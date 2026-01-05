@@ -42,10 +42,12 @@ fn set_event(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     1
 }
 
-fn wait_for_single_object(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+fn wait_for_single_object(vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    let _ = vm.run_pending_threads();
     0
 }
 
-fn sleep(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+fn sleep(vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    let _ = vm.run_pending_threads();
     0
 }

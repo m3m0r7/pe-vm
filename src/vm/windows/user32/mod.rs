@@ -4,6 +4,7 @@ mod message_box;
 mod cursor;
 mod class;
 mod window;
+mod misc;
 
 use crate::vm::Vm;
 
@@ -14,4 +15,5 @@ pub fn register(vm: &mut Vm) {
     cursor::register(vm);
     message_box::register(vm);
     window::register(vm);
+    misc::register(vm);
 }

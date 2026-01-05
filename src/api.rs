@@ -19,6 +19,7 @@ impl Pe {
         let file = PeFile::parse(&image)?;
         vm.load_image(&file, &image)?;
         vm.set_image_path(guest_path.to_string());
+        vm.resolve_imports(&file)?;
         Ok(Self { file, image })
     }
 

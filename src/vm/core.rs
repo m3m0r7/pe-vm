@@ -83,7 +83,7 @@ impl Vm {
             Os::Unix => OsState::Unix,
             Os::Mac => OsState::Mac,
         };
-        Ok(Self {
+        let mut vm = Self {
             config,
             os_state,
             base: 0,
@@ -122,13 +122,28 @@ impl Vm {
             imports_by_iat_name: HashMap::new(),
             dynamic_imports: HashMap::new(),
             dynamic_import_next: 0x7000_0000,
+            pending_threads: Vec::new(),
+            next_thread_handle: 0x6000_0000,
             stdout: Arc::new(Mutex::new(Vec::new())),
             executor: X86Executor::new(),
-        })
+        };
+        // Register default Windows stubs up front for import resolution.
+        if matches!(vm.config.os, Os::Windows) {
+            windows::register_default(&mut vm);
+        }
+        Ok(vm)
     }
 
     pub fn config(&self) -> &VmConfig {
         &self.config
+    }
+
+    pub fn network_allowed(&self, _host: &str) -> bool {
+        // Allow all traffic unless a sandbox policy disables it.
+        let Some(sandbox) = self.config.sandbox_config() else {
+            return true;
+        };
+        sandbox.network_enabled()
     }
 
     pub fn insert_path_mapping(&mut self, guest: impl Into<String>, host: impl Into<String>) {
@@ -190,6 +205,25 @@ impl Vm {
     pub fn read_bstr(&self, ptr: u32) -> Result<String, VmError> {
         // Delegate to the OLEAUT32 BSTR reader for convenience in examples.
         windows::oleaut32::read_bstr(self, ptr)
+    }
+
+    pub(crate) fn queue_thread(&mut self, entry: u32, param: u32) -> u32 {
+        let handle = self.next_thread_handle;
+        self.next_thread_handle = self.next_thread_handle.wrapping_add(1);
+        self.pending_threads.push(PendingThread { entry, param });
+        handle
+    }
+
+    pub(crate) fn run_pending_threads(&mut self) -> usize {
+        if self.pending_threads.is_empty() {
+            return 0;
+        }
+        let tasks = std::mem::take(&mut self.pending_threads);
+        let count = tasks.len();
+        for task in tasks {
+            let _ = self.execute_at_with_stack(task.entry, &[Value::U32(task.param)]);
+        }
+        count
     }
 
     pub(crate) fn set_last_error(&mut self, value: u32) {
@@ -522,9 +556,10 @@ impl Vm {
         );
     }
 
-    pub fn resolve_imports(&mut self, pe: &PeFile) {
+    pub fn resolve_imports(&mut self, pe: &PeFile) -> Result<(), VmError> {
         self.imports_by_iat.clear();
         self.imports_by_iat_name.clear();
+        let mut missing = Vec::new();
         for import in &pe.imports {
             let mut resolved = None;
             let label = if let Some(name) = &import.name {
@@ -568,11 +603,14 @@ impl Vm {
                         self.imports_by_iat_name.insert(value, label.clone());
                     }
                 }
-            } else if std::env::var("PE_VM_TRACE").is_ok() {
-                if let Some(name) = &import.name {
-                    eprintln!("[pe_vm] Unresolved import: {}!{}", import.module, name);
-                } else if let Some(ordinal) = import.ordinal {
-                    eprintln!("[pe_vm] Unresolved import: {}!#{}", import.module, ordinal);
+            } else {
+                missing.push(label.clone());
+                if std::env::var("PE_VM_TRACE").is_ok() {
+                    if let Some(name) = &import.name {
+                        eprintln!("[pe_vm] Unresolved import: {}!{}", import.module, name);
+                    } else if let Some(ordinal) = import.ordinal {
+                        eprintln!("[pe_vm] Unresolved import: {}!#{}", import.module, ordinal);
+                    }
                 }
                 let addr = self.base + import.iat_rva;
                 self.imports_by_iat_name.insert(addr, label.clone());
@@ -582,6 +620,11 @@ impl Vm {
                     }
                 }
             }
+        }
+        if missing.is_empty() {
+            Ok(())
+        } else {
+            Err(VmError::MissingImports(missing))
         }
     }
 

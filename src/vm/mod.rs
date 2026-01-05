@@ -43,6 +43,7 @@ pub struct VmConfig {
     paths: PathMapping,
     font_path: Option<String>,
     execution_limit: u64,
+    sandbox: Option<SandboxConfig>,
 }
 
 impl VmConfig {
@@ -54,6 +55,7 @@ impl VmConfig {
             paths: PathMapping::new(),
             font_path: None,
             execution_limit: 1_000_000,
+            sandbox: None,
         }
     }
 
@@ -100,9 +102,64 @@ impl VmConfig {
     pub fn execution_limit_value(&self) -> u64 {
         self.execution_limit
     }
+
+    pub fn sandbox(self, sandbox: SandboxConfig) -> Self {
+        let mut config = self;
+        config.sandbox = Some(sandbox);
+        config
+    }
+
+    pub fn sandbox_config(&self) -> Option<&SandboxConfig> {
+        self.sandbox.as_ref()
+    }
 }
 
 impl Default for VmConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// Sandbox configuration for host-side controls like network access.
+#[derive(Debug, Clone)]
+pub struct SandboxConfig {
+    network_enabled: bool,
+    network_fallback_host: Option<String>,
+}
+
+impl SandboxConfig {
+    pub fn new() -> Self {
+        Self {
+            network_enabled: false,
+            network_fallback_host: None,
+        }
+    }
+
+    pub fn enable_network(self, host: impl Into<String>) -> Self {
+        let mut config = self;
+        config.network_enabled = true;
+        let host = host.into();
+        config.network_fallback_host = if host.is_empty() { None } else { Some(host) };
+        config
+    }
+
+    pub fn disable_network(self) -> Self {
+        let mut config = self;
+        config.network_enabled = false;
+        config.network_fallback_host = None;
+        config
+    }
+
+    pub fn network_enabled(&self) -> bool {
+        self.network_enabled
+    }
+
+    pub fn network_fallback_host(&self) -> Option<&str> {
+        self.network_fallback_host.as_deref()
+    }
+}
+
+impl Default for SandboxConfig {
     fn default() -> Self {
         Self::new()
     }
@@ -187,6 +244,12 @@ struct HostFunction {
     stack_cleanup: u32,
 }
 
+#[derive(Debug, Clone)]
+struct PendingThread {
+    entry: u32,
+    param: u32,
+}
+
 #[derive(Debug)]
 pub enum VmError {
     Io(std::io::Error),
@@ -197,6 +260,7 @@ pub enum VmError {
     UnsupportedInstruction(u8),
     ExecutionLimit,
     MissingExport(String),
+    MissingImports(Vec<String>),
     NoImage,
     InvalidConfig(&'static str),
     Com(u32),
@@ -213,6 +277,7 @@ impl fmt::Display for VmError {
             VmError::UnsupportedInstruction(op) => write!(f, "unsupported instruction 0x{op:02X}"),
             VmError::ExecutionLimit => write!(f, "execution limit reached"),
             VmError::MissingExport(name) => write!(f, "missing export: {name}"),
+            VmError::MissingImports(list) => write!(f, "missing imports: {}", list.join(", ")),
             VmError::NoImage => write!(f, "no image loaded"),
             VmError::InvalidConfig(msg) => write!(f, "invalid config: {msg}"),
             VmError::Com(code) => write!(f, "com error: 0x{code:08X}"),
@@ -274,6 +339,8 @@ pub struct Vm {
     imports_by_iat_name: HashMap<u32, String>,
     dynamic_imports: HashMap<String, u32>,
     dynamic_import_next: u32,
+    pending_threads: Vec<PendingThread>,
+    next_thread_handle: u32,
     stdout: Arc<Mutex<Vec<u8>>>,
     executor: X86Executor,
 }

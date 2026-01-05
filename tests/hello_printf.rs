@@ -22,7 +22,7 @@ fn execute_hello_printf() {
 
     let mut vm = Vm::load(&pe, &image).expect("load");
     vm.register_import("msvcrt.dll", "printf", host_printf);
-    vm.resolve_imports(&pe);
+    vm.resolve_imports(&pe).expect("imports");
     vm.call_export(&pe, "hello").expect("execute");
 
     let output = vm.stdout_buffer();

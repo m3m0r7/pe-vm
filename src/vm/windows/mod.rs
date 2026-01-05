@@ -5,15 +5,20 @@ pub mod ntdll;
 pub mod com;
 pub mod advapi32;
 mod guid;
+pub mod gdi32;
 pub mod imagehlp;
+pub mod imm32;
+pub mod comdlg32;
 pub mod ole32;
 pub mod oleaut32;
 pub mod registry;
+pub mod shell32;
 pub mod shlwapi;
 pub mod user32;
 pub mod ucrt;
 pub mod vcruntime;
 pub mod version;
+pub mod wininet;
 pub mod ws2_32;
 pub mod wtsapi32;
 
@@ -62,6 +67,10 @@ pub fn register_default(vm: &mut Vm) {
     advapi32::register(vm);
     user32::register(vm);
     ntdll::register(vm);
+    imm32::register(vm);
+    gdi32::register(vm);
+    comdlg32::register(vm);
+    shell32::register(vm);
     vcruntime::register(vm);
     ucrt::register(vm);
     ole32::register(vm);
@@ -71,4 +80,5 @@ pub fn register_default(vm: &mut Vm) {
     version::register(vm);
     ws2_32::register(vm);
     wtsapi32::register(vm);
+    wininet::register(vm);
 }

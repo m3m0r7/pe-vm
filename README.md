@@ -22,7 +22,7 @@ cargo install pe_vm # Install the crate from crates.io.
 ```
 
 ```rust
-use pe_vm::{windows, Architecture, ExecuteOptions, Os, Pe, SymbolExecutor, Value, Vm, VmConfig}; // Import VM APIs.
+use pe_vm::{windows, Architecture, ExecuteOptions, Os, Pe, SandboxConfig, SymbolExecutor, Value, Vm, VmConfig}; // Import VM APIs.
 use std::collections::BTreeMap; // Map for environment variables.
 
 fn main() -> Result<(), Box<dyn std::error::Error>> { // Entry point with error propagation.
@@ -33,6 +33,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> { // Entry point with error 
         .architecture(Architecture::X86) // X86 only for now (X86_64 planned).
         .properties(registry) // Registry-backed properties for COM lookups.
         .font_path("/path/to/font.ttf"); // Optional; defaults to host fonts.
+
+    let sandbox = SandboxConfig::new() // Create a sandbox policy.
+        .enable_network( // Configure network access.
+            "127.0.0.1", // Fallback host when the guest omits a target.
+        );
+    config = config.sandbox(sandbox); // Apply the sandbox config.
 
     let mut paths = Pe::default_path_mapping(); // Default path mappings for guest paths.
     paths.insert("C:\\".to_string(), "/".to_string()); // Override mapping if needed.
@@ -65,7 +71,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> { // Entry point with error 
 Note: `VmConfig` stores OS/property/path configuration for future host
 integration. Registry and path mappings are used for COM lookups and guest path
 resolution; other OS settings are placeholders. `font_path` is used by the SDL
-dialog renderer when `MessageBoxA` is called.
+dialog renderer when `MessageBoxA` is called. `SandboxConfig` currently gates
+WinINet HTTP calls and provides a fallback host when the guest omits one.
+`Pe::load` resolves imports and returns an error if any are missing, so register
+custom imports before loading.
 
 ## Run hello world
 

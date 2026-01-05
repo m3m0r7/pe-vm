@@ -1,7 +1,4 @@
-use pe_vm::{
-    windows, Architecture, ExecuteOptions, MessageBoxMode, Os, Pe, SymbolExecutor, Value, Vm,
-    VmConfig,
-};
+use pe_vm::{Architecture, ExecuteOptions, MessageBoxMode, Os, Pe, SymbolExecutor, Value, Vm, VmConfig};
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,9 +16,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let symbol_arg = args.get(2).map(|value| value.as_str());
 
     let pe = Pe::load(&mut vm, dll_path)?;
-
-    windows::register_default(&mut vm);
-    vm.resolve_imports(pe.file());
 
     let selected_symbol = select_symbol(&pe, symbol_arg)?;
     print_dll_info(&pe, &selected_symbol);

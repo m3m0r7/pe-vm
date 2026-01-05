@@ -23,7 +23,7 @@ fn execute_hello_world_dll() {
     let pe = Pe::load(&mut vm, dll_path).expect("load");
 
     windows::register_default(&mut vm);
-    vm.resolve_imports(pe.file());
+    vm.resolve_imports(pe.file()).expect("imports");
 
     let image_base = pe.file().optional_header.image_base;
     let mut executor = SymbolExecutor::new(&mut vm, &pe).load("_DllMain@12");

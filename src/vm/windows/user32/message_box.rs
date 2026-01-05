@@ -10,6 +10,8 @@ use fontdue::{Font, FontSettings, LineMetrics};
 pub fn register(vm: &mut Vm) {
     // Expose MessageBoxA to guest imports as a stdcall host function.
     vm.register_import_stdcall("USER32.dll", "MessageBoxA", crate::vm::stdcall_args(4), message_box_a);
+    // Wide-char variant used by some DLLs.
+    vm.register_import_stdcall("USER32.dll", "MessageBoxW", crate::vm::stdcall_args(4), message_box_w);
 }
 
 pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -45,9 +47,55 @@ pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     1
 }
 
+pub(crate) fn message_box_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    // Read Win32 MessageBoxW arguments from the guest stack.
+    let text_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let caption_ptr = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
+    let _utype = vm.read_u32(stack_ptr.wrapping_add(16)).unwrap_or(0);
+    let text = if text_ptr != 0 {
+        read_w_string(vm, text_ptr)
+    } else {
+        String::new()
+    };
+    let caption = if caption_ptr != 0 {
+        read_w_string(vm, caption_ptr)
+    } else {
+        String::new()
+    };
+    match vm.message_box_mode() {
+        MessageBoxMode::Stdout => {
+            if caption.is_empty() {
+                vm.write_stdout(&text);
+                vm.write_stdout("\n");
+            } else {
+                vm.write_stdout(&format!("{}: {}\n", caption, text));
+            }
+        }
+        MessageBoxMode::Dialog => {
+            let _ = show_dialog(vm, &caption, &text);
+        }
+        MessageBoxMode::Silent => {}
+    }
+    1
+}
+
 fn show_dialog(vm: &Vm, caption: &str, text: &str) -> bool {
     // Prefer SDL rendering to match a real dialog window.
     try_sdl_dialog(vm, caption, text)
+}
+
+fn read_w_string(vm: &Vm, ptr: u32) -> String {
+    let mut units = Vec::new();
+    let mut cursor = ptr;
+    loop {
+        let value = vm.read_u16(cursor).unwrap_or(0);
+        if value == 0 {
+            break;
+        }
+        units.push(value);
+        cursor = cursor.wrapping_add(2);
+    }
+    String::from_utf16_lossy(&units)
 }
 
 #[cfg(feature = "sdl2")]

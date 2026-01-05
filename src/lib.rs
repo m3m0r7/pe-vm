@@ -18,7 +18,7 @@ pub use pe::{
 };
 pub use vm::{
     host_create_thread, host_message_box_a, host_printf, Architecture, ComOutParam, ExecuteOptions,
-    HostCall, MessageBoxMode, Os, PathMapping, Value, Vm, VmConfig, VmError,
+    HostCall, MessageBoxMode, Os, PathMapping, SandboxConfig, Value, Vm, VmConfig, VmError,
 };
 pub use vm::windows;
 pub use vm::test_support;

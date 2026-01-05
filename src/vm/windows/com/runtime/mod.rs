@@ -53,7 +53,7 @@ impl Com {
         vm.load_image(&file, &image)?;
         vm.set_image_path(dll_path.to_string());
         windows::register_default(vm);
-        vm.resolve_imports(&file);
+        vm.resolve_imports(&file)?;
         loader::register_server(vm, &file)?;
         loader::init_dll(vm, &file)?;
 

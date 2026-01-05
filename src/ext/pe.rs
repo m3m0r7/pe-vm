@@ -347,7 +347,10 @@ pub unsafe extern "C" fn pevm_pe_execute_symbol_u32(
         return 0;
     }
     windows::register_default(&mut vm);
-    vm.resolve_imports(&handle.file);
+    if let Err(err) = vm.resolve_imports(&handle.file) {
+        set_last_error(format!("failed to resolve imports: {err}"));
+        return 0;
+    }
     match vm.execute_export_with_values(&handle.file, symbol, &values, ExecuteOptions::new()) {
         Ok(value) => value,
         Err(err) => {
