@@ -21,9 +21,14 @@ const VT_EMPTY: u16 = 0;
 const VT_I4: u16 = 3;
 const VT_BSTR: u16 = 8;
 const VT_UI4: u16 = 19;
+const VT_HRESULT: u16 = 25;
 const VT_VOID: u16 = 24;
 const VT_BYREF: u16 = 0x4000;
 const VT_USERDEFINED: u16 = 0x1D;
+
+const PARAMFLAG_FIN: u32 = 0x1;
+const PARAMFLAG_FOUT: u32 = 0x2;
+const PARAMFLAG_FRETVAL: u32 = 0x8;
 
 const IID_IUNKNOWN: &str = "{00000000-0000-0000-C000-000000000046}";
 const IID_ITYPELIB: &str = "{00020402-0000-0000-C000-000000000046}";
@@ -907,7 +912,18 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
     let args_ptr = vm.read_u32(disp_params).unwrap_or(0);
     let arg_count = vm.read_u32(disp_params + 8).unwrap_or(0) as usize;
-    if arg_count > func.params.len() {
+    let mut input_positions = vec![None; func.params.len()];
+    let mut input_count = 0usize;
+    for (index, param) in func.params.iter().enumerate() {
+        let flags = param.flags;
+        if (flags & PARAMFLAG_FRETVAL) != 0 || is_out_only(flags) {
+            input_positions[index] = None;
+        } else {
+            input_positions[index] = Some(input_count);
+            input_count += 1;
+        }
+    }
+    if arg_count > input_count {
         if arg_err != 0 {
             let _ = vm.write_u32(arg_err, arg_count as u32);
         }
@@ -915,9 +931,23 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
 
     let mut values = Vec::with_capacity(func.params.len() + 1);
-    let provided = arg_count.min(func.params.len());
+    let provided = arg_count.min(input_count);
+    let mut retval_param: Option<(usize, u16)> = None;
     for (index, param) in func.params.iter().enumerate() {
-        if index >= provided {
+        let flags = param.flags;
+        let is_retval = (flags & PARAMFLAG_FRETVAL) != 0;
+        let Some(position) = input_positions[index] else {
+            let value = match alloc_out_arg(vm, param.vt) {
+                Ok(value) => value,
+                Err(_) => return DISP_E_TYPEMISMATCH,
+            };
+            if is_retval && retval_param.is_none() {
+                retval_param = Some((index, param.vt));
+            }
+            values.push(Value::U32(value));
+            continue;
+        };
+        if position >= provided {
             let value = match default_arg_for_vt(vm, param.vt) {
                 Ok(value) => value,
                 Err(_) => return DISP_E_TYPEMISMATCH,
@@ -925,7 +955,7 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             values.push(Value::U32(value));
             continue;
         }
-        let arg_index = provided.saturating_sub(1).saturating_sub(index);
+        let arg_index = provided.saturating_sub(1).saturating_sub(position);
         let var_ptr = args_ptr.wrapping_add((arg_index * VARIANT_SIZE) as u32);
         let value = match read_variant_arg(vm, var_ptr, param.vt) {
             Ok(value) => value,
@@ -1038,7 +1068,7 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     } else {
         let mut call_args = Vec::with_capacity(values.len() + 1);
         call_args.push(Value::U32(instance_ptr));
-        call_args.extend(values);
+        call_args.extend(values.iter().cloned());
         vm.execute_at_with_stack(entry, &call_args)
     };
     let result = match result {
@@ -1050,6 +1080,12 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             return E_NOTIMPL;
         }
     };
+    let retval_value = retval_param.and_then(|(index, vt)| {
+        let Some(Value::U32(ptr)) = values.get(index) else {
+            return None;
+        };
+        read_retval_value(vm, *ptr, vt).ok()
+    });
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
         eprintln!(
             "[pe_vm] ITypeInfo::Invoke returned eax=0x{result:08X} ret_vt=0x{:04X}",
@@ -1057,12 +1093,24 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
         );
     }
     if result_ptr != 0 && func.ret_vt != VT_VOID && func.ret_vt != VT_EMPTY {
-        if let Err(_) = write_variant_value(vm, result_ptr, func.ret_vt, result) {
+        let result_write = if func.ret_vt == VT_HRESULT {
+            if let Some((vt, value)) = retval_value {
+                write_variant_value(vm, result_ptr, vt, value)
+            } else {
+                write_variant_value(vm, result_ptr, VT_I4, result)
+            }
+        } else {
+            write_variant_value(vm, result_ptr, func.ret_vt, result)
+        };
+        if result_write.is_err() {
             return DISP_E_TYPEMISMATCH;
         }
     }
     if arg_err != 0 {
         let _ = vm.write_u32(arg_err, 0);
+    }
+    if func.ret_vt == VT_HRESULT {
+        return result;
     }
     S_OK
 }
@@ -1229,6 +1277,19 @@ fn read_variant_arg(vm: &Vm, var_ptr: u32, expected_vt: u16) -> Result<u32, VmEr
     Err(VmError::InvalidConfig("variant type mismatch"))
 }
 
+fn is_out_only(flags: u32) -> bool {
+    (flags & PARAMFLAG_FOUT) != 0 && (flags & PARAMFLAG_FIN) == 0
+}
+
+fn alloc_out_arg(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
+    let base = vt & !VT_BYREF;
+    let size = match base {
+        VT_I4 | VT_UI4 | VT_BSTR | VT_USERDEFINED => 4,
+        _ => 4,
+    };
+    vm.alloc_bytes(&vec![0u8; size], 4)
+}
+
 fn default_arg_for_vt(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
     if (vt & VT_BYREF) == 0 && base != VT_USERDEFINED {
@@ -1240,6 +1301,22 @@ fn default_arg_for_vt(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     };
     let buffer = vec![0u8; size];
     vm.alloc_bytes(&buffer, 4)
+}
+
+fn normalize_retval_vt(vt: u16) -> u16 {
+    let base = vt & !VT_BYREF;
+    if base == VT_USERDEFINED {
+        return VT_I4;
+    }
+    base
+}
+
+fn read_retval_value(vm: &Vm, ptr: u32, vt: u16) -> Result<(u16, u32), VmError> {
+    if ptr == 0 {
+        return Err(VmError::InvalidConfig("retval pointer is null"));
+    }
+    let value = vm.read_u32(ptr)?;
+    Ok((normalize_retval_vt(vt), value))
 }
 
 fn write_variant_value(vm: &mut Vm, dest: u32, vt: u16, value: u32) -> Result<(), VmError> {
