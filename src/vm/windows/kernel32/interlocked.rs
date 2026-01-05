@@ -1,0 +1,76 @@
+//! Kernel32 interlocked operation stubs.
+
+use crate::vm::Vm;
+
+pub fn register(vm: &mut Vm) {
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "InterlockedIncrement",
+        crate::vm::stdcall_args(1),
+        interlocked_increment,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "InterlockedDecrement",
+        crate::vm::stdcall_args(1),
+        interlocked_decrement,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "InterlockedPushEntrySList",
+        crate::vm::stdcall_args(2),
+        interlocked_push_entry_slist,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "InterlockedPopEntrySList",
+        crate::vm::stdcall_args(1),
+        interlocked_pop_entry_slist,
+    );
+}
+
+fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let addr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if addr == 0 {
+        return 0;
+    }
+    let value = vm.read_u32(addr).unwrap_or(0).wrapping_add(1);
+    let _ = vm.write_u32(addr, value);
+    value
+}
+
+fn interlocked_decrement(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let addr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if addr == 0 {
+        return 0;
+    }
+    let value = vm.read_u32(addr).unwrap_or(0).wrapping_sub(1);
+    let _ = vm.write_u32(addr, value);
+    value
+}
+
+fn interlocked_push_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let header = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let entry = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    if header == 0 || entry == 0 {
+        return 0;
+    }
+    let head = vm.read_u32(header).unwrap_or(0);
+    let _ = vm.write_u32(entry, head);
+    let _ = vm.write_u32(header, entry);
+    head
+}
+
+fn interlocked_pop_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let header = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if header == 0 {
+        return 0;
+    }
+    let head = vm.read_u32(header).unwrap_or(0);
+    if head == 0 {
+        return 0;
+    }
+    let next = vm.read_u32(head).unwrap_or(0);
+    let _ = vm.write_u32(header, next);
+    head
+}

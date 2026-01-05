@@ -1,0 +1,7 @@
+/target
+**/*.rs.bk
+.DS_Store
+test.rs
+test*.rs
+debug/
+registry.yml
