@@ -116,6 +116,15 @@ pub enum Value {
     String(String),
 }
 
+// Captures COM out parameters for the most recent IDispatch/ITypeInfo call.
+#[derive(Debug, Clone)]
+pub struct ComOutParam {
+    pub index: usize,
+    pub vt: u16,
+    pub flags: u32,
+    pub ptr: u32,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct ExecuteOptions {
     env: Option<BTreeMap<String, String>>,
@@ -245,6 +254,7 @@ pub struct Vm {
     env: BTreeMap<String, String>,
     image_path: Option<String>,
     dispatch_instance: Option<u32>,
+    last_com_out_params: Vec<ComOutParam>,
     last_error: u32,
     registry_handles: HashMap<u32, String>,
     registry_next_handle: u32,

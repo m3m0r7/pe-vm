@@ -102,6 +102,7 @@ impl Vm {
             env: BTreeMap::new(),
             image_path: None,
             dispatch_instance: None,
+            last_com_out_params: Vec::new(),
             last_error: 0,
             registry_handles: HashMap::new(),
             registry_next_handle: 0x1000_0000,
@@ -130,6 +131,20 @@ impl Vm {
         &self.config
     }
 
+    pub fn insert_path_mapping(&mut self, guest: impl Into<String>, host: impl Into<String>) {
+        // Allow late-bound path mappings for external callers such as the C ABI.
+        self.config.paths.insert(guest.into(), host.into());
+    }
+
+    pub fn set_registry(&mut self, registry: windows::registry::Registry) -> Result<(), VmError> {
+        // Replace the Windows registry model after VM construction.
+        let Some(target) = windows::get_registry_mut(self) else {
+            return Err(VmError::InvalidConfig("registry requires Windows VM"));
+        };
+        *target = registry;
+        Ok(())
+    }
+
     pub(crate) fn base(&self) -> u32 {
         self.base
     }
@@ -154,6 +169,27 @@ impl Vm {
 
     pub(crate) fn dispatch_instance(&self) -> Option<u32> {
         self.dispatch_instance
+    }
+
+    pub(crate) fn set_last_com_out_params(&mut self, params: Vec<ComOutParam>) {
+        self.last_com_out_params = params;
+    }
+
+    pub fn last_com_out_params(&self) -> &[ComOutParam] {
+        &self.last_com_out_params
+    }
+
+    pub fn clear_last_com_out_params(&mut self) {
+        self.last_com_out_params.clear();
+    }
+
+    pub fn take_last_com_out_params(&mut self) -> Vec<ComOutParam> {
+        std::mem::take(&mut self.last_com_out_params)
+    }
+
+    pub fn read_bstr(&self, ptr: u32) -> Result<String, VmError> {
+        // Delegate to the OLEAUT32 BSTR reader for convenience in examples.
+        windows::oleaut32::read_bstr(self, ptr)
     }
 
     pub(crate) fn set_last_error(&mut self, value: u32) {
@@ -1149,7 +1185,7 @@ impl Vm {
         }
     }
 
-    pub(crate) fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
+    pub fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(0);
         }
@@ -1160,7 +1196,7 @@ impl Vm {
             .ok_or(VmError::MemoryOutOfRange)
     }
 
-    pub(crate) fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
+    pub fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(0);
         }

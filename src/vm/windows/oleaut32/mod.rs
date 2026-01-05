@@ -3,7 +3,7 @@
 #[doc(hidden)]
 pub mod typelib;
 
-use crate::vm::{Value, Vm, VmError};
+use crate::vm::{ComOutParam, Value, Vm, VmError};
 use crate::vm::windows::guid::{format_guid, parse_guid};
 use crate::vm::windows::{get_registry, registry::RegistryValue};
 
@@ -19,6 +19,7 @@ const TYPE_E_LIBNOTREGISTERED: u32 = 0x8002_801D;
 const VARIANT_SIZE: usize = 16;
 const VT_EMPTY: u16 = 0;
 const VT_I4: u16 = 3;
+const VT_VARIANT: u16 = 12;
 const VT_BSTR: u16 = 8;
 const VT_UI4: u16 = 19;
 const VT_HRESULT: u16 = 25;
@@ -779,6 +780,7 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let Some(info) = typelib::get_typeinfo(info_id) else {
         return DISP_E_MEMBERNOTFOUND;
     };
+    vm.set_last_com_out_params(Vec::new());
     let mut slots = [0u32; 9];
     for (idx, slot) in slots.iter_mut().enumerate() {
         *slot = vm.read_u32(stack_ptr.wrapping_add((idx * 4) as u32)).unwrap_or(0);
@@ -931,11 +933,14 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
 
     let mut values = Vec::with_capacity(func.params.len() + 1);
+    let mut out_params = Vec::new();
     let provided = arg_count.min(input_count);
     let mut retval_param: Option<(usize, u16)> = None;
     for (index, param) in func.params.iter().enumerate() {
         let flags = param.flags;
         let is_retval = (flags & PARAMFLAG_FRETVAL) != 0;
+        let out_only = is_out_only(flags);
+        let record_out = is_retval || out_only || ((flags & PARAMFLAG_FOUT) != 0 && (param.vt & VT_BYREF) != 0);
         let Some(position) = input_positions[index] else {
             let value = match alloc_out_arg(vm, param.vt) {
                 Ok(value) => value,
@@ -945,6 +950,14 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
                 retval_param = Some((index, param.vt));
             }
             values.push(Value::U32(value));
+            if record_out {
+                out_params.push(ComOutParam {
+                    index,
+                    vt: param.vt,
+                    flags,
+                    ptr: value,
+                });
+            }
             continue;
         };
         if position >= provided {
@@ -953,6 +966,14 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
                 Err(_) => return DISP_E_TYPEMISMATCH,
             };
             values.push(Value::U32(value));
+            if record_out {
+                out_params.push(ComOutParam {
+                    index,
+                    vt: param.vt,
+                    flags,
+                    ptr: value,
+                });
+            }
             continue;
         }
         let arg_index = provided.saturating_sub(1).saturating_sub(position);
@@ -967,6 +988,14 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             }
         };
         values.push(Value::U32(value));
+        if record_out {
+            out_params.push(ComOutParam {
+                index,
+                vt: param.vt,
+                flags,
+                ptr: value,
+            });
+        }
     }
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
         let rendered = values
@@ -1080,6 +1109,7 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             return E_NOTIMPL;
         }
     };
+    vm.set_last_com_out_params(out_params);
     let retval_value = retval_param.and_then(|(index, vt)| {
         let Some(Value::U32(ptr)) = values.get(index) else {
             return None;
@@ -1284,7 +1314,8 @@ fn is_out_only(flags: u32) -> bool {
 fn alloc_out_arg(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
     let size = match base {
-        VT_I4 | VT_UI4 | VT_BSTR | VT_USERDEFINED => 4,
+        VT_I4 | VT_UI4 | VT_BSTR => 4,
+        VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
     vm.alloc_bytes(&vec![0u8; size], 4)
@@ -1292,11 +1323,12 @@ fn alloc_out_arg(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
 
 fn default_arg_for_vt(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
-    if (vt & VT_BYREF) == 0 && base != VT_USERDEFINED {
+    if (vt & VT_BYREF) == 0 && base != VT_USERDEFINED && base != VT_VARIANT {
         return Ok(0);
     }
     let size = match base {
         VT_I4 | VT_UI4 | VT_BSTR => 4,
+        VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
     let buffer = vec![0u8; size];
