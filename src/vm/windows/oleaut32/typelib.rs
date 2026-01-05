@@ -132,7 +132,7 @@ pub(crate) fn load_from_bytes(bytes: &[u8]) -> Result<TypeLib, VmError> {
     parse_msft(&resource.data)
 }
 
-fn find_typelib_resource<'a>(dir: &'a ResourceDirectory) -> Option<&'a ResourceData> {
+fn find_typelib_resource(dir: &ResourceDirectory) -> Option<&ResourceData> {
     let node = dir.roots.iter().find(|node| matches_typelib_id(&node.id))?;
     find_first_resource(node)
 }
@@ -176,7 +176,7 @@ pub fn parse_msft(data: &[u8]) -> Result<TypeLib, VmError> {
     let type_descs = read_typdesc_table(&reader, &segdir)?;
 
     let mut aliases = vec![None; nrtypeinfos];
-    for index in 0..nrtypeinfos {
+    for (index, slot) in aliases.iter_mut().enumerate() {
         let entry_offset = segdir.typeinfo_tab.offset as usize
             + index
                 .checked_mul(TYPEINFO_SIZE)
@@ -187,7 +187,7 @@ pub fn parse_msft(data: &[u8]) -> Result<TypeLib, VmError> {
         }
         let datatype1 = reader.read_i32(entry_offset + 0x54)?;
         if let Ok(vt) = resolve_vartype_basic(datatype1, &type_descs) {
-            aliases[index] = Some(vt);
+            *slot = Some(vt);
         }
     }
 
@@ -374,8 +374,8 @@ fn read_guid(reader: &Reader, segdir: &SegDir, offset: i32) -> Option<[u8; 16]> 
     }
     let base = segdir.guid_tab.offset as usize + offset as usize;
     let mut guid = [0u8; 16];
-    for i in 0..16 {
-        guid[i] = reader.read_u8(base + i).ok()?;
+    for (index, slot) in guid.iter_mut().enumerate() {
+        *slot = reader.read_u8(base + index).ok()?;
     }
     Some(guid)
 }

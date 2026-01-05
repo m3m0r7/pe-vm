@@ -27,6 +27,8 @@ const VT_VOID: u16 = 24;
 const VT_BYREF: u16 = 0x4000;
 const VT_USERDEFINED: u16 = 0x1D;
 
+type OleMethod = (&'static str, u32, fn(&mut Vm, u32) -> u32);
+
 const PARAMFLAG_FIN: u32 = 0x1;
 const PARAMFLAG_FOUT: u32 = 0x2;
 const PARAMFLAG_FRETVAL: u32 = 0x8;
@@ -460,7 +462,7 @@ fn resolve_typelib_path(
     Ok(None)
 }
 
-const TYPELIB_METHODS: &[(&str, u32, fn(&mut Vm, u32) -> u32)] = &[
+const TYPELIB_METHODS: &[OleMethod] = &[
     ("pe_vm.typelib.QueryInterface", 3, typelib_query_interface),
     ("pe_vm.typelib.AddRef", 1, typelib_add_ref),
     ("pe_vm.typelib.Release", 1, typelib_release),
@@ -476,7 +478,7 @@ const TYPELIB_METHODS: &[(&str, u32, fn(&mut Vm, u32) -> u32)] = &[
     ("pe_vm.typelib.ReleaseTLibAttr", 2, typelib_not_impl),
 ];
 
-const TYPEINFO_METHODS: &[(&str, u32, fn(&mut Vm, u32) -> u32)] = &[
+const TYPEINFO_METHODS: &[OleMethod] = &[
     ("pe_vm.typeinfo.QueryInterface", 3, typeinfo_query_interface),
     ("pe_vm.typeinfo.AddRef", 1, typeinfo_add_ref),
     ("pe_vm.typeinfo.Release", 1, typeinfo_release),
@@ -529,12 +531,9 @@ fn build_typeinfo_object(vm: &mut Vm, typeinfo_id: u32) -> Result<u32, VmError> 
     build_object(vm, vtable, &[typeinfo_id])
 }
 
-fn build_vtable(
-    vm: &mut Vm,
-    methods: &[(&str, u32, fn(&mut Vm, u32) -> u32)],
-) -> Result<u32, VmError> {
+fn build_vtable(vm: &mut Vm, methods: &[OleMethod]) -> Result<u32, VmError> {
     let mut bytes = Vec::with_capacity(methods.len() * 4);
-    for (name, _, _) in methods {
+    for &(name, _, _) in methods {
         let entry = vm
             .resolve_dynamic_import(name)
             .ok_or(VmError::InvalidConfig("missing import"))?;
@@ -553,14 +552,14 @@ fn build_object(vm: &mut Vm, vtable_ptr: u32, extras: &[u32]) -> Result<u32, VmE
 }
 
 fn register_typelib_thunks(vm: &mut Vm) {
-    for (name, args, func) in TYPELIB_METHODS {
-        vm.register_import_any_stdcall(*name, crate::vm::stdcall_args(*args), *func);
+    for &(name, args, func) in TYPELIB_METHODS {
+        vm.register_import_any_stdcall(name, crate::vm::stdcall_args(args), func);
     }
 }
 
 fn register_typeinfo_thunks(vm: &mut Vm) {
-    for (name, args, func) in TYPEINFO_METHODS {
-        vm.register_import_any_stdcall(*name, crate::vm::stdcall_args(*args), *func);
+    for &(name, args, func) in TYPEINFO_METHODS {
+        vm.register_import_any_stdcall(name, crate::vm::stdcall_args(args), func);
     }
 }
 
@@ -625,10 +624,7 @@ fn typelib_get_typeinfo(vm: &mut Vm, stack_ptr: u32) -> u32 {
             );
         }
     }
-    let typeinfo = match build_typeinfo_object(vm, typeinfo_id) {
-        Ok(ptr) => ptr,
-        Err(_) => 0,
-    };
+    let typeinfo = build_typeinfo_object(vm, typeinfo_id).unwrap_or(0);
     let _ = vm.write_u32(out_ptr, typeinfo);
     if typeinfo == 0 {
         return E_NOTIMPL;
@@ -701,10 +697,7 @@ fn typelib_get_typeinfo_of_guid(vm: &mut Vm, stack_ptr: u32) -> u32 {
             );
         }
     }
-    let typeinfo = match build_typeinfo_object(vm, typeinfo_id) {
-        Ok(ptr) => ptr,
-        Err(_) => 0,
-    };
+    let typeinfo = build_typeinfo_object(vm, typeinfo_id).unwrap_or(0);
     let _ = vm.write_u32(out_ptr, typeinfo);
     if typeinfo == 0 {
         return E_NOTIMPL;
@@ -759,7 +752,7 @@ fn typeinfo_get_type_attr(vm: &mut Vm, stack_ptr: u32) -> u32 {
     bytes[0..16].copy_from_slice(&info.guid);
     bytes[24..28].copy_from_slice(&0xFFFF_FFFFu32.to_le_bytes());
     bytes[28..32].copy_from_slice(&0xFFFF_FFFFu32.to_le_bytes());
-    bytes[40..44].copy_from_slice(&(info.typekind as u32).to_le_bytes());
+    bytes[40..44].copy_from_slice(&info.typekind.to_le_bytes());
     bytes[44..46].copy_from_slice(&info.c_funcs.to_le_bytes());
     bytes[46..48].copy_from_slice(&info.c_vars.to_le_bytes());
     bytes[48..50].copy_from_slice(&info.c_impl_types.to_le_bytes());
@@ -1296,10 +1289,10 @@ fn read_variant_arg(vm: &Vm, var_ptr: u32, expected_vt: u16) -> Result<u32, VmEr
         };
     }
 
-    if expected_base == VT_I4 || expected_base == VT_UI4 {
-        if actual_base == VT_I4 || actual_base == VT_UI4 {
-            return Ok(value);
-        }
+    if (expected_base == VT_I4 || expected_base == VT_UI4)
+        && (actual_base == VT_I4 || actual_base == VT_UI4)
+    {
+        return Ok(value);
     }
     if expected_base == VT_BSTR && actual_base == VT_BSTR {
         return Ok(value);
