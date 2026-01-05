@@ -49,6 +49,15 @@ impl Com {
         let (normalized, dll_path, host_path) = loader::resolve_inproc_path(vm, clsid)?;
         let image = std::fs::read(&host_path)?;
         let file = PeFile::parse(&image)?;
+        let typelib = match crate::vm::windows::oleaut32::typelib::load_from_bytes(&image) {
+            Ok(lib) => Some(lib),
+            Err(err) => {
+                if std::env::var("PE_VM_TRACE_COM").is_ok() {
+                    eprintln!("[pe_vm] TypeLib load skipped: {err}");
+                }
+                None
+            }
+        };
 
         vm.load_image(&file, &image)?;
         vm.set_image_path(dll_path.to_string());
@@ -57,7 +66,7 @@ impl Com {
         loader::register_server(vm, &file)?;
         loader::init_dll(vm, &file)?;
 
-        let inproc = instance::create_inproc_object(vm, &file, &normalized)?;
+        let inproc = instance::create_inproc_object(vm, &file, &normalized, typelib)?;
         let _ = activex::attach_client_site(vm, inproc.dispatch_ptr());
         Ok(ComObject::new_inproc(
             normalized,

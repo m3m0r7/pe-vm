@@ -7,12 +7,14 @@ use super::helpers::{alloc_guid, read_hex_window};
 use super::scan::recover_dispatch_from_heap;
 use super::{IID_ICLASSFACTORY, IID_IDISPATCH, IID_IUNKNOWN};
 use super::super::object::{vtable_fn, InProcObject};
+use crate::vm::windows::oleaut32::typelib::TypeLib;
 
 // Instantiate a COM object by calling DllGetClassObject and IClassFactory::CreateInstance.
 pub(super) fn create_inproc_object(
     vm: &mut Vm,
     file: &PeFile,
     clsid: &str,
+    typelib: Option<TypeLib>,
 ) -> Result<InProcObject, VmError> {
     let entry = file
         .export_rva("DllGetClassObject")
@@ -106,7 +108,7 @@ pub(super) fn create_inproc_object(
         }
         return Err(VmError::InvalidConfig("IDispatch is null"));
     }
-    Ok(InProcObject::new(i_dispatch))
+    Ok(InProcObject::new(i_dispatch, typelib))
 }
 
 fn create_instance_with_iid(

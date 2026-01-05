@@ -22,6 +22,8 @@ const VT_I4: u16 = 3;
 const VT_VARIANT: u16 = 12;
 const VT_BSTR: u16 = 8;
 const VT_UI4: u16 = 19;
+const VT_INT: u16 = 22;
+const VT_UINT: u16 = 23;
 const VT_HRESULT: u16 = 25;
 const VT_VOID: u16 = 24;
 const VT_BYREF: u16 = 0x4000;
@@ -918,11 +920,15 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             input_count += 1;
         }
     }
+    let mut positional_fallback = false;
     if arg_count > input_count {
-        if arg_err != 0 {
-            let _ = vm.write_u32(arg_err, arg_count as u32);
+        if arg_count > func.params.len() {
+            if arg_err != 0 {
+                let _ = vm.write_u32(arg_err, arg_count as u32);
+            }
+            return DISP_E_BADPARAMCOUNT;
         }
-        return DISP_E_BADPARAMCOUNT;
+        positional_fallback = true;
     }
 
     let mut values = Vec::with_capacity(func.params.len() + 1);
@@ -934,6 +940,48 @@ fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
         let is_retval = (flags & PARAMFLAG_FRETVAL) != 0;
         let out_only = is_out_only(flags);
         let record_out = is_retval || out_only || ((flags & PARAMFLAG_FOUT) != 0 && (param.vt & VT_BYREF) != 0);
+        if positional_fallback {
+            if index < arg_count {
+                let arg_index = arg_count.saturating_sub(1).saturating_sub(index);
+                let var_ptr = args_ptr.wrapping_add((arg_index * VARIANT_SIZE) as u32);
+                let value = match read_variant_arg(vm, var_ptr, param.vt) {
+                    Ok(value) => value,
+                    Err(_) => {
+                        if arg_err != 0 {
+                            let _ = vm.write_u32(arg_err, arg_index as u32);
+                        }
+                        return DISP_E_TYPEMISMATCH;
+                    }
+                };
+                values.push(Value::U32(value));
+                if record_out {
+                    out_params.push(ComOutParam {
+                        index,
+                        vt: param.vt,
+                        flags,
+                        ptr: value,
+                    });
+                }
+                continue;
+            }
+            let value = match alloc_out_arg(vm, param.vt) {
+                Ok(value) => value,
+                Err(_) => return DISP_E_TYPEMISMATCH,
+            };
+            if is_retval && retval_param.is_none() {
+                retval_param = Some((index, param.vt));
+            }
+            values.push(Value::U32(value));
+            if record_out {
+                out_params.push(ComOutParam {
+                    index,
+                    vt: param.vt,
+                    flags,
+                    ptr: value,
+                });
+            }
+            continue;
+        }
         let Some(position) = input_positions[index] else {
             let value = match alloc_out_arg(vm, param.vt) {
                 Ok(value) => value,
@@ -1283,15 +1331,21 @@ fn read_variant_arg(vm: &Vm, var_ptr: u32, expected_vt: u16) -> Result<u32, VmEr
             return Err(VmError::InvalidConfig("null byref pointer"));
         }
         return match actual_base {
-            VT_I4 | VT_UI4 => vm.read_u32(value),
+            VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED => vm.read_u32(value),
             VT_BSTR => vm.read_u32(value),
             _ => Err(VmError::InvalidConfig("unsupported byref variant")),
         };
     }
 
-    if (expected_base == VT_I4 || expected_base == VT_UI4)
-        && (actual_base == VT_I4 || actual_base == VT_UI4)
-    {
+    let expected_int = matches!(
+        expected_base,
+        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED
+    );
+    let actual_int = matches!(
+        actual_base,
+        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED
+    );
+    if expected_int && actual_int {
         return Ok(value);
     }
     if expected_base == VT_BSTR && actual_base == VT_BSTR {
@@ -1307,7 +1361,7 @@ fn is_out_only(flags: u32) -> bool {
 fn alloc_out_arg(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
     let size = match base {
-        VT_I4 | VT_UI4 | VT_BSTR => 4,
+        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_BSTR => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
@@ -1320,7 +1374,7 @@ fn default_arg_for_vt(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
         return Ok(0);
     }
     let size = match base {
-        VT_I4 | VT_UI4 | VT_BSTR => 4,
+        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_BSTR => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
@@ -1347,7 +1401,7 @@ fn read_retval_value(vm: &Vm, ptr: u32, vt: u16) -> Result<(u16, u32), VmError> 
 fn write_variant_value(vm: &mut Vm, dest: u32, vt: u16, value: u32) -> Result<(), VmError> {
     let base_vt = vt & !VT_BYREF;
     match base_vt {
-        VT_I4 | VT_UI4 | VT_BSTR => write_variant_u32(vm, dest, base_vt, value),
+        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_BSTR => write_variant_u32(vm, dest, base_vt, value),
         _ => Err(VmError::InvalidConfig("unsupported variant type")),
     }
 }
