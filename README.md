@@ -1,6 +1,6 @@
-# pe_vm
+# pe-vm
 
-pe_vm is a Rust crate that executes Portable Executable (PE) files inside a VM-like
+pe-vm is a Rust crate that executes Portable Executable (PE) files inside a VM-like
 environment, enabling cross-platform execution on Windows (.dll), macOS (.dylib),
 and Linux (.so). It is derived from 
 [PHP Machine Emulator](https://github.com/m3m0r7/php-machine-emulator).

@@ -4,6 +4,7 @@ mod helpers;
 mod instance;
 mod loader;
 mod scan;
+mod activex;
 
 use crate::pe::PeFile;
 use crate::vm::{Vm, VmError};
@@ -57,6 +58,7 @@ impl Com {
         loader::init_dll(vm, &file)?;
 
         let inproc = instance::create_inproc_object(vm, &file, &normalized)?;
+        let _ = activex::attach_client_site(vm, inproc.dispatch_ptr());
         Ok(ComObject::new_inproc(
             normalized,
             dll_path,

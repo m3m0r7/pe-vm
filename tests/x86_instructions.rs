@@ -320,6 +320,14 @@ fn logic_and_test_variants() {
     assert_eq!(vm.read_u32(mem).unwrap(), 0xFFFF_0000);
 }
 
+// Validate operand-size override for TEST with high bits set.
+#[test]
+fn test_operand_size_override_flags() {
+    let code = [0x66, 0x85, 0xC0];
+    let vm = step(&code, |vm| vm.set_reg32(0, 0x1234_0000));
+    assert!(vm.zf());
+}
+
 // Exercise F7 mul/imul/div/idiv variants.
 #[test]
 fn f7_mul_imul_div_idiv() {

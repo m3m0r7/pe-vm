@@ -217,6 +217,13 @@ pub(crate) fn update_flags_logic8(vm: &mut Vm, result: u8) {
     vm.set_flags(zf, sf, false, false);
 }
 
+pub(crate) fn update_flags_logic16(vm: &mut Vm, result: u16) {
+    // Operand-size override uses 16-bit flags.
+    let zf = result == 0;
+    let sf = (result & 0x8000) != 0;
+    vm.set_flags(zf, sf, false, false);
+}
+
 pub(crate) fn update_flags_add32(vm: &mut Vm, a: u32, b: u32, result: u32) {
     let sign = 0x8000_0000;
     let zf = result == 0;

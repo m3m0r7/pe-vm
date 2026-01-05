@@ -3,8 +3,17 @@
 use crate::vm::{Vm, VmError, REG_AL, REG_EAX};
 
 use super::core::{
-    decode_modrm, read_rm32, read_rm8, update_flags_logic32, update_flags_logic8, write_rm32,
-    write_rm8, ModRm, Prefixes,
+    decode_modrm,
+    read_rm16,
+    read_rm32,
+    read_rm8,
+    update_flags_logic16,
+    update_flags_logic32,
+    update_flags_logic8,
+    write_rm32,
+    write_rm8,
+    ModRm,
+    Prefixes,
 };
 
 pub(crate) fn or_rm32_r32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
@@ -217,10 +226,18 @@ pub(crate) fn test_rm8_r8(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Resul
 
 pub(crate) fn test_rm32_r32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     let modrm = decode_modrm(vm, cursor + 1)?;
-    let lhs = read_rm32(vm, &modrm, prefixes.segment_base)?;
-    let rhs = vm.reg32(modrm.reg);
-    let result = lhs & rhs;
-    update_flags_logic32(vm, result);
+    // Respect operand-size override for 16-bit tests.
+    if prefixes.operand_size_16 {
+        let lhs = read_rm16(vm, &modrm, prefixes.segment_base)?;
+        let rhs = vm.reg16(modrm.reg);
+        let result = lhs & rhs;
+        update_flags_logic16(vm, result);
+    } else {
+        let lhs = read_rm32(vm, &modrm, prefixes.segment_base)?;
+        let rhs = vm.reg32(modrm.reg);
+        let result = lhs & rhs;
+        update_flags_logic32(vm, result);
+    }
     vm.set_eip(cursor + 1 + modrm.len as u32);
     Ok(())
 }
@@ -240,12 +257,20 @@ pub(crate) fn test_al_imm8(
 pub(crate) fn test_eax_imm32(
     vm: &mut Vm,
     cursor: u32,
-    _prefixes: Prefixes,
+    prefixes: Prefixes,
 ) -> Result<(), VmError> {
-    let imm = vm.read_u32(cursor + 1)?;
-    let result = vm.reg32(REG_EAX) & imm;
-    update_flags_logic32(vm, result);
-    vm.set_eip(cursor + 5);
+    // Respect operand-size override for 16-bit tests.
+    if prefixes.operand_size_16 {
+        let imm = vm.read_u16(cursor + 1)?;
+        let result = vm.reg16(REG_EAX) & imm;
+        update_flags_logic16(vm, result);
+        vm.set_eip(cursor + 3);
+    } else {
+        let imm = vm.read_u32(cursor + 1)?;
+        let result = vm.reg32(REG_EAX) & imm;
+        update_flags_logic32(vm, result);
+        vm.set_eip(cursor + 5);
+    }
     Ok(())
 }
 

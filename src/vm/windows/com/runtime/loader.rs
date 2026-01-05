@@ -50,6 +50,14 @@ fn resolve_registry_path(registry: &Registry, normalized: &str) -> Result<Option
         format!(r"HKCR\CLSID\{}\InprocServer32", normalized),
         format!(r"HKLM\Software\Classes\CLSID\{}\InprocServer32", normalized),
         format!(r"HKCU\Software\Classes\CLSID\{}\InprocServer32", normalized),
+        format!(
+            r"HKLM\Software\Classes\WOW6432Node\CLSID\{}\InprocServer32",
+            normalized
+        ),
+        format!(
+            r"HKLM\Software\WOW6432Node\Classes\CLSID\{}\InprocServer32",
+            normalized
+        ),
     ];
     for key in candidates {
         if let Some(value) = resolve_registry_value(registry, &key)? {

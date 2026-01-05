@@ -238,3 +238,19 @@ pub(crate) fn movzx_rm16(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result
     vm.set_eip(cursor + 2 + modrm.len as u32);
     Ok(())
 }
+
+pub(crate) fn movsx_rm8(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let modrm = decode_modrm(vm, cursor + 2)?;
+    let value = read_rm8(vm, &modrm, prefixes.segment_base)? as i8 as i32 as u32;
+    vm.set_reg32(modrm.reg, value);
+    vm.set_eip(cursor + 2 + modrm.len as u32);
+    Ok(())
+}
+
+pub(crate) fn movsx_rm16(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let modrm = decode_modrm(vm, cursor + 2)?;
+    let value = read_rm16(vm, &modrm, prefixes.segment_base)? as i16 as i32 as u32;
+    vm.set_reg32(modrm.reg, value);
+    vm.set_eip(cursor + 2 + modrm.len as u32);
+    Ok(())
+}

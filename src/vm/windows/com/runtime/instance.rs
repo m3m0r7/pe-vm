@@ -234,7 +234,7 @@ fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
     false
 }
 
-fn query_interface(vm: &mut Vm, obj_ptr: u32, iid: &str) -> Result<u32, VmError> {
+pub(super) fn query_interface(vm: &mut Vm, obj_ptr: u32, iid: &str) -> Result<u32, VmError> {
     let query = vtable_fn(vm, obj_ptr, 0)?;
     let iid_ptr = alloc_guid(vm, iid)?;
     let out_ptr = vm.alloc_bytes(&[0u8; 4], 4)?;

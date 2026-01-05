@@ -207,13 +207,22 @@ fn multi_byte_to_wide_char(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if src_ptr == 0 {
         return 0;
     }
-    let bytes = read_bytes(vm, src_ptr, src_len);
+    // Include a terminator when the source length is -1.
+    let (bytes, needs_null) = if src_len < 0 {
+        (read_bytes(vm, src_ptr, src_len), true)
+    } else {
+        (read_bytes(vm, src_ptr, src_len), false)
+    };
     let text = String::from_utf8_lossy(&bytes);
-    let utf16: Vec<u16> = text.encode_utf16().collect();
-    if dst_ptr == 0 {
-        return utf16.len() as u32;
+    let mut utf16: Vec<u16> = text.encode_utf16().collect();
+    if needs_null {
+        utf16.push(0);
     }
-    let write_len = dst_len.min(utf16.len());
+    let required = utf16.len();
+    if dst_ptr == 0 {
+        return required as u32;
+    }
+    let write_len = dst_len.min(required);
     for (i, value) in utf16.iter().enumerate().take(write_len) {
         let _ = vm.write_u16(dst_ptr + (i as u32) * 2, *value);
     }
@@ -232,12 +241,24 @@ fn wide_char_to_multi_byte(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if src_ptr == 0 {
         return 0;
     }
-    let utf16 = read_utf16(vm, src_ptr, src_len);
+    // Include a terminator when the source length is -1.
+    let (utf16, needs_null) = if src_len < 0 {
+        (read_utf16(vm, src_ptr, src_len), true)
+    } else {
+        (read_utf16(vm, src_ptr, src_len), false)
+    };
     let text = String::from_utf16_lossy(&utf16);
     if dst_ptr == 0 {
-        return text.len() as u32;
+        return if needs_null {
+            text.len().saturating_add(1) as u32
+        } else {
+            text.len() as u32
+        };
     }
-    let bytes = text.into_bytes();
+    let mut bytes = text.into_bytes();
+    if needs_null {
+        bytes.push(0);
+    }
     let write_len = dst_len.min(bytes.len());
     let _ = vm.write_bytes(dst_ptr, &bytes[..write_len]);
     write_len as u32

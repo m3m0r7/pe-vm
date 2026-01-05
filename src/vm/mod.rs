@@ -231,6 +231,8 @@ pub struct Vm {
     base: u32,
     memory: Vec<u8>,
     regs: Registers,
+    // Minimal SSE state for XMM register operations.
+    xmm: [[u8; 16]; 8],
     flags: Flags,
     stack_top: u32,
     stack_depth: u32,
@@ -242,6 +244,7 @@ pub struct Vm {
     gs_base: u32,
     env: BTreeMap<String, String>,
     image_path: Option<String>,
+    dispatch_instance: Option<u32>,
     last_error: u32,
     registry_handles: HashMap<u32, String>,
     registry_next_handle: u32,
