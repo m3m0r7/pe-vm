@@ -320,6 +320,49 @@ fn logic_and_test_variants() {
     assert_eq!(vm.read_u32(mem).unwrap(), 0xFFFF_0000);
 }
 
+// Validate operand-size override for TEST with high bits set.
+#[test]
+fn test_operand_size_override_flags() {
+    let code = [0x66, 0x85, 0xC0];
+    let vm = step(&code, |vm| vm.set_reg32(0, 0x1234_0000));
+    assert!(vm.zf());
+}
+
+// Cover operand-size override for OR/AND/XOR instruction forms.
+#[test]
+fn logic_operand_size_override_16() {
+    let mem = addr(0x300);
+
+    let mut code = vec![0x66, 0x09, modrm_disp32(1)];
+    code.extend_from_slice(&mem.to_le_bytes());
+    let vm = step(&code, |vm| {
+        vm.write_u32(mem, 0xABCD_00F0).unwrap();
+        vm.set_reg16(1, 0x0F00);
+    });
+    assert_eq!(vm.read_u32(mem).unwrap(), 0xABCD_0FF0);
+
+    let mut code = vec![0x66, 0x23, modrm_disp32(2)];
+    code.extend_from_slice(&mem.to_le_bytes());
+    let vm = step(&code, |vm| {
+        vm.write_u32(mem, 0x1234_F0F0).unwrap();
+        vm.set_reg16(2, 0x0FF0);
+    });
+    assert_eq!(vm.reg16(2), 0x00F0);
+
+    let mut code = vec![0x66, 0x83, modrm_disp32(6)];
+    code.extend_from_slice(&mem.to_le_bytes());
+    code.push(0x0F);
+    let vm = step(&code, |vm| {
+        vm.write_u32(mem, 0xAAAA_00F0).unwrap();
+    });
+    assert_eq!(vm.read_u32(mem).unwrap(), 0xAAAA_00FF);
+
+    let mut code = vec![0x66, 0x0D];
+    code.extend_from_slice(&0x00F0u16.to_le_bytes());
+    let vm = step(&code, |vm| vm.set_reg16(0, 0x0F00));
+    assert_eq!(vm.reg16(0), 0x0FF0);
+}
+
 // Exercise F7 mul/imul/div/idiv variants.
 #[test]
 fn f7_mul_imul_div_idiv() {

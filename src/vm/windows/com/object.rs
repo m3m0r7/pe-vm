@@ -8,6 +8,7 @@ use crate::vm::windows::oleaut32;
 use super::{ComArg, ComValue, DispatchTable};
 
 const DISPATCH_METHOD: u16 = 0x1;
+const DISPATCH_PROPERTYGET: u16 = 0x2;
 const VT_EMPTY: u16 = 0;
 const VT_I4: u16 = 3;
 const VT_BSTR: u16 = 8;
@@ -74,10 +75,7 @@ impl ComObject {
         dispid: u32,
         args: &[ComArg],
     ) -> Result<ComValue, VmError> {
-        match &self.backend {
-            ComBackend::Dispatch(dispatch) => dispatch.invoke(vm, dispid, args),
-            ComBackend::InProc(inproc) => inproc.invoke(vm, dispid, args, DISPATCH_METHOD),
-        }
+        self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD)
     }
 
     pub fn invoke_i4(
@@ -86,8 +84,9 @@ impl ComObject {
         dispid: u32,
         args: &[ComArg],
     ) -> Result<i32, VmError> {
-        match self.invoke(vm, dispid, args)? {
+        match self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD | DISPATCH_PROPERTYGET)? {
             ComValue::I4(value) => Ok(value),
+            ComValue::Void => Ok(0),
             _ => Err(VmError::InvalidConfig("dispatch return type mismatch")),
         }
     }
@@ -98,7 +97,7 @@ impl ComObject {
         dispid: u32,
         args: &[ComArg],
     ) -> Result<String, VmError> {
-        match self.invoke(vm, dispid, args)? {
+        match self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD | DISPATCH_PROPERTYGET)? {
             ComValue::BStr(value) => Ok(value),
             _ => Err(VmError::InvalidConfig("dispatch return type mismatch")),
         }
@@ -110,9 +109,22 @@ impl ComObject {
         dispid: u32,
         args: &[ComArg],
     ) -> Result<(), VmError> {
-        match self.invoke(vm, dispid, args)? {
+        match self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD)? {
             ComValue::Void => Ok(()),
             _ => Err(VmError::InvalidConfig("dispatch return type mismatch")),
+        }
+    }
+
+    fn invoke_with_flags(
+        &self,
+        vm: &mut Vm,
+        dispid: u32,
+        args: &[ComArg],
+        flags: u16,
+    ) -> Result<ComValue, VmError> {
+        match &self.backend {
+            ComBackend::Dispatch(dispatch) => dispatch.invoke(vm, dispid, args),
+            ComBackend::InProc(inproc) => inproc.invoke(vm, dispid, args, flags),
         }
     }
 }
@@ -125,6 +137,10 @@ pub(crate) struct InProcObject {
 impl InProcObject {
     pub(crate) fn new(i_dispatch: u32) -> Self {
         Self { i_dispatch }
+    }
+
+    pub(crate) fn dispatch_ptr(&self) -> u32 {
+        self.i_dispatch
     }
 
     fn invoke(
@@ -145,24 +161,60 @@ impl InProcObject {
             0
         };
 
-        let values = [
-            Value::U32(self.i_dispatch),
-            Value::U32(dispid),
-            Value::U32(riid_ptr),
-            Value::U32(0),
-            Value::U32(flags as u32),
-            Value::U32(disp_params_ptr),
-            Value::U32(result_ptr),
-            Value::U32(0),
-            Value::U32(0),
-        ];
-
-        let hr = vm.execute_at_with_stack(invoke_ptr, &values)?;
+        let invoke_thiscall = detect_thiscall(vm, invoke_ptr);
+        if std::env::var("PE_VM_TRACE_COM").is_ok() {
+            eprintln!(
+                "[pe_vm] IDispatch::Invoke entry=0x{invoke_ptr:08X} thiscall={invoke_thiscall}"
+            );
+        }
+        let prev_dispatch = vm.set_dispatch_instance(Some(self.i_dispatch));
+        let hr = if invoke_thiscall {
+            let values = [
+                Value::U32(dispid),
+                Value::U32(riid_ptr),
+                Value::U32(0),
+                Value::U32(flags as u32),
+                Value::U32(disp_params_ptr),
+                Value::U32(result_ptr),
+                Value::U32(0),
+                Value::U32(0),
+            ];
+            vm.execute_at_with_stack_with_ecx(invoke_ptr, self.i_dispatch, &values)?
+        } else {
+            let values = [
+                Value::U32(self.i_dispatch),
+                Value::U32(dispid),
+                Value::U32(riid_ptr),
+                Value::U32(0),
+                Value::U32(flags as u32),
+                Value::U32(disp_params_ptr),
+                Value::U32(result_ptr),
+                Value::U32(0),
+                Value::U32(0),
+            ];
+            vm.execute_at_with_stack(invoke_ptr, &values)?
+        };
+        vm.set_dispatch_instance(prev_dispatch);
         if hr != 0 {
             return Err(VmError::Com(hr));
         }
         if result_ptr == 0 {
             return Ok(ComValue::Void);
+        }
+        if std::env::var("PE_VM_TRACE_COM").is_ok() {
+            let vt = vm.read_u16(result_ptr).unwrap_or(0);
+            let raw = vm.read_u32(result_ptr + 8).unwrap_or(0);
+            // Trace the raw VARIANT payload to debug COM return types.
+            eprintln!(
+                "[pe_vm] IDispatch::Invoke result vt=0x{vt:04X} raw=0x{raw:08X}"
+            );
+            if vt == VT_BSTR {
+                if let Ok(text) = oleaut32::read_bstr(vm, raw) {
+                    if !text.is_empty() {
+                        eprintln!("[pe_vm] IDispatch::Invoke BSTR={text}");
+                    }
+                }
+            }
         }
         read_variant(vm, result_ptr)
     }
@@ -176,6 +228,47 @@ pub(crate) fn vtable_fn(vm: &Vm, obj_ptr: u32, index: u32) -> Result<u32, VmErro
     }
     let entry = vtable_ptr.wrapping_add(index * 4);
     vm.read_u32(entry)
+}
+
+fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
+    let mut bytes = [0u8; 96];
+    for (idx, slot) in bytes.iter_mut().enumerate() {
+        *slot = vm.read_u8(entry.wrapping_add(idx as u32)).unwrap_or(0);
+    }
+
+    for idx in 0..bytes.len().saturating_sub(3) {
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x44 && bytes[idx + 2] == 0x24 && bytes[idx + 3] == 0x04 {
+            return false;
+        }
+    }
+    for idx in 0..bytes.len().saturating_sub(2) {
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x45 && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x75 && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x4D && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x55 && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+    }
+
+    for idx in 0..bytes.len().saturating_sub(1) {
+        let opcode = bytes[idx];
+        if !matches!(opcode, 0x8B | 0x89 | 0x8A | 0x8D) {
+            continue;
+        }
+        let modrm = bytes[idx + 1];
+        let mod_bits = modrm & 0xC0;
+        let rm = modrm & 0x07;
+        if mod_bits != 0xC0 && rm == 0x01 {
+            return true;
+        }
+    }
+    false
 }
 
 // Build a VARIANT array in right-to-left order.

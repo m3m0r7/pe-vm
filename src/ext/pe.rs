@@ -1,11 +1,12 @@
-//! C ABI surface for PE inspection and execution.
+//! PE inspection and execution C ABI.
 
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::os::raw::c_char;
-use std::sync::{Mutex, OnceLock};
 
 use crate::pe::{PeFile, ResourceDirectory, ResourceId, ResourceNode};
 use crate::vm::{windows, Architecture, ExecuteOptions, Value, Vm, VmConfig};
+
+use super::error::{alloc_string, clear_last_error, set_last_error};
 
 struct ResourceEntry {
     path: String,
@@ -18,27 +19,6 @@ pub struct PeHandle {
     file: PeFile,
     image: Vec<u8>,
     resources: Vec<ResourceEntry>,
-}
-
-static LAST_ERROR: OnceLock<Mutex<Option<String>>> = OnceLock::new();
-
-fn set_last_error(message: impl Into<String>) {
-    let slot = LAST_ERROR.get_or_init(|| Mutex::new(None));
-    if let Ok(mut guard) = slot.lock() {
-        *guard = Some(message.into());
-    }
-}
-
-fn clear_last_error() {
-    let slot = LAST_ERROR.get_or_init(|| Mutex::new(None));
-    if let Ok(mut guard) = slot.lock() {
-        *guard = None;
-    }
-}
-
-fn take_last_error() -> Option<String> {
-    let slot = LAST_ERROR.get_or_init(|| Mutex::new(None));
-    slot.lock().ok().and_then(|mut guard| guard.take())
 }
 
 fn resource_id_to_string(id: &ResourceId) -> String {
@@ -77,27 +57,6 @@ fn handle_from_ptr<'a>(ptr: *const PeHandle) -> Option<&'a PeHandle> {
         None
     } else {
         unsafe { ptr.as_ref() }
-    }
-}
-
-fn alloc_string(value: &str) -> *mut c_char {
-    CString::new(value).ok().map_or(std::ptr::null_mut(), CString::into_raw)
-}
-
-#[no_mangle]
-pub extern "C" fn pevm_last_error() -> *mut c_char {
-    match take_last_error() {
-        Some(message) => alloc_string(&message),
-        None => std::ptr::null_mut(),
-    }
-}
-
-/// # Safety
-/// `ptr` must be allocated by a `pevm_*` API and not freed already.
-#[no_mangle]
-pub unsafe extern "C" fn pevm_string_free(ptr: *mut c_char) {
-    if !ptr.is_null() {
-        let _ = CString::from_raw(ptr);
     }
 }
 

@@ -14,6 +14,8 @@ pub mod user32;
 pub mod ucrt;
 pub mod vcruntime;
 pub mod version;
+pub mod ws2_32;
+pub mod wtsapi32;
 
 use crate::vm::{OsState, Vm, VmConfig, VmError};
 
@@ -67,4 +69,6 @@ pub fn register_default(vm: &mut Vm) {
     shlwapi::register(vm);
     imagehlp::register(vm);
     version::register(vm);
+    ws2_32::register(vm);
+    wtsapi32::register(vm);
 }

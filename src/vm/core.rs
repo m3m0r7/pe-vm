@@ -89,6 +89,7 @@ impl Vm {
             base: 0,
             memory: Vec::new(),
             regs: Registers::default(),
+            xmm: [[0u8; 16]; 8],
             flags: Flags::default(),
             stack_top: 0,
             stack_depth: 0,
@@ -100,6 +101,8 @@ impl Vm {
             gs_base: 0,
             env: BTreeMap::new(),
             image_path: None,
+            dispatch_instance: None,
+            last_com_out_params: Vec::new(),
             last_error: 0,
             registry_handles: HashMap::new(),
             registry_next_handle: 0x1000_0000,
@@ -128,6 +131,20 @@ impl Vm {
         &self.config
     }
 
+    pub fn insert_path_mapping(&mut self, guest: impl Into<String>, host: impl Into<String>) {
+        // Allow late-bound path mappings for external callers such as the C ABI.
+        self.config.paths.insert(guest.into(), host.into());
+    }
+
+    pub fn set_registry(&mut self, registry: windows::registry::Registry) -> Result<(), VmError> {
+        // Replace the Windows registry model after VM construction.
+        let Some(target) = windows::get_registry_mut(self) else {
+            return Err(VmError::InvalidConfig("registry requires Windows VM"));
+        };
+        *target = registry;
+        Ok(())
+    }
+
     pub(crate) fn base(&self) -> u32 {
         self.base
     }
@@ -142,6 +159,37 @@ impl Vm {
 
     pub(crate) fn image_path(&self) -> Option<&str> {
         self.image_path.as_deref()
+    }
+
+    pub(crate) fn set_dispatch_instance(&mut self, value: Option<u32>) -> Option<u32> {
+        let prev = self.dispatch_instance;
+        self.dispatch_instance = value;
+        prev
+    }
+
+    pub(crate) fn dispatch_instance(&self) -> Option<u32> {
+        self.dispatch_instance
+    }
+
+    pub(crate) fn set_last_com_out_params(&mut self, params: Vec<ComOutParam>) {
+        self.last_com_out_params = params;
+    }
+
+    pub fn last_com_out_params(&self) -> &[ComOutParam] {
+        &self.last_com_out_params
+    }
+
+    pub fn clear_last_com_out_params(&mut self) {
+        self.last_com_out_params.clear();
+    }
+
+    pub fn take_last_com_out_params(&mut self) -> Vec<ComOutParam> {
+        std::mem::take(&mut self.last_com_out_params)
+    }
+
+    pub fn read_bstr(&self, ptr: u32) -> Result<String, VmError> {
+        // Delegate to the OLEAUT32 BSTR reader for convenience in examples.
+        windows::oleaut32::read_bstr(self, ptr)
     }
 
     pub(crate) fn set_last_error(&mut self, value: u32) {
@@ -351,7 +399,7 @@ impl Vm {
     pub fn load_image(&mut self, pe: &PeFile, image: &[u8]) -> Result<(), VmError> {
         let mut loaded = pe.load_image(image, None)?;
         let fs_size = 0x1000usize;
-        let heap_size = 0x20000usize;
+        let heap_size = 0x200000usize;
         let stack_size = 0x100000usize;
         let image_size = loaded.memory.len();
         let fs_start = image_size;
@@ -370,6 +418,7 @@ impl Vm {
             esp: stack_top,
             ..Registers::default()
         };
+        self.xmm = [[0u8; 16]; 8];
         self.flags = Flags::default();
         self.stack_top = stack_top;
         self.stack_depth = 0;
@@ -714,6 +763,15 @@ impl Vm {
         reg8_write!(self.regs, index, value);
     }
 
+    // SSE registers (xmm0-xmm7) used by a subset of SIMD instructions.
+    pub(crate) fn xmm(&self, index: u8) -> [u8; 16] {
+        self.xmm[index as usize]
+    }
+
+    pub(crate) fn set_xmm(&mut self, index: u8, value: [u8; 16]) {
+        self.xmm[index as usize] = value;
+    }
+
     pub(crate) fn zf(&self) -> bool {
         self.flags.zf
     }
@@ -897,6 +955,7 @@ impl Vm {
     ) -> Result<u32, VmError> {
         let saved_regs = self.regs.clone();
         let saved_flags = self.flags;
+        let saved_xmm = self.xmm;
         let saved_stack_top = self.stack_top;
         let saved_stack_depth = self.stack_depth;
 
@@ -923,6 +982,7 @@ impl Vm {
                 esp: stack_top,
                 ..Registers::default()
             };
+            self.xmm = [[0u8; 16]; 8];
             self.flags = Flags::default();
 
             self.apply_values(values)?;
@@ -941,6 +1001,7 @@ impl Vm {
 
         self.regs = saved_regs;
         self.flags = saved_flags;
+        self.xmm = saved_xmm;
         self.stack_top = saved_stack_top;
         self.stack_depth = saved_stack_depth;
 
@@ -955,6 +1016,7 @@ impl Vm {
     ) -> Result<u32, VmError> {
         let saved_regs = self.regs.clone();
         let saved_flags = self.flags;
+        let saved_xmm = self.xmm;
         let saved_stack_top = self.stack_top;
         let saved_stack_depth = self.stack_depth;
 
@@ -982,6 +1044,7 @@ impl Vm {
                 esp: stack_top,
                 ..Registers::default()
             };
+            self.xmm = [[0u8; 16]; 8];
             self.flags = Flags::default();
 
             self.apply_values(values)?;
@@ -1000,6 +1063,7 @@ impl Vm {
 
         self.regs = saved_regs;
         self.flags = saved_flags;
+        self.xmm = saved_xmm;
         self.stack_top = saved_stack_top;
         self.stack_depth = saved_stack_depth;
 
@@ -1109,10 +1173,19 @@ impl Vm {
             if let Ok(value) = self.read_u32(self.regs.edi.wrapping_add(0x0C)) {
                 eprintln!("[pe_vm] mem[edi+0x0C]=0x{value:08X}");
             }
+            if let Ok(value) = self.read_u32(self.regs.ebp.wrapping_add(0x08)) {
+                eprintln!("[pe_vm] mem[ebp+0x08]=0x{value:08X}");
+            }
+            if let Ok(value) = self.read_u32(self.regs.ebp.wrapping_add(0x0C)) {
+                eprintln!("[pe_vm] mem[ebp+0x0C]=0x{value:08X}");
+            }
+            if let Ok(value) = self.read_u32(self.regs.ebp.wrapping_add(0x10)) {
+                eprintln!("[pe_vm] mem[ebp+0x10]=0x{value:08X}");
+            }
         }
     }
 
-    pub(crate) fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
+    pub fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(0);
         }
@@ -1123,7 +1196,7 @@ impl Vm {
             .ok_or(VmError::MemoryOutOfRange)
     }
 
-    pub(crate) fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
+    pub fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(0);
         }

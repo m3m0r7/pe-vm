@@ -114,9 +114,10 @@ impl Registry {
             .or_default();
         let mut cursor = root;
         for segment in path {
+            let key = normalize_segment(segment);
             cursor = cursor
                 .children
-                .entry(segment.to_string())
+                .entry(key)
                 .or_default();
         }
         cursor
@@ -129,9 +130,10 @@ impl Registry {
             .or_default();
         let mut cursor = root;
         for segment in path {
+            let key = normalize_segment(segment);
             cursor = cursor
                 .children
-                .entry((*segment).to_string())
+                .entry(key)
                 .or_default();
         }
     }
@@ -139,7 +141,8 @@ impl Registry {
     fn get_key_node(&self, hive: RegistryHive, path: &[String]) -> Option<&RegistryNode> {
         let mut cursor = self.hives.get(&hive)?;
         for segment in path {
-            cursor = cursor.children.get(segment)?;
+            let key = normalize_segment(segment);
+            cursor = cursor.children.get(&key)?;
         }
         Some(cursor)
     }
@@ -152,5 +155,10 @@ impl Default for Registry {
 }
 
 fn normalize_value_name(name: Option<&str>) -> String {
-    name.unwrap_or("").to_string()
+    normalize_segment(name.unwrap_or(""))
+}
+
+// Registry keys and value names are case-insensitive.
+fn normalize_segment(segment: &str) -> String {
+    segment.to_ascii_uppercase()
 }

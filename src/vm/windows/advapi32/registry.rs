@@ -2,7 +2,7 @@
 
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::windows::{get_registry, get_registry_mut};
-use crate::vm::{Vm, VmError};
+use crate::vm::{Architecture, Vm, VmError};
 
 const ERROR_SUCCESS: u32 = 0;
 const ERROR_FILE_NOT_FOUND: u32 = 2;
@@ -131,9 +131,9 @@ fn reg_query_value_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    let value = match registry.get(&key) {
-        Ok(Some(value)) => value,
-        _ => return ERROR_FILE_NOT_FOUND,
+    let value = match resolve_registry_value(vm, registry, &key) {
+        Some(value) => value,
+        None => return ERROR_FILE_NOT_FOUND,
     };
 
     let (value_type, bytes) = match value {
@@ -158,17 +158,18 @@ fn reg_query_value_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if type_ptr != 0 {
         let _ = vm.write_u32(type_ptr, value_type);
     }
+    let requested_size = if size_ptr == 0 {
+        None
+    } else {
+        Some(vm.read_u32(size_ptr).unwrap_or(0) as usize)
+    };
     if size_ptr != 0 {
         let _ = vm.write_u32(size_ptr, bytes.len() as u32);
     }
     if data_ptr == 0 {
         return ERROR_SUCCESS;
     }
-    let buffer_size = if size_ptr == 0 {
-        bytes.len()
-    } else {
-        vm.read_u32(size_ptr).unwrap_or(bytes.len() as u32) as usize
-    };
+    let buffer_size = requested_size.unwrap_or(bytes.len());
     if buffer_size < bytes.len() {
         let _ = vm.write_bytes(data_ptr, &bytes[..buffer_size]);
         return ERROR_MORE_DATA;
@@ -207,14 +208,13 @@ fn reg_set_value_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         eprintln!("[pe_vm] RegSetValueExA: {key} ({name}) = {text}");
     }
 
+    let redirected = redirect_wow6432_key(vm, &key);
+    let key = redirected.unwrap_or(key);
     let registry = match get_registry_mut(vm) {
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    if registry
-        .set(&key, RegistryValue::String(text))
-        .is_err()
-    {
+    if registry.set(&key, RegistryValue::String(text)).is_err() {
         return ERROR_FILE_NOT_FOUND;
     }
     ERROR_SUCCESS
@@ -304,6 +304,68 @@ fn format_registry_key(prefix: &str, value_name: Option<&str>) -> String {
         Some(name) => format!("{prefix}@{name}"),
         None => prefix.to_string(),
     }
+}
+
+fn resolve_registry_value<'a>(
+    vm: &Vm,
+    registry: &'a crate::vm::windows::registry::Registry,
+    key: &str,
+) -> Option<&'a RegistryValue> {
+    if let Ok(Some(value)) = registry.get(key) {
+        if std::env::var("PE_VM_TRACE").is_ok() {
+            eprintln!("[pe_vm] RegQueryValueExA hit: {key}");
+        }
+        return Some(value);
+    }
+    let redirected = redirect_wow6432_key(vm, key)?;
+    match registry.get(&redirected) {
+        Ok(Some(value)) => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] RegQueryValueExA redirect: {key} -> {redirected}");
+            }
+            Some(value)
+        }
+        _ => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] RegQueryValueExA miss: {key} (redirected {redirected})");
+            }
+            None
+        }
+    }
+}
+
+// Map 32-bit registry access to WOW6432Node when present.
+fn redirect_wow6432_key(vm: &Vm, key: &str) -> Option<String> {
+    if vm.config().architecture != Architecture::X86 {
+        return None;
+    }
+    let (base, value_name) = match key.split_once('@') {
+        Some((base, name)) => (base, Some(name)),
+        None => (key, None),
+    };
+    let mut parts: Vec<&str> = base.split('\\').filter(|part| !part.is_empty()).collect();
+    if parts.len() < 2 {
+        return None;
+    }
+    let hive = parts[0];
+    let is_hklm = hive.eq_ignore_ascii_case("HKLM") || hive.eq_ignore_ascii_case("HKEY_LOCAL_MACHINE");
+    let is_hkcu = hive.eq_ignore_ascii_case("HKCU") || hive.eq_ignore_ascii_case("HKEY_CURRENT_USER");
+    if !(is_hklm || is_hkcu) {
+        return None;
+    }
+    if !parts[1].eq_ignore_ascii_case("Software") {
+        return None;
+    }
+    if parts.len() > 2 && parts[2].eq_ignore_ascii_case("WOW6432Node") {
+        return None;
+    }
+    parts.insert(2, "WOW6432Node");
+    let mut redirected = parts.join("\\");
+    if let Some(name) = value_name {
+        redirected.push('@');
+        redirected.push_str(name);
+    }
+    Some(redirected)
 }
 
 fn read_bytes(vm: &Vm, ptr: u32, len: usize) -> Vec<u8> {

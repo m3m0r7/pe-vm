@@ -1,6 +1,6 @@
-# pe_vm
+# pe-vm
 
-pe_vm is a Rust crate that executes Portable Executable (PE) files inside a VM-like
+pe-vm is a Rust crate that executes Portable Executable (PE) files inside a VM-like
 environment, enabling cross-platform execution on Windows (.dll), macOS (.dylib),
 and Linux (.so). It is derived from 
 [PHP Machine Emulator](https://github.com/m3m0r7/php-machine-emulator).
@@ -364,6 +364,173 @@ args = (ctypes.c_uint32 * 3)(hinst, 1, 0) # Build arg array.
 lib.pevm_pe_execute_symbol_u32(handle, b"_DllMain@12", args, 3) # Execute export.
 
 lib.pevm_pe_close(handle) # Close the handle.
+```
+
+## COM C ABI (experimental)
+
+The C ABI also exposes a minimal COM surface for Windows x86 automation. This
+is designed for calling in-proc COM servers from other languages.
+
+Basic flow:
+
+- Create a VM with `pevm_vm_create(os, arch)` (Windows=0, x86=0).
+- Map host paths with `pevm_vm_set_path_mapping`.
+- Load registry mappings with `pevm_vm_set_registry_from_reg` or
+  `pevm_vm_set_registry_from_yml`.
+- Create a COM runtime with `pevm_com_create`.
+- Create an in-proc COM instance with `pevm_com_create_instance_inproc`.
+- Invoke with `pevm_com_object_invoke_*`.
+- Inspect out params with `pevm_vm_last_com_out_param_*` and read values using
+  `pevm_vm_read_u32`/`pevm_vm_read_bstr`.
+- Close COM/VM handles when done.
+
+`PevmComArg` uses a tagged union for arguments:
+
+- `tag = 0` -> `i4` (signed 32-bit)
+- `tag = 1` -> `u32_value` (unsigned 32-bit)
+- `tag = 2` -> `bstr` (UTF-8 C string)
+
+### Example (C):
+
+```c
+#include <stdint.h> // Fixed-width integer types.
+#include <stdio.h> // fprintf/printf.
+
+typedef struct VmHandle VmHandle; // Opaque VM handle.
+typedef struct ComHandle ComHandle; // Opaque COM runtime handle.
+typedef struct ComObjectHandle ComObjectHandle; // Opaque COM object handle.
+
+typedef union PevmComArgValue { // COM argument union.
+  int32_t i4; // Signed 32-bit.
+  uint32_t u32_value; // Unsigned 32-bit.
+  const char* bstr; // UTF-8 string for BSTR.
+} PevmComArgValue; // Union alias.
+
+typedef struct PevmComArg { // COM argument struct.
+  uint32_t tag; // Argument tag (0=i4, 1=u32, 2=bstr).
+  PevmComArgValue value; // Argument payload.
+} PevmComArg; // Struct alias.
+
+#define PEVM_OS_WINDOWS 0 // OS selector for Windows.
+#define PEVM_ARCH_X86 0 // Architecture selector for x86.
+#define PEVM_COM_ARG_I4 0 // Tag for signed 32-bit.
+#define PEVM_COM_ARG_U32 1 // Tag for unsigned 32-bit.
+#define PEVM_COM_ARG_BSTR 2 // Tag for UTF-8 string.
+
+extern VmHandle* pevm_vm_create(uint32_t os, uint32_t arch); // Create VM.
+extern void pevm_vm_close(VmHandle* handle); // Destroy VM.
+extern int pevm_vm_set_path_mapping(VmHandle* handle, // Map guest to host paths.
+                                    const char* guest,
+                                    const char* host);
+extern int pevm_vm_set_registry_from_reg(VmHandle* handle, // Load .reg registry.
+                                         const char* path);
+extern size_t pevm_vm_last_com_out_param_count(const VmHandle* handle); // Out param count.
+extern int pevm_vm_last_com_out_param_info(const VmHandle* handle, // Out param info.
+                                           size_t pos,
+                                           size_t* out_index,
+                                           uint16_t* out_vt,
+                                           uint32_t* out_flags,
+                                           uint32_t* out_ptr);
+extern uint32_t pevm_vm_read_u32(const VmHandle* handle, uint32_t addr); // Read u32.
+extern char* pevm_vm_read_bstr(const VmHandle* handle, uint32_t bstr_ptr); // Read BSTR.
+
+extern ComHandle* pevm_com_create(void); // Create COM runtime.
+extern void pevm_com_close(ComHandle* handle); // Destroy COM runtime.
+extern ComObjectHandle* pevm_com_create_instance_inproc( // Create COM instance.
+    const ComHandle* com,
+    VmHandle* vm,
+    const char* clsid);
+extern void pevm_com_object_close(ComObjectHandle* handle); // Destroy COM object.
+extern int32_t pevm_com_object_invoke_i4(const ComObjectHandle* obj, // Invoke (i4).
+                                         VmHandle* vm,
+                                         uint32_t dispid,
+                                         const PevmComArg* args,
+                                         size_t args_len);
+
+extern char* pevm_last_error(void); // Fetch last error string.
+extern void pevm_string_free(char* str); // Free strings from the API.
+
+int main(void) { // Program entry.
+  VmHandle* vm = pevm_vm_create(PEVM_OS_WINDOWS, PEVM_ARCH_X86); // Create VM.
+  if (!vm) { // Check for VM errors.
+    return 1; // Exit failure.
+  }
+  pevm_vm_set_path_mapping(vm, "C:\\jra-van", "/Volumes/develop/m3m0r7/jra-van"); // Map paths.
+  pevm_vm_set_registry_from_reg(vm, "/Volumes/develop/m3m0r7/jra-van/registryaa.reg"); // Registry.
+
+  ComHandle* com = pevm_com_create(); // Create COM runtime.
+  ComObjectHandle* obj = pevm_com_create_instance_inproc( // Create COM object.
+      com,
+      vm,
+      "{2AB1774D-0C41-11D7-916F-0003479BEB3F}");
+  if (!obj) { // Check for COM errors.
+    char* err = pevm_last_error(); // Fetch error string.
+    if (err) { // If error string exists.
+      fprintf(stderr, "pevm error: %s\n", err); // Print error.
+      pevm_string_free(err); // Free error string.
+    }
+    pevm_com_close(com); // Destroy COM runtime.
+    pevm_vm_close(vm); // Destroy VM.
+    return 1; // Exit failure.
+  }
+
+  PevmComArg init_args[1]; // JVInit args.
+  init_args[0].tag = PEVM_COM_ARG_BSTR; // BSTR arg.
+  init_args[0].value.bstr = "UNKNOWN"; // JVInit sid.
+  int32_t init_rc = pevm_com_object_invoke_i4( // Call JVInit (DISPID 0x4).
+      obj,
+      vm,
+      0x4,
+      init_args,
+      1);
+  printf("JVInit rc=%d\n", init_rc); // Print result.
+
+  PevmComArg open_args[3]; // JVOpen args (dataspec, fromdate, option).
+  open_args[0].tag = PEVM_COM_ARG_BSTR; // BSTR arg.
+  open_args[0].value.bstr = "RACE"; // Dataspec.
+  open_args[1].tag = PEVM_COM_ARG_BSTR; // BSTR arg.
+  open_args[1].value.bstr = "20200101"; // FromDate.
+  open_args[2].tag = PEVM_COM_ARG_I4; // I4 arg.
+  open_args[2].value.i4 = 1; // Option.
+  int32_t open_rc = pevm_com_object_invoke_i4( // Call JVOpen (DISPID 0x7).
+      obj,
+      vm,
+      0x7,
+      open_args,
+      3);
+  printf("JVOpen rc=%d\n", open_rc); // Print result.
+
+  uint32_t read_count = 0; // JVOpen read count.
+  uint32_t download_count = 0; // JVOpen download count.
+  char* last_ts = NULL; // JVOpen last file timestamp.
+  size_t out_count = pevm_vm_last_com_out_param_count(vm); // Out param count.
+  for (size_t i = 0; i < out_count; ++i) { // Walk out params.
+    size_t param_index = 0; // Parameter index.
+    uint16_t vt = 0; // Variant type.
+    uint32_t ptr = 0; // Pointer to out storage.
+    if (!pevm_vm_last_com_out_param_info(vm, i, &param_index, &vt, NULL, &ptr)) { // Read info.
+      continue; // Skip invalid.
+    }
+    if (param_index == 3) { // readcount parameter.
+      read_count = pevm_vm_read_u32(vm, ptr); // Read value.
+    } else if (param_index == 4) { // downloadcount parameter.
+      download_count = pevm_vm_read_u32(vm, ptr); // Read value.
+    } else if (param_index == 5) { // lastfiletimestamp parameter.
+      uint32_t bstr_ptr = pevm_vm_read_u32(vm, ptr); // Read BSTR pointer.
+      last_ts = pevm_vm_read_bstr(vm, bstr_ptr); // Read BSTR text.
+    }
+  }
+  printf("ReadCount=%u DownloadCount=%u\n", read_count, download_count); // Print counts.
+  if (last_ts) { // If timestamp is available.
+    printf("LastFileTimestamp=%s\n", last_ts); // Print timestamp.
+    pevm_string_free(last_ts); // Free string.
+  }
+
+  pevm_com_object_close(obj); // Destroy COM object.
+  pevm_com_close(com); // Destroy COM runtime.
+  pevm_vm_close(vm); // Destroy VM.
+  return 0; // Exit success.
+}
 ```
 
 ## License
