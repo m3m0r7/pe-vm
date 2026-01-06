@@ -1,0 +1,44 @@
+//! WinINet handle types.
+
+use std::collections::HashMap;
+
+#[derive(Default)]
+pub(super) struct WinInetStore {
+    pub(super) next_handle: u32,
+    pub(super) handles: HashMap<u32, InternetHandle>,
+}
+
+#[derive(Clone)]
+pub(super) struct Session {
+    pub(super) user_agent: String,
+}
+
+#[derive(Clone)]
+pub(super) struct Connection {
+    pub(super) host: String,
+    pub(super) port: u16,
+    pub(super) user_agent: String,
+}
+
+#[derive(Clone)]
+pub(super) struct Request {
+    pub(super) connection: u32,
+    pub(super) method: String,
+    pub(super) path: String,
+    pub(super) response: Option<Response>,
+    pub(super) cursor: usize,
+}
+
+#[derive(Clone)]
+pub(super) struct Response {
+    pub(super) status: u16,
+    pub(super) body: Vec<u8>,
+    pub(super) raw_headers: String,
+}
+
+#[derive(Clone)]
+pub(super) enum InternetHandle {
+    Session(Session),
+    Connection(Connection),
+    Request(Request),
+}

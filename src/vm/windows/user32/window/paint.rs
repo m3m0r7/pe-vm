@@ -1,0 +1,70 @@
+use crate::vm::Vm;
+
+use super::constants::DUMMY_HDC;
+
+pub(super) fn register(vm: &mut Vm) {
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "GetDC",
+        crate::vm::stdcall_args(1),
+        get_dc,
+    );
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "ReleaseDC",
+        crate::vm::stdcall_args(2),
+        release_dc,
+    );
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "BeginPaint",
+        crate::vm::stdcall_args(2),
+        begin_paint,
+    );
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "EndPaint",
+        crate::vm::stdcall_args(2),
+        end_paint,
+    );
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "CreateAcceleratorTableA",
+        crate::vm::stdcall_args(2),
+        create_accelerator_table_a,
+    );
+    vm.register_import_stdcall(
+        "USER32.dll",
+        "DestroyAcceleratorTable",
+        crate::vm::stdcall_args(1),
+        destroy_accelerator_table,
+    );
+}
+
+pub(super) fn get_dc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    DUMMY_HDC
+}
+
+pub(super) fn release_dc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
+
+pub(super) fn begin_paint(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let ps_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    if ps_ptr != 0 {
+        let _ = vm.write_bytes(ps_ptr, &[0u8; 64]);
+    }
+    DUMMY_HDC
+}
+
+pub(super) fn end_paint(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
+
+pub(super) fn create_accelerator_table_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
+
+pub(super) fn destroy_accelerator_table(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
