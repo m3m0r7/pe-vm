@@ -39,7 +39,7 @@ fn free_handle(handle: u32) -> bool {
     guard.handles.remove(&handle)
 }
 
-// Register minimal GDI32 entry points needed by JVLink.
+// Register minimal GDI32 entry points needed by basic GUI flows.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("GDI32.dll", "SaveDC", crate::vm::stdcall_args(1), save_dc);
     vm.register_import_stdcall("GDI32.dll", "RestoreDC", crate::vm::stdcall_args(2), restore_dc);

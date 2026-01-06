@@ -26,6 +26,12 @@ fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return dest;
     }
     let text = vm.read_c_string(src).unwrap_or_default();
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        let raw = read_raw_bytes(vm, src, 32);
+        eprintln!(
+            "[pe_vm] lstrcpyA dest=0x{dest:08X} src=0x{src:08X} text={text:?} raw={raw}"
+        );
+    }
     write_c_string(vm, dest, &text);
     dest
 }
@@ -38,7 +44,19 @@ fn lstrcat_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     let mut dest_text = vm.read_c_string(dest).unwrap_or_default();
     let src_text = vm.read_c_string(src).unwrap_or_default();
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        let dest_raw = read_raw_bytes(vm, dest, 32);
+        let src_raw = read_raw_bytes(vm, src, 32);
+        eprintln!(
+            "[pe_vm] lstrcatA dest=0x{dest:08X} src=0x{src:08X} dest_text={dest_text:?} src_text={src_text:?} dest_raw={dest_raw} src_raw={src_raw}"
+        );
+    }
     dest_text.push_str(&src_text);
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!(
+            "[pe_vm] lstrcatA dest=0x{dest:08X} result_text={dest_text:?}"
+        );
+    }
     write_c_string(vm, dest, &dest_text);
     dest
 }
@@ -69,5 +87,24 @@ fn lstrcpyn_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     trimmed.push(0);
     let _ = vm.write_bytes(dest, &trimmed);
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        let src_raw = read_raw_bytes(vm, src, 32);
+        let rendered = String::from_utf8_lossy(&trimmed[..trimmed.len().saturating_sub(1)]);
+        eprintln!(
+            "[pe_vm] lstrcpynA dest=0x{dest:08X} src=0x{src:08X} count={count} text={rendered:?} src_raw={src_raw}"
+        );
+    }
     dest
+}
+
+fn read_raw_bytes(vm: &Vm, ptr: u32, len: usize) -> String {
+    let mut out = String::new();
+    for idx in 0..len {
+        let byte = vm.read_u8(ptr.wrapping_add(idx as u32)).unwrap_or(0);
+        if idx > 0 {
+            out.push(' ');
+        }
+        out.push_str(&format!("{byte:02X}"));
+    }
+    out
 }

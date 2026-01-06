@@ -13,14 +13,18 @@ pub(super) const TYPE_E_LIBNOTREGISTERED: u32 = 0x8002_801D;
 
 pub(super) const VARIANT_SIZE: usize = 16;
 pub(super) const VT_EMPTY: u16 = 0;
+pub(super) const VT_NULL: u16 = 1;
 pub(super) const VT_I4: u16 = 3;
 pub(super) const VT_BSTR: u16 = 8;
 pub(super) const VT_VARIANT: u16 = 12;
+pub(super) const VT_I1: u16 = 16;
+pub(super) const VT_UI1: u16 = 17;
 pub(super) const VT_UI4: u16 = 19;
 pub(super) const VT_INT: u16 = 22;
 pub(super) const VT_UINT: u16 = 23;
 pub(super) const VT_VOID: u16 = 24;
 pub(super) const VT_HRESULT: u16 = 25;
+pub(super) const VT_ARRAY: u16 = 0x2000;
 pub(super) const VT_BYREF: u16 = 0x4000;
 pub(super) const VT_USERDEFINED: u16 = 0x1D;
 

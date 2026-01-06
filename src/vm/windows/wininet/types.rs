@@ -18,6 +18,7 @@ pub(super) struct Connection {
     pub(super) host: String,
     pub(super) port: u16,
     pub(super) user_agent: String,
+    pub(super) secure_hint: bool,
 }
 
 #[derive(Clone)]
@@ -25,6 +26,7 @@ pub(super) struct Request {
     pub(super) connection: u32,
     pub(super) method: String,
     pub(super) path: String,
+    pub(super) secure: bool,
     pub(super) response: Option<Response>,
     pub(super) cursor: usize,
 }

@@ -61,6 +61,9 @@ fn get_module_file_name_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let path = vm
         .image_path()
         .unwrap_or("C:\\pe_vm\\module.dll");
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] GetModuleFileNameA: {path}");
+    }
     let mut bytes = path.as_bytes().to_vec();
     if bytes.len() >= size {
         bytes.truncate(size.saturating_sub(1));
@@ -79,6 +82,9 @@ fn get_module_file_name_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let path = vm
         .image_path()
         .unwrap_or("C:\\pe_vm\\module.dll");
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] GetModuleFileNameW: {path}");
+    }
     let mut utf16: Vec<u16> = path.encode_utf16().collect();
     if utf16.len() >= size {
         utf16.truncate(size.saturating_sub(1));

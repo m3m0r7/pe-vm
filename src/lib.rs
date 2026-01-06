@@ -4,6 +4,7 @@ mod architecture;
 mod api;
 pub mod ext;
 mod pe;
+mod settings;
 mod vm;
 
 pub use api::{Pe, SymbolExecutor};

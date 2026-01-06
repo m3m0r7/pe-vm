@@ -40,7 +40,11 @@ impl Pe {
     }
 
     pub fn default_path_mapping() -> crate::vm::PathMapping {
-        std::collections::BTreeMap::new()
+        let mut paths = crate::settings::default_path_mapping();
+        if let Some(settings) = crate::settings::load_default_settings() {
+            crate::settings::apply_settings_paths(&mut paths, &settings);
+        }
+        paths
     }
 }
 

@@ -36,6 +36,12 @@ pub(super) fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
         if bytes[idx] == 0x8B && bytes[idx + 1] == 0x55 && bytes[idx + 2] == 0x08 {
             return false;
         }
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x5D && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x7D && bytes[idx + 2] == 0x08 {
+            return false;
+        }
     }
 
     for idx in 0..bytes.len().saturating_sub(1) {

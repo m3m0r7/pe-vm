@@ -20,8 +20,21 @@ pub(super) fn log_http_request(host: &str, port: u16, request: &str, body: &[u8]
     trace_net(&format!("WinInet request body {} bytes: {preview}", body.len()));
 }
 
-pub(super) fn log_http_response(status: u16, body_len: usize) {
-    trace_net(&format!("WinInet response status={status} body_len={body_len}"));
+pub(super) fn log_http_response(status: u16, body: &[u8]) {
+    trace_net(&format!(
+        "WinInet response status={status} body_len={}",
+        body.len()
+    ));
+    if body.is_empty() {
+        return;
+    }
+    if std::env::var("PE_VM_TRACE_NET_BODY").is_ok() {
+        let preview = body_preview(body);
+        trace_net(&format!(
+            "WinInet response body {} bytes: {preview}",
+            body.len()
+        ));
+    }
 }
 
 fn body_preview(body: &[u8]) -> String {

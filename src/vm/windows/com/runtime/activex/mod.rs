@@ -10,7 +10,9 @@ use crate::vm::{Value, Vm, VmError};
 
 use super::instance::query_interface;
 use super::super::object::vtable_fn;
-use constants::{E_NOINTERFACE, E_NOTIMPL, IID_IOLEOBJECT, OLEIVERB_INPLACEACTIVATE};
+use constants::{
+    E_NOINTERFACE, E_NOTIMPL, IID_IOLEOBJECT, IID_IPERSISTSTREAMINIT, OLEIVERB_INPLACEACTIVATE,
+};
 use utils::detect_thiscall;
 
 // Attach a stub IOleClientSite to an in-proc COM object if it supports IOleObject.
@@ -64,6 +66,7 @@ pub(super) fn attach_client_site(vm: &mut Vm, i_dispatch: u32) -> Result<(), VmE
     if hr != 0 {
         return Err(VmError::Com(hr));
     }
+    init_persist_stream(vm, i_dispatch)?;
     let do_verb = vtable_fn(vm, ole_object, 11)?;
     let do_thiscall = detect_thiscall(vm, do_verb);
     let hr = if do_thiscall {
@@ -97,6 +100,34 @@ pub(super) fn attach_client_site(vm: &mut Vm, i_dispatch: u32) -> Result<(), VmE
         eprintln!(
             "[pe_vm] IOleObject::DoVerb hr=0x{hr:08X} verb=0x{OLEIVERB_INPLACEACTIVATE:08X}"
         );
+    }
+    Ok(())
+}
+
+fn init_persist_stream(vm: &mut Vm, i_dispatch: u32) -> Result<(), VmError> {
+    let persist = match query_interface(vm, i_dispatch, IID_IPERSISTSTREAMINIT) {
+        Ok(ptr) => ptr,
+        Err(VmError::Com(code)) if code == E_NOINTERFACE => return Ok(()),
+        Err(err) => return Err(err),
+    };
+    if persist == 0 {
+        return Ok(());
+    }
+    let init_new = vtable_fn(vm, persist, 8)?;
+    let init_thiscall = detect_thiscall(vm, init_new);
+    let hr = if init_thiscall {
+        vm.execute_at_with_stack_with_ecx(init_new, persist, &[])?
+    } else {
+        vm.execute_at_with_stack(init_new, &[Value::U32(persist)])?
+    };
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] IPersistStreamInit::InitNew hr=0x{hr:08X}");
+    }
+    if hr == E_NOTIMPL {
+        return Ok(());
+    }
+    if hr != 0 {
+        return Err(VmError::Com(hr));
     }
     Ok(())
 }

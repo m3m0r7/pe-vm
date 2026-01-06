@@ -23,6 +23,16 @@ pub struct Registry {
     hives: BTreeMap<RegistryHive, RegistryNode>,
 }
 
+// Aggregated registry stats for RegQueryInfoKey.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct RegistryStats {
+    pub subkey_count: u32,
+    pub max_subkey_len: u32,
+    pub value_count: u32,
+    pub max_value_name_len: u32,
+    pub max_value_len: u32,
+}
+
 impl Registry {
     pub fn new() -> Self {
         Self::with_defaults()
@@ -82,6 +92,18 @@ impl Registry {
         let node = self.get_key_node(key.hive, &key.path)?;
         let name = normalize_value_name(key.value_name.as_deref());
         node.values.get(&name)
+    }
+
+    // Enumerate immediate subkeys under a key.
+    pub fn subkeys(&self, key: &str) -> Result<Vec<String>, RegistryError> {
+        let key = RegistryKey::parse(key)?;
+        Ok(self.subkeys_key(&key))
+    }
+
+    // Return stats for RegQueryInfoKeyA/W.
+    pub fn stats(&self, key: &str, wide: bool) -> Result<RegistryStats, RegistryError> {
+        let key = RegistryKey::parse(key)?;
+        self.stats_key(&key, wide)
     }
 
     pub(crate) fn apply_value(
@@ -146,6 +168,44 @@ impl Registry {
         }
         Some(cursor)
     }
+
+    fn subkeys_key(&self, key: &RegistryKey) -> Vec<String> {
+        let Some(node) = self.get_key_node(key.hive, &key.path) else {
+            return Vec::new();
+        };
+        let mut names = node.children.keys().cloned().collect::<Vec<_>>();
+        names.sort();
+        names
+    }
+
+    fn stats_key(&self, key: &RegistryKey, wide: bool) -> Result<RegistryStats, RegistryError> {
+        let node = self
+            .get_key_node(key.hive, &key.path)
+            .ok_or_else(|| RegistryError::InvalidKey("missing registry key".to_string()))?;
+        let mut stats = RegistryStats::default();
+        stats.subkey_count = node.children.len() as u32;
+        stats.value_count = node.values.len() as u32;
+        stats.max_subkey_len = node
+            .children
+            .keys()
+            .map(|name| name.len())
+            .max()
+            .unwrap_or(0) as u32;
+        let mut max_value_len = 0usize;
+        let mut max_value_name_len = 0usize;
+        for (name, value) in &node.values {
+            if !name.is_empty() {
+                max_value_name_len = max_value_name_len.max(name.len());
+            }
+            let value_len = registry_value_len(value, wide);
+            if value_len > max_value_len {
+                max_value_len = value_len;
+            }
+        }
+        stats.max_value_name_len = max_value_name_len as u32;
+        stats.max_value_len = max_value_len as u32;
+        Ok(stats)
+    }
 }
 
 impl Default for Registry {
@@ -161,4 +221,33 @@ fn normalize_value_name(name: Option<&str>) -> String {
 // Registry keys and value names are case-insensitive.
 fn normalize_segment(segment: &str) -> String {
     segment.to_ascii_uppercase()
+}
+
+fn registry_value_len(value: &RegistryValue, wide: bool) -> usize {
+    match value {
+        RegistryValue::String(text) => {
+            if wide {
+                (text.encode_utf16().count() + 1) * 2
+            } else {
+                text.as_bytes().len() + 1
+            }
+        }
+        RegistryValue::Dword(_) => 4,
+        RegistryValue::MultiString(values) => {
+            let mut len = 0usize;
+            for value in values {
+                if wide {
+                    len += (value.encode_utf16().count() + 1) * 2;
+                } else {
+                    len += value.as_bytes().len() + 1;
+                }
+            }
+            if wide {
+                len + 2
+            } else {
+                len + 1
+            }
+        }
+        RegistryValue::Binary(bytes) => bytes.len(),
+    }
 }

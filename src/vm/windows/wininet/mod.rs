@@ -9,7 +9,7 @@ mod utils;
 
 use crate::vm::Vm;
 
-// Register the minimal WinINet entry points used by JVLink.
+// Register minimal WinINet entry points used by common DLLs.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("WININET.dll", "InternetOpenA", crate::vm::stdcall_args(5), http::internet_open_a);
     vm.register_import_stdcall("WININET.dll", "InternetConnectA", crate::vm::stdcall_args(8), http::internet_connect_a);

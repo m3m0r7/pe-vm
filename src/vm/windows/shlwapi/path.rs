@@ -14,9 +14,9 @@ fn path_file_exists_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     let path = vm.read_c_string(ptr).unwrap_or_default();
     let host_path = vm.map_path(&path);
-    if std::path::Path::new(&host_path).exists() {
-        1
-    } else {
-        0
+    let exists = std::path::Path::new(&host_path).exists();
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] PathFileExistsA: {path} -> {exists}");
     }
+    if exists { 1 } else { 0 }
 }

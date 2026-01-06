@@ -163,3 +163,40 @@ Windows Registry Editor Version 5.00
 
     let _ = std::fs::remove_file(path);
 }
+
+// Ensure subkey enumeration and stats reflect stored registry data.
+#[test]
+fn registry_subkeys_and_stats() {
+    let mut registry = Registry::with_defaults();
+    registry
+        .set(
+            r"HKLM\Software\ExampleVendor\App\Settings@endpoint",
+            RegistryValue::String("https://example.invalid/api".to_string()),
+        )
+        .expect("set endpoint");
+    registry
+        .set(
+            r"HKLM\Software\ExampleVendor\App\State@retry_count",
+            RegistryValue::Dword(2),
+        )
+        .expect("set retry_count");
+
+    let subkeys = registry
+        .subkeys(r"HKLM\Software\ExampleVendor\App")
+        .expect("subkeys");
+    assert!(subkeys.contains(&"SETTINGS".to_string()));
+    assert!(subkeys.contains(&"STATE".to_string()));
+
+    let root_stats = registry
+        .stats(r"HKLM\Software\ExampleVendor\App", false)
+        .expect("stats root");
+    assert_eq!(root_stats.subkey_count, 2);
+    assert_eq!(root_stats.value_count, 0);
+
+    let info_stats = registry
+        .stats(r"HKLM\Software\ExampleVendor\App\Settings", false)
+        .expect("stats settings");
+    assert_eq!(info_stats.value_count, 1);
+    assert_eq!(info_stats.max_value_name_len, "ENDPOINT".len() as u32);
+    assert!(info_stats.max_value_len >= "https://example.invalid/api".len() as u32 + 1);
+}

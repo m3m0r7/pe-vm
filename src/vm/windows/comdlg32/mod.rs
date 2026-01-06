@@ -2,7 +2,7 @@
 
 use crate::vm::Vm;
 
-// Register minimal common dialog APIs used by JVLink.
+// Register minimal common dialog APIs used by dialog clients.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
         "COMDLG32.dll",

@@ -33,8 +33,7 @@ pub struct WindowsState {
 impl WindowsState {
     pub fn new(config: &VmConfig) -> Result<Self, VmError> {
         let registry = config
-            .properties
-            .clone()
+            .properties_cloned()
             .unwrap_or_else(registry::Registry::with_defaults);
         Ok(Self { registry })
     }

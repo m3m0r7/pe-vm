@@ -1,0 +1,27 @@
+# This file is a template for pe-vm settings.
+# Remove the leading '#' to enable the settings you need.
+
+#vm:
+#  # Registry and platform hints used by Windows stubs (COM, registry lookups).
+#  properties:
+#    # Guest OS mode for the VM (windows/unix/mac).
+#    os: windows
+#    # Registry file path (.reg or .yml) loaded into the Windows registry model.
+#    path: /path/to/registry.reg
+#  # Guest-to-host path mappings used for file resolution.
+#  paths:
+#    # "Guest path": "Host path" (use escaped backslashes for Windows paths).
+#    "C:\\path\\to\\guest_dir": "/path/to/host_dir"
+#    "C:\\path\\to\\another_dir": "/path/to/another_host_dir"
+
+#pe:
+#  # Additional path mappings merged into Pe::default_path_mapping.
+#  paths:
+#    # "Guest path": "Host path" (overrides base mappings if duplicated).
+#    "C:\\": "/path/to/pe-vm-root"
+
+#sandbox:
+#  # Enable WinInet HTTP stubs; requests are allowed when network is enabled.
+#  network:
+#    # Host name used when a target host is empty in WinInet calls.
+#    fallback_host: 127.0.0.1

@@ -7,7 +7,7 @@ use crate::vm::windows::oleaut32::typelib::FuncDesc;
 use super::{ComArg, ComValue};
 use super::{
     DISP_E_TYPEMISMATCH, PARAMFLAG_FIN, PARAMFLAG_FOUT, PARAMFLAG_FRETVAL, VARIANT_SIZE, VT_BSTR,
-    VT_BYREF, VT_EMPTY, VT_I4, VT_INT, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
+    VT_BYREF, VT_EMPTY, VT_I4, VT_INT, VT_NULL, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
 };
 
 // Build a VARIANT array in right-to-left order.
@@ -29,25 +29,40 @@ pub(super) fn build_variant_array_typed(
     args: &[ComArg],
     func: &FuncDesc,
 ) -> Result<(u32, usize, Vec<ComOutParam>), VmError> {
-    if args.is_empty() {
+    if func.params.is_empty() {
         return Ok((0, 0, Vec::new()));
     }
 
-    let mut input_vts = Vec::new();
-    for param in &func.params {
-        if (param.flags & PARAMFLAG_FRETVAL) != 0 || is_out_only(param.flags) {
-            continue;
-        }
-        input_vts.push(param.vt);
-    }
-    if args.len() > input_vts.len() {
+    let expected_inputs = func
+        .params
+        .iter()
+        .filter(|param| (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags))
+        .count();
+    if args.len() > expected_inputs {
         let base = build_variant_array(vm, args)?;
         return Ok((base, args.len(), Vec::new()));
     }
 
-    let mut params = Vec::with_capacity(args.len());
-    for (arg, vt) in args.iter().zip(input_vts.iter()) {
-        let (vt, value, _out_ptr) = build_param_variant(vm, *vt, Some(arg), false)?;
+    let mut params = Vec::with_capacity(func.params.len());
+    let mut out_params = Vec::new();
+    let mut input_iter = args.iter();
+    for (index, param) in func.params.iter().enumerate() {
+        let is_retval = (param.flags & PARAMFLAG_FRETVAL) != 0;
+        if is_retval {
+            continue;
+        }
+        let out_only = is_out_only(param.flags);
+        let arg = if out_only { None } else { input_iter.next() };
+        let force_out = out_only || arg.is_none();
+        let (vt, value, out_ptr) = build_param_variant(vm, param.vt, arg, force_out)?;
+        if let Some(ptr) = out_ptr {
+            out_params.push(ComOutParam {
+                index,
+                vt,
+                flags: param.flags,
+                ptr,
+            });
+        }
         params.push(ParamValue { vt, value });
     }
 
@@ -56,16 +71,31 @@ pub(super) fn build_variant_array_typed(
     for (index, param) in params.iter().rev().enumerate() {
         write_variant_raw(vm, base + (index as u32) * VARIANT_SIZE as u32, param.vt, param.value)?;
     }
-    Ok((base, params.len(), Vec::new()))
+    Ok((base, params.len(), out_params))
 }
 
 // Build a DISPPARAMS structure for Invoke.
-pub(super) fn build_disp_params(vm: &mut Vm, args_ptr: u32, arg_count: usize) -> Result<u32, VmError> {
+pub(super) fn build_disp_params(
+    vm: &mut Vm,
+    args_ptr: u32,
+    arg_count: usize,
+    named_args: Option<&[i32]>,
+) -> Result<u32, VmError> {
     let base = vm.alloc_bytes(&[0u8; 16], 4)?;
     vm.write_u32(base, args_ptr)?;
-    vm.write_u32(base + 4, 0)?;
+    if let Some(args) = named_args {
+        let mut raw = Vec::with_capacity(args.len() * 4);
+        for arg in args {
+            raw.extend_from_slice(&(*arg as u32).to_le_bytes());
+        }
+        let named_ptr = vm.alloc_bytes(&raw, 4)?;
+        vm.write_u32(base + 4, named_ptr)?;
+        vm.write_u32(base + 12, args.len() as u32)?;
+    } else {
+        vm.write_u32(base + 4, 0)?;
+        vm.write_u32(base + 12, 0)?;
+    }
     vm.write_u32(base + 8, arg_count as u32)?;
-    vm.write_u32(base + 12, 0)?;
     Ok(base)
 }
 
@@ -110,8 +140,8 @@ fn build_param_variant(
     let mut out_ptr = None;
     let value = if let Some(arg) = arg {
         let base_value = match (base_vt, arg) {
-            (VT_I4 | VT_INT | VT_USERDEFINED, ComArg::I4(value)) => *value as u32,
-            (VT_I4 | VT_INT | VT_USERDEFINED, ComArg::U32(value)) => *value,
+            (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::I4(value)) => *value as u32,
+            (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::U32(value)) => *value,
             (VT_UI4 | VT_UINT, ComArg::I4(value)) => *value as u32,
             (VT_UI4 | VT_UINT, ComArg::U32(value)) => *value,
             (VT_BSTR, ComArg::BStr(text)) => oleaut32::alloc_bstr(vm, text)?,
@@ -150,7 +180,7 @@ fn write_variant_raw(vm: &mut Vm, addr: u32, vt: u16, value: u32) -> Result<(), 
 
 fn write_base_value(vm: &mut Vm, base_vt: u16, ptr: u32, value: u32) -> Result<(), VmError> {
     match base_vt {
-        VT_I4 | VT_UI4 | VT_BSTR => vm.write_u32(ptr, value),
+        VT_I4 | VT_UI4 | VT_BSTR | VT_NULL => vm.write_u32(ptr, value),
         _ => Err(VmError::Com(DISP_E_TYPEMISMATCH)),
     }
 }
@@ -158,7 +188,7 @@ fn write_base_value(vm: &mut Vm, base_vt: u16, ptr: u32, value: u32) -> Result<(
 fn alloc_param_buffer(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
     let size = match base {
-        VT_I4 | VT_UI4 | VT_BSTR => 4,
+        VT_I4 | VT_UI4 | VT_BSTR | VT_NULL => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };

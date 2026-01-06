@@ -4,28 +4,8 @@ use crate::vm::windows::registry::RegistryValue;
 use crate::vm::{Architecture, Vm, VmError};
 
 use super::constants::{
-    ERROR_SUCCESS, HKEY_CLASSES_ROOT, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE,
-    HKEY_USERS,
+    HKEY_CLASSES_ROOT, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS,
 };
-
-pub(super) fn write_zero_counts(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let subkeys_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let max_subkey_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let values_ptr = vm.read_u32(stack_ptr + 24).unwrap_or(0);
-    let max_value_ptr = vm.read_u32(stack_ptr + 28).unwrap_or(0);
-    let _ = write_optional_u32(vm, subkeys_ptr, 0);
-    let _ = write_optional_u32(vm, max_subkey_ptr, 0);
-    let _ = write_optional_u32(vm, values_ptr, 0);
-    let _ = write_optional_u32(vm, max_value_ptr, 0);
-    ERROR_SUCCESS
-}
-
-fn write_optional_u32(vm: &mut Vm, ptr: u32, value: u32) -> Result<(), VmError> {
-    if ptr == 0 {
-        return Ok(());
-    }
-    vm.write_u32(ptr, value)
-}
 
 pub(super) fn registry_prefix(vm: &Vm, hkey: u32) -> Result<String, VmError> {
     if let Some(path) = vm.registry_handle_path(hkey) {
@@ -64,7 +44,7 @@ pub(super) fn resolve_registry_value<'a>(
 ) -> Option<&'a RegistryValue> {
     if let Ok(Some(value)) = registry.get(key) {
         if std::env::var("PE_VM_TRACE").is_ok() {
-            eprintln!("[pe_vm] RegQueryValueExA hit: {key}");
+            eprintln!("[pe_vm] RegQueryValueEx hit: {key}");
         }
         return Some(value);
     }
@@ -72,13 +52,13 @@ pub(super) fn resolve_registry_value<'a>(
     match registry.get(&redirected) {
         Ok(Some(value)) => {
             if std::env::var("PE_VM_TRACE").is_ok() {
-                eprintln!("[pe_vm] RegQueryValueExA redirect: {key} -> {redirected}");
+                eprintln!("[pe_vm] RegQueryValueEx redirect: {key} -> {redirected}");
             }
             Some(value)
         }
         _ => {
             if std::env::var("PE_VM_TRACE").is_ok() {
-                eprintln!("[pe_vm] RegQueryValueExA miss: {key} (redirected {redirected})");
+                eprintln!("[pe_vm] RegQueryValueEx miss: {key} (redirected {redirected})");
             }
             None
         }
@@ -86,8 +66,8 @@ pub(super) fn resolve_registry_value<'a>(
 }
 
 // Map 32-bit registry access to WOW6432Node when present.
-fn redirect_wow6432_key(vm: &Vm, key: &str) -> Option<String> {
-    if vm.config().architecture != Architecture::X86 {
+pub(super) fn redirect_wow6432_key(vm: &Vm, key: &str) -> Option<String> {
+    if vm.config().architecture_value() != Architecture::X86 {
         return None;
     }
     let (base, value_name) = match key.split_once('@') {
@@ -152,51 +132,18 @@ pub(super) fn read_raw_ascii(vm: &Vm, ptr: u32, len: usize) -> String {
     out
 }
 
-pub(super) fn read_string_arg(vm: &Vm, ptr: u32) -> String {
+pub(super) fn read_string_arg_a(vm: &Vm, ptr: u32) -> String {
     if ptr == 0 {
         return String::new();
     }
-    let b0 = vm.read_u8(ptr).unwrap_or(0);
-    let b1 = vm.read_u8(ptr.wrapping_add(1)).unwrap_or(0);
-    let b2 = vm.read_u8(ptr.wrapping_add(2)).unwrap_or(0);
-    let b3 = vm.read_u8(ptr.wrapping_add(3)).unwrap_or(0);
-    let looks_wide = b0 != 0 && b1 == 0 && (b2 != 0 || b3 == 0);
-    if looks_wide {
-        let wide = read_w_string(vm, ptr);
-        if !wide.is_empty() {
-            return wide;
-        }
+    vm.read_c_string(ptr).unwrap_or_default()
+}
+
+pub(super) fn read_string_arg_w(vm: &Vm, ptr: u32) -> String {
+    if ptr == 0 {
+        return String::new();
     }
-    let ascii = vm.read_c_string(ptr).unwrap_or_default();
-    if !ascii.is_empty() {
-        return ascii;
-    }
-    let mut found = None;
-    for offset in 0..64u32 {
-        let byte = vm.read_u8(ptr.wrapping_add(offset)).unwrap_or(0);
-        if byte == 0 {
-            continue;
-        }
-        let mut bytes = Vec::new();
-        for i in 0..64u32 {
-            let next = vm.read_u8(ptr.wrapping_add(offset + i)).unwrap_or(0);
-            if next == 0 {
-                break;
-            }
-            bytes.push(next);
-        }
-        if !bytes.is_empty() {
-            found = Some(String::from_utf8_lossy(&bytes).to_string());
-            break;
-        }
-    }
-    if let Some(value) = found {
-        if let Some(prefix) = scan_prefix(vm, ptr) {
-            return format!("{prefix}{value}");
-        }
-        return value;
-    }
-    String::new()
+    read_w_string(vm, ptr)
 }
 
 fn read_w_string(vm: &Vm, ptr: u32) -> String {
@@ -211,33 +158,6 @@ fn read_w_string(vm: &Vm, ptr: u32) -> String {
         cursor = cursor.wrapping_add(2);
     }
     String::from_utf16_lossy(&units)
-}
-
-fn scan_prefix(vm: &Vm, ptr: u32) -> Option<String> {
-    let window_start = ptr.wrapping_sub(128);
-    let mut current = Vec::new();
-    let mut last_prefix = None;
-    for i in 0..256u32 {
-        let byte = vm.read_u8(window_start.wrapping_add(i)).unwrap_or(0);
-        if (0x20..0x7F).contains(&byte) {
-            current.push(byte);
-            continue;
-        }
-        if !current.is_empty() {
-            let text = String::from_utf8_lossy(&current).to_string();
-            if text.contains('\\') && text.ends_with('\\') {
-                last_prefix = Some(text);
-            }
-            current.clear();
-        }
-    }
-    if !current.is_empty() {
-        let text = String::from_utf8_lossy(&current).to_string();
-        if text.contains('\\') && text.ends_with('\\') {
-            last_prefix = Some(text);
-        }
-    }
-    last_prefix
 }
 
 pub(super) fn is_root_hive(hkey: u32) -> bool {

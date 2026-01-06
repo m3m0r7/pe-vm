@@ -1,0 +1,106 @@
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{Arc, Mutex};
+
+use crate::architecture::intel::x86::X86Executor;
+use crate::pe::ResourceDirectory;
+
+use super::{windows, ComOutParam, MessageBoxMode, VmConfig};
+
+// OS-specific state stored in the VM without exposing platform details.
+pub(crate) enum OsState {
+    Windows(windows::WindowsState),
+    Unix,
+    Mac,
+}
+
+pub type HostCall = fn(&mut Vm, u32) -> u32;
+
+#[derive(Debug, Default, Clone)]
+#[allow(dead_code)]
+pub struct Registers {
+    pub eax: u32,
+    pub ecx: u32,
+    pub edx: u32,
+    pub ebx: u32,
+    pub esp: u32,
+    pub ebp: u32,
+    pub esi: u32,
+    pub edi: u32,
+    pub eip: u32,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct Flags {
+    pub(crate) cf: bool,
+    pub(crate) zf: bool,
+    pub(crate) sf: bool,
+    pub(crate) of: bool,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct HostFunction {
+    pub(crate) func: HostCall,
+    pub(crate) stack_cleanup: u32,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct PendingThread {
+    pub(crate) entry: u32,
+    pub(crate) param: u32,
+}
+
+pub struct Vm {
+    pub(super) config: VmConfig,
+    pub(super) os_state: OsState,
+    pub(super) base: u32,
+    pub(super) memory: Vec<u8>,
+    pub(super) regs: Registers,
+    // Minimal SSE state for XMM register operations.
+    pub(super) xmm: [[u8; 16]; 8],
+    pub(super) flags: Flags,
+    pub(super) stack_top: u32,
+    pub(super) stack_depth: u32,
+    pub(super) heap_start: usize,
+    pub(super) heap_end: usize,
+    pub(super) heap_cursor: usize,
+    pub(super) heap_allocs: HashMap<u32, usize>,
+    pub(super) fs_base: u32,
+    pub(super) gs_base: u32,
+    pub(super) env: BTreeMap<String, String>,
+    pub(super) string_overlays: HashMap<u32, String>,
+    pub(super) image_path: Option<String>,
+    pub(super) resource_dir: Option<ResourceDirectory>,
+    pub(super) dispatch_instance: Option<u32>,
+    pub(super) last_com_out_params: Vec<ComOutParam>,
+    pub(super) last_error: u32,
+    pub(super) registry_handles: HashMap<u32, String>,
+    pub(super) registry_next_handle: u32,
+    pub(super) file_handles: HashMap<u32, FileHandle>,
+    pub(super) file_next_handle: u32,
+    pub(super) virtual_files: HashMap<String, Vec<u8>>,
+    pub(super) tls_values: HashMap<u32, u32>,
+    pub(super) tls_next_index: u32,
+    pub(super) unhandled_exception_filter: u32,
+    pub(super) message_box_mode: MessageBoxMode,
+    pub(super) onexit_tables: BTreeMap<u32, Vec<u32>>,
+    pub(super) default_onexit_table: u32,
+    pub(super) imports_by_name: HashMap<String, HostFunction>,
+    pub(super) imports_by_any: HashMap<String, HostFunction>,
+    pub(super) imports_by_ordinal: HashMap<String, HostFunction>,
+    pub(super) imports_by_iat: HashMap<u32, HostFunction>,
+    pub(super) imports_by_iat_name: HashMap<u32, String>,
+    pub(super) dynamic_imports: HashMap<String, u32>,
+    pub(super) dynamic_import_next: u32,
+    pub(super) pending_threads: Vec<PendingThread>,
+    pub(super) next_thread_handle: u32,
+    pub(super) stdout: Arc<Mutex<Vec<u8>>>,
+    pub(super) executor: X86Executor,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct FileHandle {
+    pub(crate) path: String,
+    pub(crate) cursor: usize,
+    pub(crate) readable: bool,
+    pub(crate) writable: bool,
+}

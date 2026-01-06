@@ -9,7 +9,7 @@ mod yaml;
 
 pub use error::RegistryError;
 pub use key::{RegistryHive, RegistryKey};
-pub use store::{Registry, RegistryMergeMode};
+pub use store::{Registry, RegistryMergeMode, RegistryStats};
 pub use value::RegistryValue;
 
 use std::path::Path;

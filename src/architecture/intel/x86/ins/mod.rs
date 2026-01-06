@@ -141,6 +141,7 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     register_range(&mut ins, 0x58, 0x5F, stack::pop_reg);
     register(&mut ins, 0x6A, stack::push_imm8);
     register(&mut ins, 0x68, stack::push_imm32);
+    register(&mut ins, 0x69, imul::imul_rm32_imm32);
     register(&mut ins, 0x6B, imul::imul_rm32_imm8);
     register_range(&mut ins, 0x70, 0x7F, control::jcc_rel8);
     register(&mut ins, 0x80, group1::exec_group1_8);
@@ -169,6 +170,7 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     register(&mut ins, 0xA9, logic::test_eax_imm32);
     register_range(&mut ins, 0xB0, 0xB7, mov::mov_r8_imm8);
     register_range(&mut ins, 0xB8, 0xBF, mov::mov_r32_imm32);
+    register(&mut ins, 0xC0, shift::shift_rm8_imm8);
     register(&mut ins, 0xC1, shift::shift_rm32_imm8);
     register(&mut ins, 0xC2, control::ret_imm16);
     register(&mut ins, 0xC3, control::ret_near);
@@ -179,7 +181,9 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     register(&mut ins, 0xCD, system::int);
     register(&mut ins, 0xD6, system::salc);
     register_range(&mut ins, 0xD8, 0xDF, fpu::exec);
+    register(&mut ins, 0xD0, shift::shift_rm8_1);
     register(&mut ins, 0xD1, shift::shift_rm32_1);
+    register(&mut ins, 0xD2, shift::shift_rm8_cl);
     register(&mut ins, 0xD3, shift::shift_rm32_cl);
     register(&mut ins, 0xE8, control::call_rel32);
     register(&mut ins, 0xE9, control::jmp_rel32);
