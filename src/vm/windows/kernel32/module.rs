@@ -1,5 +1,6 @@
 //! Kernel32 module/loader stubs.
 
+use crate::pe::{ResourceData, ResourceId, ResourceNode};
 use crate::vm::Vm;
 
 pub fn register(vm: &mut Vm) {
@@ -139,26 +140,20 @@ fn get_command_line_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 fn find_resource_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let name = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    if name != 0 {
-        return name;
-    }
-    1
+    let r#type = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    find_resource(vm, name, r#type, false)
 }
 
 fn find_resource_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let name = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    if name != 0 {
-        return name;
-    }
-    1
+    let r#type = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    find_resource(vm, name, r#type, true)
 }
 
 fn find_resource_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let r#type = vm.read_u32(stack_ptr + 8).unwrap_or(0);
     let name = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    if name != 0 {
-        return name;
-    }
-    1
+    find_resource(vm, name, r#type, true)
 }
 
 fn load_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -169,6 +164,96 @@ fn lock_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
     vm.read_u32(stack_ptr + 4).unwrap_or(0)
 }
 
-fn sizeof_resource(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+fn sizeof_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let handle = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    vm.resource_sizes.get(&handle).copied().unwrap_or(0)
+}
+
+fn find_resource(vm: &mut Vm, name: u32, r#type: u32, wide: bool) -> u32 {
+    let (bytes, size) = {
+        let Some(dir) = vm.resource_dir() else {
+            return 0;
+        };
+        let name_id = read_resource_id(vm, name, wide);
+        let type_id = read_resource_id(vm, r#type, wide);
+        let (Some(name_id), Some(type_id)) = (name_id, type_id) else {
+            return 0;
+        };
+        let Some(data) = lookup_resource(dir.roots.as_slice(), &type_id, &name_id) else {
+            return 0;
+        };
+        (data.data.clone(), data.size)
+    };
+    let ptr = vm.alloc_bytes(&bytes, 1).unwrap_or(0);
+    if ptr != 0 {
+        vm.resource_sizes.insert(ptr, size);
+    }
+    ptr
+}
+
+fn read_resource_id(vm: &Vm, value: u32, wide: bool) -> Option<ResourceId> {
+    if value == 0 {
+        return None;
+    }
+    if value & 0xFFFF_0000 == 0 {
+        return Some(ResourceId::Id(value));
+    }
+    if wide {
+        let name = read_w_string(vm, value);
+        if name.is_empty() {
+            None
+        } else {
+            Some(ResourceId::Name(name))
+        }
+    } else {
+        let name = vm.read_c_string(value).unwrap_or_default();
+        if name.is_empty() {
+            None
+        } else {
+            Some(ResourceId::Name(name))
+        }
+    }
+}
+
+fn lookup_resource<'a>(
+    roots: &'a [ResourceNode],
+    type_id: &ResourceId,
+    name_id: &ResourceId,
+) -> Option<&'a ResourceData> {
+    let type_node = roots.iter().find(|node| resource_id_eq(&node.id, type_id))?;
+    let name_node = type_node
+        .children
+        .iter()
+        .find(|node| resource_id_eq(&node.id, name_id))?;
+    if let Some(data) = name_node.data.as_ref() {
+        return Some(data);
+    }
+    for child in &name_node.children {
+        if let Some(data) = child.data.as_ref() {
+            return Some(data);
+        }
+    }
+    None
+}
+
+fn resource_id_eq(left: &ResourceId, right: &ResourceId) -> bool {
+    match (left, right) {
+        (ResourceId::Id(a), ResourceId::Id(b)) => a == b,
+        (ResourceId::Name(a), ResourceId::Name(b)) => a.eq_ignore_ascii_case(b),
+        _ => false,
+    }
+}
+
+fn read_w_string(vm: &Vm, ptr: u32) -> String {
+    let mut units = Vec::new();
+    let mut cursor = ptr;
+    loop {
+        let unit = vm.read_u16(cursor).unwrap_or(0);
+        if unit == 0 {
+            break;
+        }
+        units.push(unit);
+        cursor = cursor.wrapping_add(2);
+    }
+    String::from_utf16_lossy(&units)
 }

@@ -77,6 +77,81 @@ pub(super) fn typeinfo_release_type_attr(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     S_OK
 }
 
+pub(super) fn typeinfo_get_func_desc(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let Some((_this, info_id, thiscall)) = resolve_typeinfo_info(vm, stack_ptr) else {
+        return E_NOTIMPL;
+    };
+    let index = vm.read_u32(stack_ptr + if thiscall { 4 } else { 8 }).unwrap_or(0) as usize;
+    let out_ptr = vm.read_u32(stack_ptr + if thiscall { 8 } else { 12 }).unwrap_or(0);
+    if out_ptr == 0 {
+        return E_INVALIDARG;
+    }
+    let Some(info) = typelib::get_typeinfo(info_id) else {
+        let _ = vm.write_u32(out_ptr, 0);
+        return E_NOTIMPL;
+    };
+    let Some(func) = info.funcs.get(index) else {
+        let _ = vm.write_u32(out_ptr, 0);
+        return E_INVALIDARG;
+    };
+    let params_ptr = if func.params.is_empty() {
+        0
+    } else {
+        let mut bytes = vec![0u8; func.params.len() * ELEMDESC_SIZE];
+        for (idx, param) in func.params.iter().enumerate() {
+            let offset = idx * ELEMDESC_SIZE;
+            write_elemdesc(&mut bytes, offset, param.vt, param.flags as u16);
+        }
+        vm.alloc_bytes(&bytes, 4).unwrap_or(0)
+    };
+
+    let mut func_bytes = vec![0u8; FUNCDESC_SIZE];
+    func_bytes[0..4].copy_from_slice(&func.memid.to_le_bytes());
+    func_bytes[4..8].copy_from_slice(&0u32.to_le_bytes()); // lprgscode
+    func_bytes[8..12].copy_from_slice(&params_ptr.to_le_bytes());
+    func_bytes[12..16].copy_from_slice(&0u32.to_le_bytes()); // FUNC_VIRTUAL
+    func_bytes[16..20].copy_from_slice(&(func.invkind as u32).to_le_bytes());
+    func_bytes[20..24].copy_from_slice(&(func.callconv as u32).to_le_bytes());
+    func_bytes[24..26].copy_from_slice(&(func.params.len() as u16).to_le_bytes());
+    func_bytes[26..28].copy_from_slice(&0u16.to_le_bytes()); // cParamsOpt
+    func_bytes[28..30].copy_from_slice(&func.vtable_offset.to_le_bytes());
+    func_bytes[30..32].copy_from_slice(&0u16.to_le_bytes()); // cScodes
+    write_elemdesc(&mut func_bytes, 32, func.ret_vt, 0);
+    func_bytes[48..50].copy_from_slice(&0u16.to_le_bytes()); // wFuncFlags
+
+    let func_ptr = vm.alloc_bytes(&func_bytes, 4).unwrap_or(0);
+    let _ = vm.write_u32(out_ptr, func_ptr);
+    if std::env::var("PE_VM_TRACE_COM").is_ok() {
+        eprintln!(
+            "[pe_vm] ITypeInfo::GetFuncDesc index={index} memid=0x{:08X} params={} vtable=0x{:04X}",
+            func.memid,
+            func.params.len(),
+            func.vtable_offset
+        );
+    }
+    S_OK
+}
+
+pub(super) fn typeinfo_release_func_desc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    S_OK
+}
+
 pub(super) fn typeinfo_not_impl(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     E_NOTIMPL
+}
+
+const FUNCDESC_SIZE: usize = 0x34;
+const ELEMDESC_SIZE: usize = 0x10;
+
+fn write_elemdesc(bytes: &mut [u8], offset: usize, vt: u16, flags: u16) {
+    let end = offset + ELEMDESC_SIZE;
+    if end > bytes.len() {
+        return;
+    }
+    bytes[offset..offset + 4].copy_from_slice(&0u32.to_le_bytes());
+    bytes[offset + 4..offset + 6].copy_from_slice(&vt.to_le_bytes());
+    bytes[offset + 6..offset + 8].copy_from_slice(&0u16.to_le_bytes());
+    bytes[offset + 8..offset + 12].copy_from_slice(&0u32.to_le_bytes());
+    bytes[offset + 12..offset + 14].copy_from_slice(&flags.to_le_bytes());
+    bytes[offset + 14..offset + 16].copy_from_slice(&0u16.to_le_bytes());
 }

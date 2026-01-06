@@ -66,6 +66,10 @@ pub(super) fn build_variant_array_typed(
         params.push(ParamValue { vt, value });
     }
 
+    if params.is_empty() {
+        return Ok((0, 0, out_params));
+    }
+
     let total = params.len() * VARIANT_SIZE;
     let base = vm.alloc_bytes(&vec![0u8; total], 4)?;
     for (index, param) in params.iter().rev().enumerate() {

@@ -1,8 +1,8 @@
 use crate::vm::Vm;
 
 use super::constants::{
-    ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, FILE_ATTRIBUTE_NORMAL, FILE_TYPE_DISK,
-    INVALID_FILE_ATTRIBUTES,
+    ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL,
+    FILE_TYPE_DISK, INVALID_FILE_ATTRIBUTES,
 };
 
 pub(super) fn register(vm: &mut Vm) {
@@ -38,7 +38,12 @@ fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         eprintln!("[pe_vm] GetFileAttributesA: {path}");
     }
     if vm.file_exists(&path) {
-        FILE_ATTRIBUTE_NORMAL
+        let host_path = vm.map_path(&path);
+        if std::path::Path::new(&host_path).is_dir() {
+            FILE_ATTRIBUTE_DIRECTORY
+        } else {
+            FILE_ATTRIBUTE_NORMAL
+        }
     } else {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         INVALID_FILE_ATTRIBUTES

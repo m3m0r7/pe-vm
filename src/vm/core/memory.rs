@@ -48,6 +48,7 @@ impl Vm {
         self.dynamic_import_next = 0x7000_0000;
         self.string_overlays.clear();
         self.resource_dir = pe.directories.resource.clone();
+        self.resource_sizes.clear();
         Ok(())
     }
 

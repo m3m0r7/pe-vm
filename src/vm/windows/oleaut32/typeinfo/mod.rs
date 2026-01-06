@@ -8,8 +8,9 @@ use super::constants::OleMethod;
 
 use invoke::typeinfo_invoke;
 use methods::{
-    typeinfo_add_ref, typeinfo_get_type_attr, typeinfo_not_impl, typeinfo_query_interface,
-    typeinfo_release, typeinfo_release_type_attr,
+    typeinfo_add_ref, typeinfo_get_func_desc, typeinfo_get_type_attr, typeinfo_not_impl,
+    typeinfo_query_interface, typeinfo_release, typeinfo_release_func_desc,
+    typeinfo_release_type_attr,
 };
 
 pub(super) const TYPEINFO_METHODS: &[OleMethod] = &[
@@ -18,7 +19,7 @@ pub(super) const TYPEINFO_METHODS: &[OleMethod] = &[
     ("pe_vm.typeinfo.Release", 1, typeinfo_release),
     ("pe_vm.typeinfo.GetTypeAttr", 2, typeinfo_get_type_attr),
     ("pe_vm.typeinfo.GetTypeComp", 2, typeinfo_not_impl),
-    ("pe_vm.typeinfo.GetFuncDesc", 3, typeinfo_not_impl),
+    ("pe_vm.typeinfo.GetFuncDesc", 3, typeinfo_get_func_desc),
     ("pe_vm.typeinfo.GetVarDesc", 3, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetNames", 5, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetRefTypeOfImplType", 3, typeinfo_not_impl),
@@ -33,7 +34,7 @@ pub(super) const TYPEINFO_METHODS: &[OleMethod] = &[
     ("pe_vm.typeinfo.GetMops", 3, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetContainingTypeLib", 3, typeinfo_not_impl),
     ("pe_vm.typeinfo.ReleaseTypeAttr", 2, typeinfo_release_type_attr),
-    ("pe_vm.typeinfo.ReleaseFuncDesc", 2, typeinfo_not_impl),
+    ("pe_vm.typeinfo.ReleaseFuncDesc", 2, typeinfo_release_func_desc),
     ("pe_vm.typeinfo.ReleaseVarDesc", 2, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetTypeKind", 2, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetTypeFlags", 2, typeinfo_not_impl),

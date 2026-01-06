@@ -183,6 +183,14 @@ pub(crate) fn default_path_mapping() -> PathMapping {
     if let Some(home) = home_dir() {
         let root = home.join(".pe-vm");
         let _ = std::fs::create_dir_all(&root);
+        let data_dir = root.join("data");
+        let cache_dir = root.join("cache");
+        let _ = std::fs::create_dir_all(&data_dir);
+        let _ = std::fs::create_dir_all(&cache_dir);
+        let lock_path = data_dir.join("lock.dat");
+        if !lock_path.exists() {
+            let _ = std::fs::write(&lock_path, b"");
+        }
         let host_path = root.to_string_lossy().to_string();
         if !host_path.is_empty() {
             paths.insert("C:\\".to_string(), host_path);

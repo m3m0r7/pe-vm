@@ -70,6 +70,7 @@ pub struct Vm {
     pub(super) string_overlays: HashMap<u32, String>,
     pub(super) image_path: Option<String>,
     pub(super) resource_dir: Option<ResourceDirectory>,
+    pub(super) resource_sizes: HashMap<u32, u32>,
     pub(super) dispatch_instance: Option<u32>,
     pub(super) last_com_out_params: Vec<ComOutParam>,
     pub(super) last_error: u32,

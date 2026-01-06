@@ -1,6 +1,6 @@
 use crate::vm::Vm;
 
-use super::helpers::{compare_strings, read_string_arg, write_c_string};
+use super::helpers::{compare_strings, read_bytes, read_string_arg};
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall("KERNEL32.dll", "lstrlenA", crate::vm::stdcall_args(1), lstrlen_a);
@@ -16,7 +16,7 @@ fn lstrlen_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if ptr == 0 {
         return 0;
     }
-    vm.read_c_string(ptr).map(|s| s.len() as u32).unwrap_or(0)
+    read_bytes(vm, ptr, -1).len() as u32
 }
 
 fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -25,14 +25,15 @@ fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if dest == 0 || src == 0 {
         return dest;
     }
-    let text = vm.read_c_string(src).unwrap_or_default();
+    let text = read_bytes(vm, src, -1);
     if std::env::var("PE_VM_TRACE").is_ok() {
         let raw = read_raw_bytes(vm, src, 32);
         eprintln!(
-            "[pe_vm] lstrcpyA dest=0x{dest:08X} src=0x{src:08X} text={text:?} raw={raw}"
+            "[pe_vm] lstrcpyA dest=0x{dest:08X} src=0x{src:08X} text={:?} raw={raw}",
+            render_bytes(&text)
         );
     }
-    write_c_string(vm, dest, &text);
+    write_c_bytes(vm, dest, &text);
     dest
 }
 
@@ -42,22 +43,25 @@ fn lstrcat_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if dest == 0 || src == 0 {
         return dest;
     }
-    let mut dest_text = vm.read_c_string(dest).unwrap_or_default();
-    let src_text = vm.read_c_string(src).unwrap_or_default();
+    let mut dest_text = read_bytes(vm, dest, -1);
+    let src_text = read_bytes(vm, src, -1);
     if std::env::var("PE_VM_TRACE").is_ok() {
         let dest_raw = read_raw_bytes(vm, dest, 32);
         let src_raw = read_raw_bytes(vm, src, 32);
         eprintln!(
-            "[pe_vm] lstrcatA dest=0x{dest:08X} src=0x{src:08X} dest_text={dest_text:?} src_text={src_text:?} dest_raw={dest_raw} src_raw={src_raw}"
+            "[pe_vm] lstrcatA dest=0x{dest:08X} src=0x{src:08X} dest_text={:?} src_text={:?} dest_raw={dest_raw} src_raw={src_raw}",
+            render_bytes(&dest_text),
+            render_bytes(&src_text)
         );
     }
-    dest_text.push_str(&src_text);
+    dest_text.extend_from_slice(&src_text);
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!(
-            "[pe_vm] lstrcatA dest=0x{dest:08X} result_text={dest_text:?}"
+            "[pe_vm] lstrcatA dest=0x{dest:08X} result_text={:?}",
+            render_bytes(&dest_text)
         );
     }
-    write_c_string(vm, dest, &dest_text);
+    write_c_bytes(vm, dest, &dest_text);
     dest
 }
 
@@ -80,16 +84,15 @@ fn lstrcpyn_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if dest == 0 || src == 0 || count == 0 {
         return dest;
     }
-    let text = vm.read_c_string(src).unwrap_or_default();
-    let mut trimmed = text.as_bytes().to_vec();
-    if trimmed.len() >= count {
-        trimmed.truncate(count - 1);
+    let mut bytes = read_bytes(vm, src, -1);
+    if bytes.len() >= count {
+        bytes.truncate(count.saturating_sub(1));
     }
-    trimmed.push(0);
-    let _ = vm.write_bytes(dest, &trimmed);
+    bytes.push(0);
+    let _ = vm.write_bytes(dest, &bytes);
     if std::env::var("PE_VM_TRACE").is_ok() {
         let src_raw = read_raw_bytes(vm, src, 32);
-        let rendered = String::from_utf8_lossy(&trimmed[..trimmed.len().saturating_sub(1)]);
+        let rendered = render_bytes(&bytes[..bytes.len().saturating_sub(1)]);
         eprintln!(
             "[pe_vm] lstrcpynA dest=0x{dest:08X} src=0x{src:08X} count={count} text={rendered:?} src_raw={src_raw}"
         );
@@ -107,4 +110,14 @@ fn read_raw_bytes(vm: &Vm, ptr: u32, len: usize) -> String {
         out.push_str(&format!("{byte:02X}"));
     }
     out
+}
+
+fn write_c_bytes(vm: &mut Vm, dest: u32, bytes: &[u8]) {
+    let mut out = bytes.to_vec();
+    out.push(0);
+    let _ = vm.write_bytes(dest, &out);
+}
+
+fn render_bytes(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).to_string()
 }

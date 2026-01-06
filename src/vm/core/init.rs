@@ -36,6 +36,7 @@ impl Vm {
             string_overlays: HashMap::new(),
             image_path: None,
             resource_dir: None,
+            resource_sizes: HashMap::new(),
             dispatch_instance: None,
             last_com_out_params: Vec::new(),
             last_error: 0,

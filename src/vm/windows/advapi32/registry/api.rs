@@ -143,7 +143,10 @@ fn reg_open_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
     } else {
         read_string_arg_a(vm, subkey_ptr)
     };
-    let path = join_key(&prefix, &subkey);
+    let mut path = join_key(&prefix, &subkey);
+    if let Some(redirected) = redirect_wow6432_key(vm, &path) {
+        path = redirected;
+    }
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!(
             "[pe_vm] {api}: {path} (hkey=0x{hkey:08X} subkey_ptr=0x{subkey_ptr:08X})"
@@ -193,7 +196,10 @@ fn reg_create_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 
     } else {
         read_string_arg_a(vm, subkey_ptr)
     };
-    let path = join_key(&prefix, &subkey);
+    let mut path = join_key(&prefix, &subkey);
+    if let Some(redirected) = redirect_wow6432_key(vm, &path) {
+        path = redirected;
+    }
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] {api}: {path}");
     }
@@ -503,11 +509,12 @@ fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
         Ok(value) => value,
         Err(_) => return ERROR_FILE_NOT_FOUND,
     };
+    let query_prefix = redirect_wow6432_key(vm, &prefix).unwrap_or(prefix);
     let registry = match get_registry(vm) {
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    let subkeys = match registry.subkeys(&prefix) {
+    let subkeys = match registry.subkeys(&query_prefix) {
         Ok(values) => values,
         Err(_) => return ERROR_FILE_NOT_FOUND,
     };
@@ -529,7 +536,7 @@ fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
         return ERROR_FILE_NOT_FOUND;
     }
     if std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!("[pe_vm] {api}: {prefix} index={index} name={name}");
+        eprintln!("[pe_vm] {api}: {query_prefix} index={index} name={name}");
     }
     if wide {
         let mut cursor = name_ptr;
@@ -578,18 +585,19 @@ fn reg_query_info_key(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
         Ok(value) => value,
         Err(_) => return ERROR_FILE_NOT_FOUND,
     };
+    let query_prefix = redirect_wow6432_key(vm, &prefix).unwrap_or(prefix);
     let registry = match get_registry(vm) {
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    let stats = match registry.stats(&prefix, wide) {
+    let stats = match registry.stats(&query_prefix, wide) {
         Ok(stats) => stats,
         Err(_) => return ERROR_FILE_NOT_FOUND,
     };
 
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!(
-            "[pe_vm] {api}: {prefix} subkeys={} values={}",
+            "[pe_vm] {api}: {query_prefix} subkeys={} values={}",
             stats.subkey_count, stats.value_count
         );
     }

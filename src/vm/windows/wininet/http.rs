@@ -286,6 +286,12 @@ pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
     let info = info_level & 0xFFFF;
     let wants_number = (info_level & HTTP_QUERY_FLAG_NUMBER) != 0;
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        let provided = vm.read_u32(buffer_len_ptr).unwrap_or(0);
+        trace_net(&format!(
+            "HttpQueryInfoA handle=0x{request_handle:08X} info=0x{info_level:08X} buf=0x{buffer:08X} len={provided}"
+        ));
+    }
 
     let (text, number) = match info {
         HTTP_QUERY_STATUS_CODE => (

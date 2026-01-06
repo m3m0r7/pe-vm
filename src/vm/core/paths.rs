@@ -25,11 +25,16 @@ impl Vm {
         };
         let guest = normalize_path(guest_prefix, is_windows);
         let remainder = input.get(guest.len()..).unwrap_or("");
-        let remainder = remainder.trim_start_matches(['\\', '/']);
+        let mut remainder = remainder.trim_start_matches(['\\', '/']).to_string();
         if remainder.is_empty() {
             return host_prefix.clone();
         }
         let sep = if host_prefix.contains('\\') { '\\' } else { '/' };
+        if sep == '/' {
+            remainder = remainder.replace('\\', "/");
+        } else {
+            remainder = remainder.replace('/', "\\");
+        }
         let needs_sep = !host_prefix.ends_with(['\\', '/']);
         if needs_sep {
             format!("{host_prefix}{sep}{remainder}")
