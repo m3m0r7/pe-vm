@@ -163,9 +163,12 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     register(&mut ins, 0x99, system::cdq);
     register(&mut ins, 0xA1, mov::mov_moffs_to_eax);
     register(&mut ins, 0xA3, mov::mov_eax_to_moffs);
+    register(&mut ins, 0xA4, mov::movsb);
     register(&mut ins, 0xA5, mov::movsd);
     register(&mut ins, 0xAA, mov::stosb);
     register(&mut ins, 0xAB, mov::stosd);
+    register(&mut ins, 0xAE, mov::scasb);
+    register(&mut ins, 0xAF, mov::scasd);
     register(&mut ins, 0xA8, logic::test_al_imm8);
     register(&mut ins, 0xA9, logic::test_eax_imm32);
     register_range(&mut ins, 0xB0, 0xB7, mov::mov_r8_imm8);

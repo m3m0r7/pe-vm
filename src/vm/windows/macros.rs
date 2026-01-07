@@ -626,6 +626,12 @@ mod tests {
         vm
     }
 
+    fn alloc_wstr(vm: &mut Vm, value: &str) -> u32 {
+        let stack = vm.stack_top - 8;
+        vm_set_args!(vm, stack; vm_wstr!(value));
+        vm.read_u32(stack + 4).unwrap()
+    }
+
     #[test]
     fn test_vm_args_single_u32() {
         let mut vm = create_test_vm();
@@ -721,12 +727,7 @@ mod tests {
     #[test]
     fn test_read_wstr_arg_basic() {
         let mut vm = create_test_vm();
-        let ptr = vm.heap_start as u32;
-        // Write L"ABC\0"
-        vm.write_u16(ptr, 'A' as u16).unwrap();
-        vm.write_u16(ptr + 2, 'B' as u16).unwrap();
-        vm.write_u16(ptr + 4, 'C' as u16).unwrap();
-        vm.write_u16(ptr + 6, 0).unwrap();
+        let ptr = alloc_wstr(&mut vm, "ABC");
         assert_eq!(read_wstr_arg(&vm, ptr), "ABC");
     }
 
@@ -762,13 +763,7 @@ mod tests {
     #[test]
     fn test_read_wstr_len() {
         let mut vm = create_test_vm();
-        let ptr = vm.heap_start as u32;
-        // Write L"Hello" (no null terminator needed)
-        vm.write_u16(ptr, 'H' as u16).unwrap();
-        vm.write_u16(ptr + 2, 'e' as u16).unwrap();
-        vm.write_u16(ptr + 4, 'l' as u16).unwrap();
-        vm.write_u16(ptr + 6, 'l' as u16).unwrap();
-        vm.write_u16(ptr + 8, 'o' as u16).unwrap();
+        let ptr = alloc_wstr(&mut vm, "Hello");
         assert_eq!(read_wstr_len(&vm, ptr, 5), "Hello");
         assert_eq!(read_wstr_len(&vm, ptr, 3), "Hel");
     }
@@ -804,24 +799,14 @@ mod tests {
     #[test]
     fn test_read_wstr_delim_null_term() {
         let mut vm = create_test_vm();
-        let ptr = vm.heap_start as u32;
-        // Write L"Hi\0X"
-        vm.write_u16(ptr, 'H' as u16).unwrap();
-        vm.write_u16(ptr + 2, 'i' as u16).unwrap();
-        vm.write_u16(ptr + 4, 0).unwrap();
-        vm.write_u16(ptr + 6, 'X' as u16).unwrap();
+        let ptr = alloc_wstr(&mut vm, "Hi\0X");
         assert_eq!(read_wstr_delim(&vm, ptr, 0), "Hi");
     }
 
     #[test]
     fn test_read_wstr_delim_custom() {
         let mut vm = create_test_vm();
-        let ptr = vm.heap_start as u32;
-        // Write L"Hi|X"
-        vm.write_u16(ptr, 'H' as u16).unwrap();
-        vm.write_u16(ptr + 2, 'i' as u16).unwrap();
-        vm.write_u16(ptr + 4, '|' as u16).unwrap();
-        vm.write_u16(ptr + 6, 'X' as u16).unwrap();
+        let ptr = alloc_wstr(&mut vm, "Hi|X");
         assert_eq!(read_wstr_delim(&vm, ptr, '|' as u16), "Hi");
     }
 
