@@ -14,6 +14,12 @@ use super::store::{alloc_socket, close_socket, register_socket, set_last_error, 
 use super::trace::{log_connect, log_send, trace_net};
 use super::util::{parse_ipv4, read_fd_count, read_sockaddr_in};
 
+fn network_fallback_host(vm: &Vm) -> Option<&str> {
+    vm.config()
+        .sandbox_config()
+        .and_then(|sandbox| sandbox.network_fallback_host())
+}
+
 pub(super) fn bind(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     set_last_error(0);
     0
@@ -41,10 +47,14 @@ pub(super) fn connect(vm: &mut Vm, stack_ptr: u32) -> u32 {
     ));
     if let Some((host, port)) = read_sockaddr_in(vm, addr_ptr) {
         let port = u16::from_be(port);
-        if let Ok(ip) = host.parse::<Ipv4Addr>() {
+        // Use sandbox fallback host if configured
+        let target_host = network_fallback_host(vm)
+            .map(|s| s.to_string())
+            .unwrap_or(host);
+        if let Ok(ip) = target_host.parse::<Ipv4Addr>() {
             let addr = SocketAddrV4::new(ip, port);
             if let Some(socket) = socket_by_handle(handle) {
-                log_connect(&host, port);
+                log_connect(&target_host, port);
                 if socket.connect(addr).is_ok() {
                     set_last_error(0);
                     return 0;
@@ -248,9 +258,11 @@ pub(super) fn gethostbyname(vm: &mut Vm, stack_ptr: u32) -> u32 {
         set_last_error(WSAEINVAL);
         return 0;
     }
-    let addr = parse_ipv4(&name)
-        .or_else(|| resolve_host(&name))
-        .unwrap_or(default_addr_for_host(&name));
+    // Use sandbox fallback host if configured
+    let target_name = network_fallback_host(vm).unwrap_or(&name);
+    let addr = parse_ipv4(target_name)
+        .or_else(|| resolve_host(target_name))
+        .unwrap_or(default_addr_for_host(target_name));
     let ptr = alloc_hostent(vm, name.as_str(), addr);
     set_last_error(0);
     ptr
