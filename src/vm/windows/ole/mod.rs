@@ -4,8 +4,8 @@
 //! which is commonly used for Perl/COM automation.
 
 pub const DLL_NAME: &str = "OLE.dll";
+const DLL: &str = DLL_NAME;
 
-use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 
 

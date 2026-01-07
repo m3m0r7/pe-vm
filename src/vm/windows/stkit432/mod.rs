@@ -4,8 +4,8 @@
 //! commonly used in older Windows installers (REGSVR32.DLL wrapper).
 
 pub const DLL_NAME: &str = "STKIT432.dll";
+const DLL: &str = DLL_NAME;
 
-use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 
 

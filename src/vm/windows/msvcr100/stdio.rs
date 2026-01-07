@@ -1,6 +1,5 @@
 //! Standard I/O function stubs for MSVCR100.dll.
 
-use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
