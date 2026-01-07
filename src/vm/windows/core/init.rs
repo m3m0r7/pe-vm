@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use crate::architecture::intel::x86::X86Executor;
 use crate::pe::ResourceDirectory;
 
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub fn new(config: VmConfig) -> Result<Self, VmError> {

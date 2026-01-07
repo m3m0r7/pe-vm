@@ -1,6 +1,6 @@
 use crate::pe::PeFile;
 
-use super::super::*;
+use crate::vm::*;
 
 const NULL_PAGE_LIMIT: u32 = 0x1000;
 

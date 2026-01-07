@@ -5,70 +5,63 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // Time functions
-stub!(time32_impl);
-stub!(time64_impl);
-stub!(clock_impl);
-stub!(difftime32_impl);
-stub!(difftime64_impl);
-stub!(mktime32_impl);
-stub!(mktime64_impl);
-stub!(gmtime32_impl);
-stub!(gmtime32_s_impl);
-stub!(gmtime64_impl);
-stub!(gmtime64_s_impl);
-stub!(localtime32_impl);
-stub!(localtime32_s_impl);
-stub!(localtime64_impl);
-stub!(localtime64_s_impl);
-stub!(asctime_impl);
-stub!(asctime_s_impl);
-stub!(wasctime_impl);
-stub!(wasctime_s_impl);
-stub!(ctime32_impl);
-stub!(ctime32_s_impl);
-stub!(ctime64_impl);
-stub!(ctime64_s_impl);
-stub!(wctime32_impl);
-stub!(wctime32_s_impl);
-stub!(wctime64_impl);
-stub!(wctime64_s_impl);
-stub!(strdate_impl);
-stub!(strdate_s_impl);
-stub!(wstrdate_impl);
-stub!(wstrdate_s_impl);
-stub!(strtime_impl);
-stub!(strtime_s_impl);
-stub!(wstrtime_impl);
-stub!(wstrtime_s_impl);
-stub!(tzset_impl);
-stub!(daylight);
-stub!(dstbias);
-stub!(timezone);
-stub!(tzname);
-stub!(utime32_impl);
-stub!(utime64_impl);
-stub!(wutime32_impl);
-stub!(wutime64_impl);
-stub!(futime32_impl);
-stub!(futime64_impl);
-stub!(ftime32_impl);
-stub!(ftime32_s_impl);
-stub!(ftime64_impl);
-stub!(ftime64_s_impl);
-stub!(get_daylight);
-stub!(get_dstbias);
-stub!(get_timezone);
-stub!(get_tzname);
+define_stub_fn!(DLL, time32_impl, 0);
+define_stub_fn!(DLL, time64_impl, 0);
+define_stub_fn!(DLL, clock_impl, 0);
+define_stub_fn!(DLL, difftime32_impl, 0);
+define_stub_fn!(DLL, difftime64_impl, 0);
+define_stub_fn!(DLL, mktime32_impl, 0);
+define_stub_fn!(DLL, mktime64_impl, 0);
+define_stub_fn!(DLL, gmtime32_impl, 0);
+define_stub_fn!(DLL, gmtime32_s_impl, 0);
+define_stub_fn!(DLL, gmtime64_impl, 0);
+define_stub_fn!(DLL, gmtime64_s_impl, 0);
+define_stub_fn!(DLL, localtime32_impl, 0);
+define_stub_fn!(DLL, localtime32_s_impl, 0);
+define_stub_fn!(DLL, localtime64_impl, 0);
+define_stub_fn!(DLL, localtime64_s_impl, 0);
+define_stub_fn!(DLL, asctime_impl, 0);
+define_stub_fn!(DLL, asctime_s_impl, 0);
+define_stub_fn!(DLL, wasctime_impl, 0);
+define_stub_fn!(DLL, wasctime_s_impl, 0);
+define_stub_fn!(DLL, ctime32_impl, 0);
+define_stub_fn!(DLL, ctime32_s_impl, 0);
+define_stub_fn!(DLL, ctime64_impl, 0);
+define_stub_fn!(DLL, ctime64_s_impl, 0);
+define_stub_fn!(DLL, wctime32_impl, 0);
+define_stub_fn!(DLL, wctime32_s_impl, 0);
+define_stub_fn!(DLL, wctime64_impl, 0);
+define_stub_fn!(DLL, wctime64_s_impl, 0);
+define_stub_fn!(DLL, strdate_impl, 0);
+define_stub_fn!(DLL, strdate_s_impl, 0);
+define_stub_fn!(DLL, wstrdate_impl, 0);
+define_stub_fn!(DLL, wstrdate_s_impl, 0);
+define_stub_fn!(DLL, strtime_impl, 0);
+define_stub_fn!(DLL, strtime_s_impl, 0);
+define_stub_fn!(DLL, wstrtime_impl, 0);
+define_stub_fn!(DLL, wstrtime_s_impl, 0);
+define_stub_fn!(DLL, tzset_impl, 0);
+define_stub_fn!(DLL, daylight, 0);
+define_stub_fn!(DLL, dstbias, 0);
+define_stub_fn!(DLL, timezone, 0);
+define_stub_fn!(DLL, tzname, 0);
+define_stub_fn!(DLL, utime32_impl, 0);
+define_stub_fn!(DLL, utime64_impl, 0);
+define_stub_fn!(DLL, wutime32_impl, 0);
+define_stub_fn!(DLL, wutime64_impl, 0);
+define_stub_fn!(DLL, futime32_impl, 0);
+define_stub_fn!(DLL, futime64_impl, 0);
+define_stub_fn!(DLL, ftime32_impl, 0);
+define_stub_fn!(DLL, ftime32_s_impl, 0);
+define_stub_fn!(DLL, ftime64_impl, 0);
+define_stub_fn!(DLL, ftime64_s_impl, 0);
+define_stub_fn!(DLL, get_daylight, 0);
+define_stub_fn!(DLL, get_dstbias, 0);
+define_stub_fn!(DLL, get_timezone, 0);
+define_stub_fn!(DLL, get_tzname, 0);
 
 pub fn register(vm: &mut Vm) {
     // Time functions

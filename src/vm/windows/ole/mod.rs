@@ -8,21 +8,14 @@ pub const DLL_NAME: &str = "OLE.dll";
 use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL_NAME, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // OLE.dll exports (Win32::OLE Perl module)
-stub!(create_perl_object);
-stub!(set_sv_from_variant);
-stub!(set_sv_from_variant_ex);
-stub!(set_variant_from_sv);
-stub!(boot_win32_ole);
+define_stub_fn!(DLL, create_perl_object, 0);
+define_stub_fn!(DLL, set_sv_from_variant, 0);
+define_stub_fn!(DLL, set_sv_from_variant_ex, 0);
+define_stub_fn!(DLL, set_variant_from_sv, 0);
+define_stub_fn!(DLL, boot_win32_ole, 0);
 
 pub fn register(vm: &mut Vm) {
     // Win32::OLE Perl module functions

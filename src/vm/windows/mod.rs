@@ -2,6 +2,7 @@
 
 #[macro_use]
 pub mod macros;
+pub mod core;
 pub mod kernel32;
 pub mod ntdll;
 pub mod com;
@@ -12,6 +13,7 @@ pub mod imagehlp;
 pub mod imm32;
 pub mod comdlg32;
 pub mod msvcr100;
+pub mod mscoree;
 pub mod ole;
 pub mod ole32;
 pub mod oleaut32;
@@ -93,6 +95,7 @@ pub fn register_default(vm: &mut Vm) {
     vcruntime::register(vm);
     ucrt::register(vm);
     msvcr100::register(vm);
+    mscoree::register(vm);
     ole::register(vm);
     ole32::register(vm);
     oleaut32::register(vm);

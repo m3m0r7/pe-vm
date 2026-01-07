@@ -2,6 +2,7 @@
 
 pub(super) const INVALID_SOCKET: u32 = 0xFFFF_FFFF;
 pub(super) const SOCKET_ERROR: u32 = 0xFFFF_FFFF;
+pub(super) const AF_INET: u16 = 2;
 
 pub(super) const WSAEINVAL: u32 = 10022;
 pub(super) const WSAENOTSOCK: u32 = 10038;

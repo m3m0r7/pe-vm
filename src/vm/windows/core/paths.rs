@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub fn map_path(&self, path: &str) -> String {

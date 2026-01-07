@@ -1,6 +1,6 @@
 use crate::pe::PeFile;
 
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub fn register_import(&mut self, module: &str, name: &str, func: HostCall) {

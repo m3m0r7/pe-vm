@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub(crate) fn unhandled_exception_filter(&self) -> u32 {

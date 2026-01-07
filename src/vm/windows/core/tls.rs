@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub(crate) fn tls_alloc(&mut self) -> u32 {

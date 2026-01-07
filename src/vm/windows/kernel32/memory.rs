@@ -8,6 +8,7 @@ const HEAP_HANDLE: u32 = 0x1000;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "GetProcessHeap", crate::vm::stdcall_args(0), get_process_heap);
+    vm.register_import_stdcall(DLL_NAME, "HeapCreate", crate::vm::stdcall_args(3), heap_create);
     vm.register_import_stdcall(DLL_NAME, "HeapAlloc", crate::vm::stdcall_args(3), heap_alloc);
     vm.register_import_stdcall(DLL_NAME, "HeapReAlloc", crate::vm::stdcall_args(4), heap_realloc);
     vm.register_import_stdcall(DLL_NAME, "HeapFree", crate::vm::stdcall_args(3), heap_free);
@@ -27,6 +28,10 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_process_heap(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    HEAP_HANDLE
+}
+
+fn heap_create(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     HEAP_HANDLE
 }
 

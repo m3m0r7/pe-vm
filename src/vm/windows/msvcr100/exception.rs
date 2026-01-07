@@ -5,100 +5,93 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // Exception handling
-stub!(cxx_throw_exception);
-stub!(cxx_frame_handler);
-stub!(cxx_frame_handler2);
-stub!(cxx_frame_handler3);
-stub!(cxx_call_unwind_dtor);
-stub!(cxx_call_unwind_del_dtor);
-stub!(cxx_call_unwind_std_del_dtor);
-stub!(cxx_call_unwind_vec_dtor);
-stub!(cxx_detect_rethrow);
-stub!(cxx_exception_filter);
-stub!(cxx_longjmp_unwind);
-stub!(cxx_query_exception_size);
-stub!(cxx_register_exception_object);
-stub!(cxx_unregister_exception_object);
-stub!(destruct_exception_object);
-stub!(is_exception_object_to_be_destroyed);
-stub!(frame_unwind_filter);
-stub!(xcpt_filter);
-stub!(cpp_xcpt_filter);
-stub!(eh_prolog);
-stub!(create_frame_info);
-stub!(find_and_unlink_frame);
-stub!(adjust_pointer);
-stub!(build_catch_object);
-stub!(build_catch_object_helper);
-stub!(type_match);
-stub!(nlg_dispatch2);
-stub!(nlg_return);
-stub!(nlg_return2);
-stub!(abnormal_termination);
-stub!(longjmp);
-stub!(setjmp);
-stub!(setjmp3);
-stub!(rt_cast_to_void);
-stub!(rt_dynamic_cast);
-stub!(rt_typeid);
-stub!(unwind_call);
+define_stub_fn!(DLL, cxx_throw_exception, 0);
+define_stub_fn!(DLL, cxx_frame_handler, 0);
+define_stub_fn!(DLL, cxx_frame_handler2, 0);
+define_stub_fn!(DLL, cxx_frame_handler3, 0);
+define_stub_fn!(DLL, cxx_call_unwind_dtor, 0);
+define_stub_fn!(DLL, cxx_call_unwind_del_dtor, 0);
+define_stub_fn!(DLL, cxx_call_unwind_std_del_dtor, 0);
+define_stub_fn!(DLL, cxx_call_unwind_vec_dtor, 0);
+define_stub_fn!(DLL, cxx_detect_rethrow, 0);
+define_stub_fn!(DLL, cxx_exception_filter, 0);
+define_stub_fn!(DLL, cxx_longjmp_unwind, 0);
+define_stub_fn!(DLL, cxx_query_exception_size, 0);
+define_stub_fn!(DLL, cxx_register_exception_object, 0);
+define_stub_fn!(DLL, cxx_unregister_exception_object, 0);
+define_stub_fn!(DLL, destruct_exception_object, 0);
+define_stub_fn!(DLL, is_exception_object_to_be_destroyed, 0);
+define_stub_fn!(DLL, frame_unwind_filter, 0);
+define_stub_fn!(DLL, xcpt_filter, 0);
+define_stub_fn!(DLL, cpp_xcpt_filter, 0);
+define_stub_fn!(DLL, eh_prolog, 0);
+define_stub_fn!(DLL, create_frame_info, 0);
+define_stub_fn!(DLL, find_and_unlink_frame, 0);
+define_stub_fn!(DLL, adjust_pointer, 0);
+define_stub_fn!(DLL, build_catch_object, 0);
+define_stub_fn!(DLL, build_catch_object_helper, 0);
+define_stub_fn!(DLL, type_match, 0);
+define_stub_fn!(DLL, nlg_dispatch2, 0);
+define_stub_fn!(DLL, nlg_return, 0);
+define_stub_fn!(DLL, nlg_return2, 0);
+define_stub_fn!(DLL, abnormal_termination, 0);
+define_stub_fn!(DLL, longjmp, 0);
+define_stub_fn!(DLL, setjmp, 0);
+define_stub_fn!(DLL, setjmp3, 0);
+define_stub_fn!(DLL, rt_cast_to_void, 0);
+define_stub_fn!(DLL, rt_dynamic_cast, 0);
+define_stub_fn!(DLL, rt_typeid, 0);
+define_stub_fn!(DLL, unwind_call, 0);
 
 // Exception classes
-stub!(exception_ctor);
-stub!(exception_ctor_str);
-stub!(exception_ctor_copy);
-stub!(exception_dtor);
-stub!(exception_what);
-stub!(exception_copy_str);
-stub!(exception_assign);
-stub!(bad_cast_ctor);
-stub!(bad_cast_dtor);
-stub!(bad_typeid_ctor);
-stub!(bad_typeid_dtor);
-stub!(non_rtti_object_ctor);
-stub!(non_rtti_object_dtor);
-stub!(type_info_dtor);
-stub!(type_info_name);
-stub!(type_info_raw_name);
-stub!(type_info_eq);
-stub!(type_info_ne);
-stub!(type_info_before);
-stub!(uncaught_exception);
+define_stub_fn!(DLL, exception_ctor, 0);
+define_stub_fn!(DLL, exception_ctor_str, 0);
+define_stub_fn!(DLL, exception_ctor_copy, 0);
+define_stub_fn!(DLL, exception_dtor, 0);
+define_stub_fn!(DLL, exception_what, 0);
+define_stub_fn!(DLL, exception_copy_str, 0);
+define_stub_fn!(DLL, exception_assign, 0);
+define_stub_fn!(DLL, bad_cast_ctor, 0);
+define_stub_fn!(DLL, bad_cast_dtor, 0);
+define_stub_fn!(DLL, bad_typeid_ctor, 0);
+define_stub_fn!(DLL, bad_typeid_dtor, 0);
+define_stub_fn!(DLL, non_rtti_object_ctor, 0);
+define_stub_fn!(DLL, non_rtti_object_dtor, 0);
+define_stub_fn!(DLL, type_info_dtor, 0);
+define_stub_fn!(DLL, type_info_name, 0);
+define_stub_fn!(DLL, type_info_raw_name, 0);
+define_stub_fn!(DLL, type_info_eq, 0);
+define_stub_fn!(DLL, type_info_ne, 0);
+define_stub_fn!(DLL, type_info_before, 0);
+define_stub_fn!(DLL, uncaught_exception, 0);
 
 // Concurrency exception classes
-stub!(bad_target_ctor);
-stub!(context_self_unblock_ctor);
-stub!(context_unblock_unbalanced_ctor);
-stub!(default_scheduler_exists_ctor);
-stub!(improper_lock_ctor);
-stub!(improper_scheduler_attach_ctor);
-stub!(improper_scheduler_detach_ctor);
-stub!(improper_scheduler_reference_ctor);
-stub!(invalid_link_target_ctor);
-stub!(invalid_multiple_scheduling_ctor);
-stub!(invalid_operation_ctor);
-stub!(invalid_oversubscribe_operation_ctor);
-stub!(invalid_scheduler_policy_key_ctor);
-stub!(invalid_scheduler_policy_thread_specification_ctor);
-stub!(invalid_scheduler_policy_value_ctor);
-stub!(message_not_found_ctor);
-stub!(missing_wait_ctor);
-stub!(nested_scheduler_missing_detach_ctor);
-stub!(operation_timed_out_ctor);
-stub!(scheduler_not_attached_ctor);
-stub!(scheduler_resource_allocation_error_ctor);
-stub!(task_canceled_ctor);
-stub!(unsupported_os_ctor);
+define_stub_fn!(DLL, bad_target_ctor, 0);
+define_stub_fn!(DLL, context_self_unblock_ctor, 0);
+define_stub_fn!(DLL, context_unblock_unbalanced_ctor, 0);
+define_stub_fn!(DLL, default_scheduler_exists_ctor, 0);
+define_stub_fn!(DLL, improper_lock_ctor, 0);
+define_stub_fn!(DLL, improper_scheduler_attach_ctor, 0);
+define_stub_fn!(DLL, improper_scheduler_detach_ctor, 0);
+define_stub_fn!(DLL, improper_scheduler_reference_ctor, 0);
+define_stub_fn!(DLL, invalid_link_target_ctor, 0);
+define_stub_fn!(DLL, invalid_multiple_scheduling_ctor, 0);
+define_stub_fn!(DLL, invalid_operation_ctor, 0);
+define_stub_fn!(DLL, invalid_oversubscribe_operation_ctor, 0);
+define_stub_fn!(DLL, invalid_scheduler_policy_key_ctor, 0);
+define_stub_fn!(DLL, invalid_scheduler_policy_thread_specification_ctor, 0);
+define_stub_fn!(DLL, invalid_scheduler_policy_value_ctor, 0);
+define_stub_fn!(DLL, message_not_found_ctor, 0);
+define_stub_fn!(DLL, missing_wait_ctor, 0);
+define_stub_fn!(DLL, nested_scheduler_missing_detach_ctor, 0);
+define_stub_fn!(DLL, operation_timed_out_ctor, 0);
+define_stub_fn!(DLL, scheduler_not_attached_ctor, 0);
+define_stub_fn!(DLL, scheduler_resource_allocation_error_ctor, 0);
+define_stub_fn!(DLL, task_canceled_ctor, 0);
+define_stub_fn!(DLL, unsupported_os_ctor, 0);
 
 pub fn register(vm: &mut Vm) {
     // C++ exception handling

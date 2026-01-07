@@ -8,44 +8,37 @@ pub const DLL_NAME: &str = "STKIT432.dll";
 use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL_NAME, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // Setup Toolkit functions
-stub!(sync_shell);
-stub!(dll_self_register);
-stub!(alloc_unit);
-stub!(set_time);
-stub!(disk_space_free);
-stub!(get_win_platform);
-stub!(lmemcpy);
-stub!(f_nt_with_shell);
+define_stub_fn!(DLL, sync_shell, 0);
+define_stub_fn!(DLL, dll_self_register, 0);
+define_stub_fn!(DLL, alloc_unit, 0);
+define_stub_fn!(DLL, set_time, 0);
+define_stub_fn!(DLL, disk_space_free, 0);
+define_stub_fn!(DLL, get_win_platform, 0);
+define_stub_fn!(DLL, lmemcpy, 0);
+define_stub_fn!(DLL, f_nt_with_shell, 0);
 
 // Action logging functions
-stub!(abort_action);
-stub!(add_action_note);
-stub!(change_action_key);
-stub!(commit_action);
-stub!(f_within_action);
-stub!(log_error);
-stub!(log_warning);
-stub!(new_action);
-stub!(enable_logging);
-stub!(disable_logging);
-stub!(log_note);
-stub!(log_config);
+define_stub_fn!(DLL, abort_action, 0);
+define_stub_fn!(DLL, add_action_note, 0);
+define_stub_fn!(DLL, change_action_key, 0);
+define_stub_fn!(DLL, commit_action, 0);
+define_stub_fn!(DLL, f_within_action, 0);
+define_stub_fn!(DLL, log_error, 0);
+define_stub_fn!(DLL, log_warning, 0);
+define_stub_fn!(DLL, new_action, 0);
+define_stub_fn!(DLL, enable_logging, 0);
+define_stub_fn!(DLL, disable_logging, 0);
+define_stub_fn!(DLL, log_note, 0);
+define_stub_fn!(DLL, log_config, 0);
 
 // Shell folder functions
-stub!(f_create_shell_folder);
-stub!(f_create_shell_link);
-stub!(f_remove_shell_link);
-stub!(get_long_path_name);
+define_stub_fn!(DLL, f_create_shell_folder, 0);
+define_stub_fn!(DLL, f_create_shell_link, 0);
+define_stub_fn!(DLL, f_remove_shell_link, 0);
+define_stub_fn!(DLL, get_long_path_name, 0);
 
 pub fn register(vm: &mut Vm) {
     // Core setup functions

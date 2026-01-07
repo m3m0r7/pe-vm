@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub(crate) fn set_last_error(&mut self, value: u32) {

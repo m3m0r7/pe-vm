@@ -5,39 +5,32 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // CRT initialization
-stub!(dllonexit_impl);
-stub!(encode_pointer);
-stub!(decode_pointer);
-stub!(encoded_null);
-stub!(crt_atexit);
-stub!(crt_at_quick_exit);
-stub!(get_sbh_threshold);
-stub!(set_sbh_threshold);
-stub!(seh_longjmp_unwind);
-stub!(seh_longjmp_unwind4);
-stub!(local_unwind2);
-stub!(local_unwind4);
-stub!(global_unwind2);
-stub!(except_handler2);
-stub!(except_handler3);
-stub!(except_handler4);
-stub!(security_error_handler);
-stub!(security_init_cookie);
-stub!(crt_dbg_report_v);
-stub!(crt_dbg_report_wv);
-stub!(pxcptinfoptrs);
-stub!(signal_impl);
-stub!(raise_impl);
+define_stub_fn!(DLL, dllonexit_impl, 0);
+define_stub_fn!(DLL, encode_pointer, 0);
+define_stub_fn!(DLL, decode_pointer, 0);
+define_stub_fn!(DLL, encoded_null, 0);
+define_stub_fn!(DLL, crt_atexit, 0);
+define_stub_fn!(DLL, crt_at_quick_exit, 0);
+define_stub_fn!(DLL, get_sbh_threshold, 0);
+define_stub_fn!(DLL, set_sbh_threshold, 0);
+define_stub_fn!(DLL, seh_longjmp_unwind, 0);
+define_stub_fn!(DLL, seh_longjmp_unwind4, 0);
+define_stub_fn!(DLL, local_unwind2, 0);
+define_stub_fn!(DLL, local_unwind4, 0);
+define_stub_fn!(DLL, global_unwind2, 0);
+define_stub_fn!(DLL, except_handler2, 0);
+define_stub_fn!(DLL, except_handler3, 0);
+define_stub_fn!(DLL, except_handler4, 0);
+define_stub_fn!(DLL, security_error_handler, 0);
+define_stub_fn!(DLL, security_init_cookie, 0);
+define_stub_fn!(DLL, crt_dbg_report_v, 0);
+define_stub_fn!(DLL, crt_dbg_report_wv, 0);
+define_stub_fn!(DLL, pxcptinfoptrs, 0);
+define_stub_fn!(DLL, signal_impl, 0);
+define_stub_fn!(DLL, raise_impl, 0);
 
 pub fn register(vm: &mut Vm) {
     // CRT initialization

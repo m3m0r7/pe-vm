@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub(crate) fn set_last_com_out_params(&mut self, params: Vec<ComOutParam>) {

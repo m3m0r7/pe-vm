@@ -5,79 +5,72 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // Memory allocation
-stub!(malloc_impl);
-stub!(calloc_impl);
-stub!(realloc_impl);
-stub!(free_impl);
-stub!(aligned_malloc);
-stub!(aligned_realloc);
-stub!(aligned_recalloc);
-stub!(aligned_free);
-stub!(aligned_msize);
-stub!(aligned_offset_malloc);
-stub!(aligned_offset_realloc);
-stub!(aligned_offset_recalloc);
-stub!(msize);
-stub!(expand);
-stub!(heapchk);
-stub!(heapmin);
-stub!(heapset);
-stub!(heapwalk);
-stub!(heapadd);
-stub!(heapused);
-stub!(recalloc);
-stub!(query_new_handler);
-stub!(query_new_mode);
-stub!(set_new_handler);
-stub!(set_new_mode);
-stub!(crt_dbg_break);
-stub!(crt_dbg_report);
-stub!(crt_dbg_report_w);
-stub!(crt_set_alloc_hook);
-stub!(crt_set_break_alloc);
-stub!(crt_set_dbg_flag);
-stub!(crt_set_dump_client);
-stub!(crt_set_report_file);
-stub!(crt_set_report_hook);
-stub!(crt_set_report_hook2);
-stub!(crt_set_report_mode);
-stub!(crt_mem_checkpoint);
-stub!(crt_mem_difference);
-stub!(crt_mem_dump_all_objects_since);
-stub!(crt_mem_dump_statistics);
-stub!(crt_is_valid_heap_pointer);
-stub!(crt_is_valid_pointer);
-stub!(crt_check_memory);
-stub!(crt_dump_memory_leaks);
-stub!(get_heap_handle);
-stub!(sbh_heap_init);
-stub!(new_operator);
-stub!(new_operator_debug);
-stub!(delete_operator);
-stub!(new_array_operator);
-stub!(new_array_operator_debug);
-stub!(delete_array_operator);
-stub!(nh_malloc);
-stub!(nh_malloc_dbg);
-stub!(heap_alloc);
-stub!(heap_realloc);
-stub!(heap_free);
-stub!(locked_malloc);
-stub!(locked_free);
-stub!(purecall);
-stub!(onexit);
-stub!(initterm);
-stub!(initterm_e);
+define_stub_fn!(DLL, malloc_impl, 0);
+define_stub_fn!(DLL, calloc_impl, 0);
+define_stub_fn!(DLL, realloc_impl, 0);
+define_stub_fn!(DLL, free_impl, 0);
+define_stub_fn!(DLL, aligned_malloc, 0);
+define_stub_fn!(DLL, aligned_realloc, 0);
+define_stub_fn!(DLL, aligned_recalloc, 0);
+define_stub_fn!(DLL, aligned_free, 0);
+define_stub_fn!(DLL, aligned_msize, 0);
+define_stub_fn!(DLL, aligned_offset_malloc, 0);
+define_stub_fn!(DLL, aligned_offset_realloc, 0);
+define_stub_fn!(DLL, aligned_offset_recalloc, 0);
+define_stub_fn!(DLL, msize, 0);
+define_stub_fn!(DLL, expand, 0);
+define_stub_fn!(DLL, heapchk, 0);
+define_stub_fn!(DLL, heapmin, 0);
+define_stub_fn!(DLL, heapset, 0);
+define_stub_fn!(DLL, heapwalk, 0);
+define_stub_fn!(DLL, heapadd, 0);
+define_stub_fn!(DLL, heapused, 0);
+define_stub_fn!(DLL, recalloc, 0);
+define_stub_fn!(DLL, query_new_handler, 0);
+define_stub_fn!(DLL, query_new_mode, 0);
+define_stub_fn!(DLL, set_new_handler, 0);
+define_stub_fn!(DLL, set_new_mode, 0);
+define_stub_fn!(DLL, crt_dbg_break, 0);
+define_stub_fn!(DLL, crt_dbg_report, 0);
+define_stub_fn!(DLL, crt_dbg_report_w, 0);
+define_stub_fn!(DLL, crt_set_alloc_hook, 0);
+define_stub_fn!(DLL, crt_set_break_alloc, 0);
+define_stub_fn!(DLL, crt_set_dbg_flag, 0);
+define_stub_fn!(DLL, crt_set_dump_client, 0);
+define_stub_fn!(DLL, crt_set_report_file, 0);
+define_stub_fn!(DLL, crt_set_report_hook, 0);
+define_stub_fn!(DLL, crt_set_report_hook2, 0);
+define_stub_fn!(DLL, crt_set_report_mode, 0);
+define_stub_fn!(DLL, crt_mem_checkpoint, 0);
+define_stub_fn!(DLL, crt_mem_difference, 0);
+define_stub_fn!(DLL, crt_mem_dump_all_objects_since, 0);
+define_stub_fn!(DLL, crt_mem_dump_statistics, 0);
+define_stub_fn!(DLL, crt_is_valid_heap_pointer, 0);
+define_stub_fn!(DLL, crt_is_valid_pointer, 0);
+define_stub_fn!(DLL, crt_check_memory, 0);
+define_stub_fn!(DLL, crt_dump_memory_leaks, 0);
+define_stub_fn!(DLL, get_heap_handle, 0);
+define_stub_fn!(DLL, sbh_heap_init, 0);
+define_stub_fn!(DLL, new_operator, 0);
+define_stub_fn!(DLL, new_operator_debug, 0);
+define_stub_fn!(DLL, delete_operator, 0);
+define_stub_fn!(DLL, new_array_operator, 0);
+define_stub_fn!(DLL, new_array_operator_debug, 0);
+define_stub_fn!(DLL, delete_array_operator, 0);
+define_stub_fn!(DLL, nh_malloc, 0);
+define_stub_fn!(DLL, nh_malloc_dbg, 0);
+define_stub_fn!(DLL, heap_alloc, 0);
+define_stub_fn!(DLL, heap_realloc, 0);
+define_stub_fn!(DLL, heap_free, 0);
+define_stub_fn!(DLL, locked_malloc, 0);
+define_stub_fn!(DLL, locked_free, 0);
+define_stub_fn!(DLL, purecall, 0);
+define_stub_fn!(DLL, onexit, 0);
+define_stub_fn!(DLL, initterm, 0);
+define_stub_fn!(DLL, initterm_e, 0);
 
 pub fn register(vm: &mut Vm) {
     // Standard C memory functions

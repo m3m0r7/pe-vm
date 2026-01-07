@@ -403,6 +403,107 @@ macro_rules! define_stub_fn {
     };
 }
 
+/// Wrapper for wide (UTF-16) string arguments in vm_set_args!.
+pub struct VmWideStr<'a>(pub &'a str);
+
+impl<'a> VmWideStr<'a> {
+    pub fn new(value: &'a str) -> Self {
+        Self(value)
+    }
+}
+
+/// Helper macro to mark a UTF-16 string argument for vm_set_args!.
+#[macro_export]
+macro_rules! vm_wstr {
+    ($value:expr) => {
+        $crate::vm::windows::macros::VmWideStr::new($value)
+    };
+}
+
+pub(crate) trait VmSetArg {
+    fn write(self, vm: &mut Vm, offset: u32);
+}
+
+impl Vm {
+    pub(crate) fn write_arg<T: VmSetArg>(&mut self, offset: u32, value: T) {
+        value.write(self, offset);
+    }
+}
+
+fn alloc_c_string(vm: &mut Vm, value: &str) -> u32 {
+    let mut bytes = value.as_bytes().to_vec();
+    bytes.push(0);
+    vm.alloc_bytes(&bytes, 1).unwrap()
+}
+
+fn alloc_wide_string(vm: &mut Vm, value: &str) -> u32 {
+    let mut bytes = Vec::new();
+    for unit in value.encode_utf16() {
+        bytes.extend_from_slice(&unit.to_le_bytes());
+    }
+    bytes.extend_from_slice(&0u16.to_le_bytes());
+    vm.alloc_bytes(&bytes, 2).unwrap()
+}
+
+impl VmSetArg for u32 {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        vm.write_u32(offset, self).unwrap();
+    }
+}
+
+impl VmSetArg for i32 {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        vm.write_u32(offset, self as u32).unwrap();
+    }
+}
+
+impl VmSetArg for u16 {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        vm.write_u32(offset, self as u32).unwrap();
+    }
+}
+
+impl VmSetArg for usize {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        vm.write_u32(offset, self as u32).unwrap();
+    }
+}
+
+impl VmSetArg for &str {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        let ptr = alloc_c_string(vm, self);
+        vm.write_u32(offset, ptr).unwrap();
+    }
+}
+
+impl VmSetArg for String {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        let ptr = alloc_c_string(vm, &self);
+        vm.write_u32(offset, ptr).unwrap();
+    }
+}
+
+impl<'a> VmSetArg for &'a [u8] {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        let ptr = vm.alloc_bytes(self, 1).unwrap();
+        vm.write_u32(offset, ptr).unwrap();
+    }
+}
+
+impl VmSetArg for Vec<u8> {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        let ptr = vm.alloc_bytes(&self, 1).unwrap();
+        vm.write_u32(offset, ptr).unwrap();
+    }
+}
+
+impl<'a> VmSetArg for VmWideStr<'a> {
+    fn write(self, vm: &mut Vm, offset: u32) {
+        let ptr = alloc_wide_string(vm, self.0);
+        vm.write_u32(offset, ptr).unwrap();
+    }
+}
+
 /// Macro to write function arguments to the stack (for testing).
 ///
 /// # Syntax
@@ -412,8 +513,8 @@ macro_rules! define_stub_fn {
 /// ```
 ///
 /// This writes u32 values to stack_ptr+4, stack_ptr+8, etc.
-/// For strings, you can pass a string slice or &[u8] which will be written
-/// to heap and its pointer placed on the stack.
+/// For ANSI strings, pass a string slice or &[u8] to write into the heap and
+/// place its pointer on the stack. Use `vm_wstr!()` for UTF-16 strings.
 ///
 /// # Examples
 ///
@@ -428,7 +529,7 @@ macro_rules! define_stub_fn {
 macro_rules! vm_set_args {
     // Internal: write single value
     (@write $vm:expr, $offset:expr, $val:expr) => {
-        $vm.write_u32($offset, $val as u32).unwrap();
+        $vm.write_arg($offset, $val);
     };
 
     // 1 argument
@@ -529,7 +630,7 @@ mod tests {
     fn test_vm_args_single_u32() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        vm.write_u32(stack + 4, 0x1234).unwrap();
+        vm_set_args!(vm, stack; 0x1234u32);
         let (value,) = vm_args!(&vm, stack; u32);
         assert_eq!(value, 0x1234);
     }
@@ -538,10 +639,7 @@ mod tests {
     fn test_vm_args_four_u32() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 20;
-        vm.write_u32(stack + 4, 0xAAAA).unwrap();
-        vm.write_u32(stack + 8, 0xBBBB).unwrap();
-        vm.write_u32(stack + 12, 0xCCCC).unwrap();
-        vm.write_u32(stack + 16, 0xDDDD).unwrap();
+        vm_set_args!(vm, stack; 0xAAAAu32, 0xBBBBu32, 0xCCCCu32, 0xDDDDu32);
         let (a, b, c, d) = vm_args!(&vm, stack; u32, u32, u32, u32);
         assert_eq!(a, 0xAAAA);
         assert_eq!(b, 0xBBBB);
@@ -553,9 +651,7 @@ mod tests {
     fn test_vm_args_mixed_types() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, 0x1234).unwrap();
-        vm.write_u32(stack + 8, 0xFFFF_FFFF).unwrap(); // -1 as i32
-        vm.write_u32(stack + 12, 42).unwrap();
+        vm_set_args!(vm, stack; 0x1234u32, -1i32, 42usize);
         let (handle, signed, index) = vm_args!(&vm, stack; u32, i32, usize);
         assert_eq!(handle, 0x1234);
         assert_eq!(signed, -1);
@@ -566,7 +662,7 @@ mod tests {
     fn test_vm_args_u16() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        vm.write_u32(stack + 4, 0x00001234).unwrap();
+        vm_set_args!(vm, stack; 0x1234u16);
         let (value,) = vm_args!(&vm, stack; u16);
         assert_eq!(value, 0x1234u16);
     }
@@ -575,11 +671,7 @@ mod tests {
     fn test_vm_args_str() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
-        let str_ptr = vm.heap_start as u32;
-        // Write "Hello\0" to heap
-        vm.write_bytes(str_ptr, b"Hello\0").unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
-        vm.write_u32(stack + 8, 42).unwrap();
+        vm_set_args!(vm, stack; "Hello", 42u32);
         let (s, n) = vm_args!(&vm, stack; str, u32);
         assert_eq!(s, "Hello");
         assert_eq!(n, 42);
@@ -589,12 +681,7 @@ mod tests {
     fn test_vm_args_wstr() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        // Write L"Hi\0" (UTF-16LE)
-        vm.write_u16(str_ptr, 'H' as u16).unwrap();
-        vm.write_u16(str_ptr + 2, 'i' as u16).unwrap();
-        vm.write_u16(str_ptr + 4, 0).unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; vm_wstr!("Hi"));
         let (s,) = vm_args!(&vm, stack; wstr);
         assert_eq!(s, "Hi");
     }
@@ -603,7 +690,7 @@ mod tests {
     fn test_vm_args_null_str() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        vm.write_u32(stack + 4, 0).unwrap(); // NULL pointer
+        vm_set_args!(vm, stack; 0u32); // NULL pointer
         let (s,) = vm_args!(&vm, stack; str);
         assert_eq!(s, "");
     }
@@ -612,7 +699,7 @@ mod tests {
     fn test_vm_args_null_wstr() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        vm.write_u32(stack + 4, 0).unwrap(); // NULL pointer
+        vm_set_args!(vm, stack; 0u32); // NULL pointer
         let (s,) = vm_args!(&vm, stack; wstr);
         assert_eq!(s, "");
     }
@@ -748,9 +835,7 @@ mod tests {
     fn test_vm_args_str_len_macro() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        vm.write_bytes(str_ptr, b"Hello World").unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; "Hello World");
         let text = vm_args_str_len!(&vm, stack; 5);
         assert_eq!(text, "Hello");
     }
@@ -759,13 +844,7 @@ mod tests {
     fn test_vm_args_wstr_len_macro() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        // Write L"Test"
-        vm.write_u16(str_ptr, 'T' as u16).unwrap();
-        vm.write_u16(str_ptr + 2, 'e' as u16).unwrap();
-        vm.write_u16(str_ptr + 4, 's' as u16).unwrap();
-        vm.write_u16(str_ptr + 6, 't' as u16).unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; vm_wstr!("Test"));
         let text = vm_args_wstr_len!(&vm, stack; 4);
         assert_eq!(text, "Test");
     }
@@ -774,9 +853,7 @@ mod tests {
     fn test_vm_args_str_delim_macro_default() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        vm.write_bytes(str_ptr, b"Hello\0World").unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; "Hello\0World");
         let text = vm_args_str_delim!(&vm, stack);
         assert_eq!(text, "Hello");
     }
@@ -785,9 +862,7 @@ mod tests {
     fn test_vm_args_str_delim_macro_custom() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        vm.write_bytes(str_ptr, b"Line1\nLine2").unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; "Line1\nLine2");
         let text = vm_args_str_delim!(&vm, stack; b'\n');
         assert_eq!(text, "Line1");
     }
@@ -796,12 +871,7 @@ mod tests {
     fn test_vm_args_wstr_delim_macro_default() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        // Write L"OK\0"
-        vm.write_u16(str_ptr, 'O' as u16).unwrap();
-        vm.write_u16(str_ptr + 2, 'K' as u16).unwrap();
-        vm.write_u16(str_ptr + 4, 0).unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; vm_wstr!("OK"));
         let text = vm_args_wstr_delim!(&vm, stack);
         assert_eq!(text, "OK");
     }
@@ -810,12 +880,7 @@ mod tests {
     fn test_vm_args_wstr_delim_macro_custom() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        let str_ptr = vm.heap_start as u32;
-        // Write L"A;B"
-        vm.write_u16(str_ptr, 'A' as u16).unwrap();
-        vm.write_u16(str_ptr + 2, ';' as u16).unwrap();
-        vm.write_u16(str_ptr + 4, 'B' as u16).unwrap();
-        vm.write_u32(stack + 4, str_ptr).unwrap();
+        vm_set_args!(vm, stack; vm_wstr!("A;B"));
         let text = vm_args_wstr_delim!(&vm, stack; ';' as u16);
         assert_eq!(text, "A");
     }

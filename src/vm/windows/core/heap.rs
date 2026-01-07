@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     // Allocate bytes in the VM heap for host-side helpers (COM/BSTR/etc).

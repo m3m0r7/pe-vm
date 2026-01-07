@@ -2,6 +2,7 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
+    vm.register_import_any_stdcall("GetVersion", crate::vm::stdcall_args(0), get_version);
     vm.register_import_any_stdcall("GetVersionExA", crate::vm::stdcall_args(1), get_version_ex_a);
     vm.register_import_any_stdcall("GetVersionExW", crate::vm::stdcall_args(1), get_version_ex_w);
     vm.register_import_any_stdcall(
@@ -9,6 +10,10 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(3),
         rtl_get_nt_version_numbers,
     );
+}
+
+fn get_version(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    (19045u32 << 16) | 0x0A
 }
 
 // Provide a stable OS version for version checks inside DLLs.

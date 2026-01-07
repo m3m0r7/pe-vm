@@ -1,7 +1,6 @@
 //! VM configuration and core types.
 
 mod config;
-mod core;
 mod error;
 mod host;
 mod registers;

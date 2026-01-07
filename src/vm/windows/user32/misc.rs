@@ -12,6 +12,8 @@ pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "EnableWindow", crate::vm::stdcall_args(2), enable_window);
     vm.register_import_stdcall(DLL_NAME, "CharNextA", crate::vm::stdcall_args(1), char_next_a);
     vm.register_import_stdcall(DLL_NAME, "CharNextW", crate::vm::stdcall_args(1), char_next_w);
+    vm.register_import_stdcall(DLL_NAME, "SetTimer", crate::vm::stdcall_args(4), set_timer);
+    vm.register_import_stdcall(DLL_NAME, "KillTimer", crate::vm::stdcall_args(2), kill_timer);
 }
 
 fn char_next_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -28,6 +30,19 @@ fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     ptr.wrapping_add(2)
+}
+
+fn set_timer(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_, timer_id, _, _) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    if timer_id == 0 {
+        1
+    } else {
+        timer_id
+    }
+}
+
+fn kill_timer(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
 }
 
 #[cfg(test)]

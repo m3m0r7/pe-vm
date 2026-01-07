@@ -5,108 +5,101 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-macro_rules! stub {
-    ($name:ident) => {
-        fn $name(vm: &mut Vm, _sp: u32) -> u32 {
-            check_stub(vm, DLL, stringify!($name));
-            0
-        }
-    };
-}
+
 
 // Low-level file I/O
-stub!(open_impl);
-stub!(wopen_impl);
-stub!(sopen_impl);
-stub!(sopen_s_impl);
-stub!(wsopen_impl);
-stub!(wsopen_s_impl);
-stub!(creat_impl);
-stub!(wcreat_impl);
-stub!(close_impl);
-stub!(read_impl);
-stub!(write_impl);
-stub!(lseek_impl);
-stub!(lseeki64_impl);
-stub!(tell_impl);
-stub!(telli64_impl);
-stub!(dup_impl);
-stub!(dup2_impl);
-stub!(eof_impl);
-stub!(commit_impl);
-stub!(chsize_impl);
-stub!(chsize_s_impl);
-stub!(filelength_impl);
-stub!(filelengthi64_impl);
-stub!(locking_impl);
-stub!(isatty_impl);
-stub!(setmode_impl);
-stub!(umask_impl);
-stub!(umask_s_impl);
-stub!(unlink_impl);
-stub!(wunlink_impl);
-stub!(access_impl);
-stub!(access_s_impl);
-stub!(waccess_impl);
-stub!(waccess_s_impl);
-stub!(chmod_impl);
-stub!(wchmod_impl);
-stub!(mktemp_impl);
-stub!(mktemp_s_impl);
-stub!(wmktemp_impl);
-stub!(wmktemp_s_impl);
-stub!(pipe_impl);
-stub!(getcwd_impl);
-stub!(wgetcwd_impl);
-stub!(getdcwd_impl);
-stub!(wgetdcwd_impl);
-stub!(getdcwd_nolock_impl);
-stub!(wgetdcwd_nolock_impl);
-stub!(chdir_impl);
-stub!(wchdir_impl);
-stub!(mkdir_impl);
-stub!(wmkdir_impl);
-stub!(rmdir_impl);
-stub!(wrmdir_impl);
-stub!(getdrive_impl);
-stub!(chdrive_impl);
+define_stub_fn!(DLL, open_impl, 0);
+define_stub_fn!(DLL, wopen_impl, 0);
+define_stub_fn!(DLL, sopen_impl, 0);
+define_stub_fn!(DLL, sopen_s_impl, 0);
+define_stub_fn!(DLL, wsopen_impl, 0);
+define_stub_fn!(DLL, wsopen_s_impl, 0);
+define_stub_fn!(DLL, creat_impl, 0);
+define_stub_fn!(DLL, wcreat_impl, 0);
+define_stub_fn!(DLL, close_impl, 0);
+define_stub_fn!(DLL, read_impl, 0);
+define_stub_fn!(DLL, write_impl, 0);
+define_stub_fn!(DLL, lseek_impl, 0);
+define_stub_fn!(DLL, lseeki64_impl, 0);
+define_stub_fn!(DLL, tell_impl, 0);
+define_stub_fn!(DLL, telli64_impl, 0);
+define_stub_fn!(DLL, dup_impl, 0);
+define_stub_fn!(DLL, dup2_impl, 0);
+define_stub_fn!(DLL, eof_impl, 0);
+define_stub_fn!(DLL, commit_impl, 0);
+define_stub_fn!(DLL, chsize_impl, 0);
+define_stub_fn!(DLL, chsize_s_impl, 0);
+define_stub_fn!(DLL, filelength_impl, 0);
+define_stub_fn!(DLL, filelengthi64_impl, 0);
+define_stub_fn!(DLL, locking_impl, 0);
+define_stub_fn!(DLL, isatty_impl, 0);
+define_stub_fn!(DLL, setmode_impl, 0);
+define_stub_fn!(DLL, umask_impl, 0);
+define_stub_fn!(DLL, umask_s_impl, 0);
+define_stub_fn!(DLL, unlink_impl, 0);
+define_stub_fn!(DLL, wunlink_impl, 0);
+define_stub_fn!(DLL, access_impl, 0);
+define_stub_fn!(DLL, access_s_impl, 0);
+define_stub_fn!(DLL, waccess_impl, 0);
+define_stub_fn!(DLL, waccess_s_impl, 0);
+define_stub_fn!(DLL, chmod_impl, 0);
+define_stub_fn!(DLL, wchmod_impl, 0);
+define_stub_fn!(DLL, mktemp_impl, 0);
+define_stub_fn!(DLL, mktemp_s_impl, 0);
+define_stub_fn!(DLL, wmktemp_impl, 0);
+define_stub_fn!(DLL, wmktemp_s_impl, 0);
+define_stub_fn!(DLL, pipe_impl, 0);
+define_stub_fn!(DLL, getcwd_impl, 0);
+define_stub_fn!(DLL, wgetcwd_impl, 0);
+define_stub_fn!(DLL, getdcwd_impl, 0);
+define_stub_fn!(DLL, wgetdcwd_impl, 0);
+define_stub_fn!(DLL, getdcwd_nolock_impl, 0);
+define_stub_fn!(DLL, wgetdcwd_nolock_impl, 0);
+define_stub_fn!(DLL, chdir_impl, 0);
+define_stub_fn!(DLL, wchdir_impl, 0);
+define_stub_fn!(DLL, mkdir_impl, 0);
+define_stub_fn!(DLL, wmkdir_impl, 0);
+define_stub_fn!(DLL, rmdir_impl, 0);
+define_stub_fn!(DLL, wrmdir_impl, 0);
+define_stub_fn!(DLL, getdrive_impl, 0);
+define_stub_fn!(DLL, chdrive_impl, 0);
 
 // File find
-stub!(findfirst32_impl);
-stub!(findfirst32i64_impl);
-stub!(findfirst64_impl);
-stub!(findfirst64i32_impl);
-stub!(findnext32_impl);
-stub!(findnext32i64_impl);
-stub!(findnext64_impl);
-stub!(findnext64i32_impl);
-stub!(findclose_impl);
-stub!(wfindfirst32_impl);
-stub!(wfindfirst32i64_impl);
-stub!(wfindfirst64_impl);
-stub!(wfindfirst64i32_impl);
-stub!(wfindnext32_impl);
-stub!(wfindnext32i64_impl);
-stub!(wfindnext64_impl);
-stub!(wfindnext64i32_impl);
+define_stub_fn!(DLL, findfirst32_impl, 0);
+define_stub_fn!(DLL, findfirst32i64_impl, 0);
+define_stub_fn!(DLL, findfirst64_impl, 0);
+define_stub_fn!(DLL, findfirst64i32_impl, 0);
+define_stub_fn!(DLL, findnext32_impl, 0);
+define_stub_fn!(DLL, findnext32i64_impl, 0);
+define_stub_fn!(DLL, findnext64_impl, 0);
+define_stub_fn!(DLL, findnext64i32_impl, 0);
+define_stub_fn!(DLL, findclose_impl, 0);
+define_stub_fn!(DLL, wfindfirst32_impl, 0);
+define_stub_fn!(DLL, wfindfirst32i64_impl, 0);
+define_stub_fn!(DLL, wfindfirst64_impl, 0);
+define_stub_fn!(DLL, wfindfirst64i32_impl, 0);
+define_stub_fn!(DLL, wfindnext32_impl, 0);
+define_stub_fn!(DLL, wfindnext32i64_impl, 0);
+define_stub_fn!(DLL, wfindnext64_impl, 0);
+define_stub_fn!(DLL, wfindnext64i32_impl, 0);
 
 // File stat
-stub!(stat32_impl);
-stub!(stat32i64_impl);
-stub!(stat64_impl);
-stub!(stat64i32_impl);
-stub!(wstat32_impl);
-stub!(wstat32i64_impl);
-stub!(wstat64_impl);
-stub!(wstat64i32_impl);
-stub!(fstat32_impl);
-stub!(fstat32i64_impl);
-stub!(fstat64_impl);
-stub!(fstat64i32_impl);
+define_stub_fn!(DLL, stat32_impl, 0);
+define_stub_fn!(DLL, stat32i64_impl, 0);
+define_stub_fn!(DLL, stat64_impl, 0);
+define_stub_fn!(DLL, stat64i32_impl, 0);
+define_stub_fn!(DLL, wstat32_impl, 0);
+define_stub_fn!(DLL, wstat32i64_impl, 0);
+define_stub_fn!(DLL, wstat64_impl, 0);
+define_stub_fn!(DLL, wstat64i32_impl, 0);
+define_stub_fn!(DLL, fstat32_impl, 0);
+define_stub_fn!(DLL, fstat32i64_impl, 0);
+define_stub_fn!(DLL, fstat64_impl, 0);
+define_stub_fn!(DLL, fstat64i32_impl, 0);
 
 // Pioinfo
-stub!(pioinfo);
-stub!(badioinfo);
+define_stub_fn!(DLL, pioinfo, 0);
+define_stub_fn!(DLL, badioinfo, 0);
 
 pub fn register(vm: &mut Vm) {
     // Low-level file I/O

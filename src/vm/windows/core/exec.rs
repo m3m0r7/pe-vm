@@ -1,6 +1,6 @@
 use crate::pe::PeFile;
 
-use super::super::*;
+use crate::vm::*;
 
 const NESTED_STACK_SLICE_SIZE: u32 = 0x20000;
 

@@ -1,9 +1,15 @@
 use crate::vm::Vm;
 use crate::vm_args;
 
-use super::helpers::read_w_len;
+use super::helpers::{read_bytes, read_w_len};
 
 pub(super) fn register(vm: &mut Vm) {
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetStringTypeA",
+        crate::vm::stdcall_args(4),
+        get_string_type_a,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "GetStringTypeW",
@@ -15,6 +21,12 @@ pub(super) fn register(vm: &mut Vm) {
         "CompareStringW",
         crate::vm::stdcall_args(6),
         compare_string_w,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "LCMapStringA",
+        crate::vm::stdcall_args(6),
+        lc_map_string_a,
     );
     vm.register_import_stdcall(
         "KERNEL32.dll",
@@ -37,6 +49,18 @@ fn get_string_type_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     let count = read_w_len(vm, src_ptr, src_len).len();
+    for idx in 0..count {
+        let _ = vm.write_u16(out_ptr + (idx as u32) * 2, 0);
+    }
+    1
+}
+
+fn get_string_type_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_type, src_ptr, src_len, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, i32, u32);
+    if src_ptr == 0 || out_ptr == 0 {
+        return 0;
+    }
+    let count = read_bytes(vm, src_ptr, src_len).len();
     for idx in 0..count {
         let _ = vm.write_u16(out_ptr + (idx as u32) * 2, 0);
     }
@@ -78,6 +102,30 @@ fn lc_map_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
         let _ = vm.write_u16(dst_ptr + (idx as u32) * 2, *unit);
     }
     let _ = vm.write_u16(dst_ptr + (write_len as u32) * 2, 0);
+    needed as u32
+}
+
+fn lc_map_string_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
+    if src_ptr == 0 {
+        return 0;
+    }
+    let mut text = String::from_utf8_lossy(&read_bytes(vm, src_ptr, src_len)).into_owned();
+    if flags & 0x0000_0100 != 0 {
+        text = text.to_ascii_lowercase();
+    } else if flags & 0x0000_0200 != 0 {
+        text = text.to_ascii_uppercase();
+    }
+    let needed = text.len() + 1;
+    if dst_ptr == 0 || dst_len == 0 {
+        return needed as u32;
+    }
+    let mut bytes = text.into_bytes();
+    if bytes.len() >= dst_len {
+        bytes.truncate(dst_len.saturating_sub(1));
+    }
+    bytes.push(0);
+    let _ = vm.write_bytes(dst_ptr, &bytes);
     needed as u32
 }
 

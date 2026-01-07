@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
-use super::super::*;
+use crate::vm::*;
 
 impl Vm {
     pub fn stdout_buffer(&self) -> Arc<Mutex<Vec<u8>>> {

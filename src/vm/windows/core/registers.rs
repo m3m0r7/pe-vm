@@ -1,4 +1,4 @@
-use super::super::*;
+use crate::vm::*;
 
 // Register index helpers to avoid repeating match ladders.
 macro_rules! reg32_read {
