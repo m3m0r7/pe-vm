@@ -2,15 +2,15 @@
 
 pub const DLL_NAME: &str = "KERNEL32.dll";
 
-mod exceptions;
-mod error;
-mod env;
 mod console;
 mod dynamic;
-mod memory;
-mod module;
+mod env;
+mod error;
+mod exceptions;
 mod file;
 mod interlocked;
+mod memory;
+mod module;
 mod pointer;
 mod process;
 mod slist;

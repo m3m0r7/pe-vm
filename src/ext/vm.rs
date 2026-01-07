@@ -3,8 +3,8 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
-use crate::vm::{Architecture, Os, Vm, VmConfig};
 use crate::vm::windows;
+use crate::vm::{Architecture, Os, Vm, VmConfig};
 
 use super::error::{alloc_string, clear_last_error, set_last_error};
 use super::handles::{vm_from_ptr, vm_from_ptr_mut, VmHandle};

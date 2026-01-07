@@ -3,7 +3,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::vm::{Vm, REG_EDX};
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_any_stdcall("GetTickCount64", crate::vm::stdcall_args(0), get_tick_count64);
+    vm.register_import_any_stdcall(
+        "GetTickCount64",
+        crate::vm::stdcall_args(0),
+        get_tick_count64,
+    );
 }
 
 fn get_tick_count64(vm: &mut Vm, _stack_ptr: u32) -> u32 {

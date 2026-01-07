@@ -4,15 +4,30 @@ use crate::vm_args;
 use super::constants::{ERROR_INVALID_HANDLE, INVALID_HANDLE_VALUE};
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "SetEndOfFile", crate::vm::stdcall_args(1), set_end_of_file);
-    vm.register_import_stdcall("KERNEL32.dll", "SetFilePointer", crate::vm::stdcall_args(4), set_file_pointer);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "SetEndOfFile",
+        crate::vm::stdcall_args(1),
+        set_end_of_file,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "SetFilePointer",
+        crate::vm::stdcall_args(4),
+        set_file_pointer,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "SetFilePointerEx",
         crate::vm::stdcall_args(5),
         set_file_pointer_ex,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "SetFileTime", crate::vm::stdcall_args(4), set_file_time);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "SetFileTime",
+        crate::vm::stdcall_args(4),
+        set_file_time,
+    );
 }
 
 fn set_end_of_file(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

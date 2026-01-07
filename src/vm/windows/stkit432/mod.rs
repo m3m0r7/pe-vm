@@ -8,8 +8,6 @@ const DLL: &str = DLL_NAME;
 
 use crate::vm::Vm;
 
-
-
 // Setup Toolkit functions
 define_stub_fn!(DLL, sync_shell, 0);
 define_stub_fn!(DLL, dll_self_register, 0);

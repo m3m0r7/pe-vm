@@ -6,10 +6,9 @@ use crate::vm::Vm;
 use super::handlers::{
     in_place_frame_query_interface, in_place_site_get_window_context,
     in_place_site_query_interface, in_place_ui_query_interface, ole_context_sensitive_help,
-    ole_get_border, ole_get_window, ole_simple_ok, ole_translate_accelerator,
-    site_add_ref, site_get_container, site_get_moniker, site_on_show_window,
-    site_query_interface, site_release, site_request_new_object_layout, site_save_object,
-    site_show_object,
+    ole_get_border, ole_get_window, ole_simple_ok, ole_translate_accelerator, site_add_ref,
+    site_get_container, site_get_moniker, site_on_show_window, site_query_interface, site_release,
+    site_request_new_object_layout, site_save_object, site_show_object,
 };
 
 pub(super) fn register_site_thunks(vm: &mut Vm) {
@@ -19,11 +18,7 @@ pub(super) fn register_site_thunks(vm: &mut Vm) {
         stdcall_args(3),
         site_query_interface,
     );
-    vm.register_import_any_stdcall(
-        "pe_vm.ioleclientsite.AddRef",
-        stdcall_args(1),
-        site_add_ref,
-    );
+    vm.register_import_any_stdcall("pe_vm.ioleclientsite.AddRef", stdcall_args(1), site_add_ref);
     vm.register_import_any_stdcall(
         "pe_vm.ioleclientsite.Release",
         stdcall_args(1),

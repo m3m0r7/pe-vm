@@ -3,8 +3,8 @@ use std::os::raw::c_char;
 
 use crate::pe::{PeFile, ResourceDirectory, ResourceId, ResourceNode};
 
-use super::resource::ResourceEntry;
 use super::super::error::{alloc_string, clear_last_error, set_last_error};
+use super::resource::ResourceEntry;
 
 pub(super) fn resource_id_to_string(id: &ResourceId) -> String {
     match id {

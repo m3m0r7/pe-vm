@@ -75,8 +75,18 @@ impl CodePage {
 }
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "GetACP", crate::vm::stdcall_args(0), get_acp);
-    vm.register_import_stdcall("KERNEL32.dll", "GetOEMCP", crate::vm::stdcall_args(0), get_oemcp);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetACP",
+        crate::vm::stdcall_args(0),
+        get_acp,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetOEMCP",
+        crate::vm::stdcall_args(0),
+        get_oemcp,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "AreFileApisANSI",
@@ -89,7 +99,12 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         is_valid_code_page,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "GetCPInfo", crate::vm::stdcall_args(2), get_cp_info);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetCPInfo",
+        crate::vm::stdcall_args(2),
+        get_cp_info,
+    );
 }
 
 fn get_acp(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

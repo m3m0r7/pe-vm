@@ -4,30 +4,41 @@ mod loader;
 mod methods;
 mod object;
 
+use crate::vm::windows::guid::format_guid;
 use crate::vm::Vm;
 use crate::vm_args;
-use crate::vm::windows::guid::format_guid;
 
 use super::bstr::read_utf16_z;
-use super::constants::{
-    E_INVALIDARG, E_NOTIMPL, OleMethod, S_OK, TYPE_E_LIBNOTREGISTERED,
-};
+use super::constants::{OleMethod, E_INVALIDARG, E_NOTIMPL, S_OK, TYPE_E_LIBNOTREGISTERED};
 use super::guid::read_guid_bytes;
 
 use loader::{load_typelib_from_path, resolve_typelib_path};
 use methods::{
-    typelib_add_ref, typelib_get_typeinfo, typelib_get_typeinfo_count, typelib_get_typeinfo_of_guid,
-    typelib_get_typeinfo_type, typelib_not_impl, typelib_query_interface, typelib_release,
+    typelib_add_ref, typelib_get_typeinfo, typelib_get_typeinfo_count,
+    typelib_get_typeinfo_of_guid, typelib_get_typeinfo_type, typelib_not_impl,
+    typelib_query_interface, typelib_release,
 };
 
 pub(super) const TYPELIB_METHODS: &[OleMethod] = &[
     ("pe_vm.typelib.QueryInterface", 3, typelib_query_interface),
     ("pe_vm.typelib.AddRef", 1, typelib_add_ref),
     ("pe_vm.typelib.Release", 1, typelib_release),
-    ("pe_vm.typelib.GetTypeInfoCount", 1, typelib_get_typeinfo_count),
+    (
+        "pe_vm.typelib.GetTypeInfoCount",
+        1,
+        typelib_get_typeinfo_count,
+    ),
     ("pe_vm.typelib.GetTypeInfo", 3, typelib_get_typeinfo),
-    ("pe_vm.typelib.GetTypeInfoType", 3, typelib_get_typeinfo_type),
-    ("pe_vm.typelib.GetTypeInfoOfGuid", 3, typelib_get_typeinfo_of_guid),
+    (
+        "pe_vm.typelib.GetTypeInfoType",
+        3,
+        typelib_get_typeinfo_type,
+    ),
+    (
+        "pe_vm.typelib.GetTypeInfoOfGuid",
+        3,
+        typelib_get_typeinfo_of_guid,
+    ),
     ("pe_vm.typelib.GetLibAttr", 2, typelib_not_impl),
     ("pe_vm.typelib.GetTypeComp", 2, typelib_not_impl),
     ("pe_vm.typelib.GetDocumentation", 6, typelib_not_impl),

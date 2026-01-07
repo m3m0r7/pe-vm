@@ -1,22 +1,16 @@
-use crate::vm::{Vm, VmError, REG_AL, REG_EDX, REG_EDI};
+use crate::vm::{Vm, VmError, REG_AL, REG_EDI, REG_EDX};
 
 use crate::architecture::intel::x86::ins::core::{
     decode_modrm, read_rm16, read_rm32, write_rm8, Prefixes,
 };
 
-pub(crate) fn jcc_rel8(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn jcc_rel8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let cond = condition(vm, opcode).ok_or(VmError::UnsupportedInstruction(opcode))?;
     let rel = vm.read_u8(cursor + 1)? as i8 as i32;
     let next = cursor + 2;
     if opcode == 0x74 {
-        let pattern = [
-            0x88u8, 0x07, 0x83, 0xC7, 0x01, 0x83, 0xEA, 0x01, 0x75, 0xF6,
-        ];
+        let pattern = [0x88u8, 0x07, 0x83, 0xC7, 0x01, 0x83, 0xEA, 0x01, 0x75, 0xF6];
         let mut matches = true;
         for (idx, byte) in pattern.iter().enumerate() {
             if vm.read_u8(cursor + 2 + idx as u32).unwrap_or(0) != *byte {
@@ -80,29 +74,17 @@ pub(crate) fn jcc_rel32_ext(
     Ok(())
 }
 
-pub(crate) fn setcc(
-    vm: &mut Vm,
-    cursor: u32,
-    ext: u8,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn setcc(vm: &mut Vm, cursor: u32, ext: u8, prefixes: Prefixes) -> Result<(), VmError> {
     let modrm = decode_modrm(vm, cursor + 2)?;
-    let cond = condition(vm, ext.wrapping_sub(0x20))
-        .ok_or(VmError::UnsupportedInstruction(ext))?;
+    let cond = condition(vm, ext.wrapping_sub(0x20)).ok_or(VmError::UnsupportedInstruction(ext))?;
     let value = if cond { 1 } else { 0 };
     write_rm8(vm, &modrm, prefixes.segment_base, value)?;
     vm.set_eip(cursor + 2 + modrm.len as u32);
     Ok(())
 }
 
-pub(crate) fn cmovcc(
-    vm: &mut Vm,
-    cursor: u32,
-    ext: u8,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
-    let cond = condition(vm, ext.wrapping_add(0x30))
-        .ok_or(VmError::UnsupportedInstruction(ext))?;
+pub(crate) fn cmovcc(vm: &mut Vm, cursor: u32, ext: u8, prefixes: Prefixes) -> Result<(), VmError> {
+    let cond = condition(vm, ext.wrapping_add(0x30)).ok_or(VmError::UnsupportedInstruction(ext))?;
     if ext == 0x49 && std::env::var("PE_VM_TRACE_CMOV").is_ok() {
         eprintln!(
             "[pe_vm] cmovns at 0x{cursor:08X} cond={cond} sf={} eax=0x{:08X} esi=0x{:08X}",

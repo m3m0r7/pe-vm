@@ -17,7 +17,10 @@ pub enum VmError {
     InvalidConfig(&'static str),
     Com(u32),
     /// Called when an unimplemented module function is invoked.
-    NotImplemented { dll: String, function: String },
+    NotImplemented {
+        dll: String,
+        function: String,
+    },
 }
 
 impl fmt::Display for VmError {

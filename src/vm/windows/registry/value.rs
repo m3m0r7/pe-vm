@@ -139,9 +139,7 @@ mod tests {
 
     #[test]
     fn test_registry_value_from_yaml_invalid_binary() {
-        let yaml = YamlValue::Sequence(vec![
-            YamlValue::Number(serde_yaml::Number::from(256i64)),
-        ]);
+        let yaml = YamlValue::Sequence(vec![YamlValue::Number(serde_yaml::Number::from(256i64))]);
         let result = RegistryValue::from_yaml(&yaml);
         assert!(result.is_err());
     }

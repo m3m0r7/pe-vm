@@ -6,7 +6,7 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 use super::constants::{
-    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSAEINVAL, WSAENOTSOCK, WSADATA_SIZE, WSADATA_VERSION,
+    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL, WSAENOTSOCK,
 };
 use super::store::{alloc_socket, close_socket, set_last_error};
 use super::trace::{log_connect, log_send, trace_net};
@@ -66,27 +66,29 @@ pub(super) fn listen(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 pub(super) fn recv(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (_, buf, len) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    trace_net(&format!("WSA recv called buf=0x{buf:08X} len={len}"));
     if buf != 0 && len != 0 {
-        if len as usize >= 48 {
-            let mut bytes = vec![0u8; len as usize];
-            let packet = build_ntp_response();
-            bytes[..packet.len()].copy_from_slice(&packet);
-            let _ = vm.write_bytes(buf, &bytes);
-            trace_net("WSA recv stubbed NTP response");
-        } else {
-            let _ = vm.memset(buf, 0, len as usize);
-            trace_net(&format!("WSA recv stubbed {len} bytes"));
-        }
+        let packet = build_ntp_response();
+        let copy_len = (len as usize).min(packet.len());
+        let _ = vm.write_bytes(buf, &packet[..copy_len]);
+        trace_net(&format!(
+            "WSA recv stubbed {copy_len} byte{}",
+            if copy_len == 1 { "" } else { "s" }
+        ));
+        set_last_error(0);
+        return copy_len as u32;
     }
     set_last_error(0);
-    len
+    0
 }
 
 fn build_ntp_response() -> [u8; 48] {
     let mut packet = [0u8; 48];
     packet[0] = 0x1C; // LI=0, VN=3, Mode=4 (server)
     packet[1] = 1; // stratum
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
     let ntp_seconds = now.as_secs().wrapping_add(2_208_988_800);
     let ntp_fraction = ((now.subsec_nanos() as u64) << 32) / 1_000_000_000;
     packet[40..44].copy_from_slice(&(ntp_seconds as u32).to_be_bytes());
@@ -102,7 +104,9 @@ pub(super) fn select(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let except_count = read_fd_count(vm, except_ptr);
 
     set_last_error(0);
-    read_count.saturating_add(write_count).saturating_add(except_count)
+    read_count
+        .saturating_add(write_count)
+        .saturating_add(except_count)
 }
 
 pub(super) fn send(vm: &mut Vm, stack_ptr: u32) -> u32 {

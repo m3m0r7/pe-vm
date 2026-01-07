@@ -70,9 +70,9 @@ pub(super) fn parse_export_directory(
     let mut symbols = Vec::with_capacity(number_of_functions);
     for (index, func_rva) in function_rvas.into_iter().enumerate() {
         let forwarder = if func_rva >= dir.rva && func_rva < dir.rva + dir.size && func_rva != 0 {
-            let fwd_off = pe
-                .rva_to_offset(func_rva)
-                .ok_or(PeParseError::Invalid("export forwarder"))? as usize;
+            let fwd_off =
+                pe.rva_to_offset(func_rva)
+                    .ok_or(PeParseError::Invalid("export forwarder"))? as usize;
             Some(read_c_string(image, fwd_off)?)
         } else {
             None

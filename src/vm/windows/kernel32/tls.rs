@@ -6,8 +6,18 @@ use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "TlsAlloc", crate::vm::stdcall_args(0), tls_alloc);
-    vm.register_import_stdcall(DLL_NAME, "TlsGetValue", crate::vm::stdcall_args(1), tls_get_value);
-    vm.register_import_stdcall(DLL_NAME, "TlsSetValue", crate::vm::stdcall_args(2), tls_set_value);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "TlsGetValue",
+        crate::vm::stdcall_args(1),
+        tls_get_value,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "TlsSetValue",
+        crate::vm::stdcall_args(2),
+        tls_set_value,
+    );
     vm.register_import_stdcall(DLL_NAME, "TlsFree", crate::vm::stdcall_args(1), tls_free);
 }
 

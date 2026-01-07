@@ -50,10 +50,13 @@ impl DispatchTable {
     where
         F: Fn(&mut Vm, &[ComArg]) -> Result<(), VmError> + Send + Sync + 'static,
     {
-        self.register(dispid, Arc::new(move |vm, args| {
-            handler(vm, args)?;
-            Ok(ComValue::Void)
-        }))
+        self.register(
+            dispid,
+            Arc::new(move |vm, args| {
+                handler(vm, args)?;
+                Ok(ComValue::Void)
+            }),
+        )
     }
 
     pub fn set_fallback<F>(&mut self, handler: F) -> &mut Self
@@ -64,12 +67,7 @@ impl DispatchTable {
         self
     }
 
-    pub fn invoke(
-        &self,
-        vm: &mut Vm,
-        dispid: u32,
-        args: &[ComArg],
-    ) -> Result<ComValue, VmError> {
+    pub fn invoke(&self, vm: &mut Vm, dispid: u32, args: &[ComArg]) -> Result<ComValue, VmError> {
         if let Some(handler) = self.handlers.get(&dispid) {
             return handler(vm, args);
         }
@@ -212,7 +210,8 @@ mod tests {
     #[test]
     fn test_dispatch_handle_clsid() {
         let table = DispatchTable::new();
-        let handle = DispatchHandle::new("{12345678-1234-1234-1234-123456789ABC}".to_string(), table);
+        let handle =
+            DispatchHandle::new("{12345678-1234-1234-1234-123456789ABC}".to_string(), table);
         assert_eq!(handle.clsid(), "{12345678-1234-1234-1234-123456789ABC}");
     }
 }

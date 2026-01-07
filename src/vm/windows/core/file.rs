@@ -24,7 +24,10 @@ impl Vm {
                 .open(path);
         }
         if truncate {
-            let _ = std::fs::OpenOptions::new().write(true).truncate(true).open(path);
+            let _ = std::fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(path);
         }
         let mut data = Vec::new();
         if readable {

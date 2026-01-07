@@ -13,11 +13,36 @@ define_stub_fn!(DLL_NAME, sh_get_file_info_a, 0);
 
 // Register shell entry points that may be imported by GUI DLLs.
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "ShellExecuteA", crate::vm::stdcall_args(6), shell_execute_a);
-    vm.register_import_stdcall(DLL_NAME, "ShellExecuteExA", crate::vm::stdcall_args(1), shell_execute_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "SHBrowseForFolderA", crate::vm::stdcall_args(1), sh_browse_for_folder_a);
-    vm.register_import_stdcall(DLL_NAME, "SHGetPathFromIDListA", crate::vm::stdcall_args(2), sh_get_path_from_id_list_a);
-    vm.register_import_stdcall(DLL_NAME, "SHGetFileInfoA", crate::vm::stdcall_args(5), sh_get_file_info_a);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "ShellExecuteA",
+        crate::vm::stdcall_args(6),
+        shell_execute_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "ShellExecuteExA",
+        crate::vm::stdcall_args(1),
+        shell_execute_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SHBrowseForFolderA",
+        crate::vm::stdcall_args(1),
+        sh_browse_for_folder_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SHGetPathFromIDListA",
+        crate::vm::stdcall_args(2),
+        sh_get_path_from_id_list_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SHGetFileInfoA",
+        crate::vm::stdcall_args(5),
+        sh_get_file_info_a,
+    );
 }
 
 fn sh_get_path_from_id_list_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

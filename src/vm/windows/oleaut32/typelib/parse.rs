@@ -1,11 +1,11 @@
 use crate::vm::VmError;
 
-use super::{FuncDesc, ParamDesc, TypeInfoData, TypeLib};
 use super::super::constants::{
     PARAMFLAG_FOUT, PARAMFLAG_FRETVAL, VT_BSTR, VT_I1, VT_I4, VT_INT, VT_UI1, VT_UI4, VT_UINT,
 };
 use super::reader::{Reader, SegDir, SegEntry};
 use super::MSFT_SIGNATURE;
+use super::{FuncDesc, ParamDesc, TypeInfoData, TypeLib};
 
 const HELPDLLFLAG: u32 = 0x0100;
 const TYPEINFO_SIZE: usize = 0x64;
@@ -35,15 +35,13 @@ pub(super) fn parse_msft(data: &[u8]) -> Result<TypeLib, VmError> {
             "[pe_vm] typelib header varflags=0x{varflags:08X} nrtypeinfos={nrtypeinfos} posguid=0x{posguid:08X}"
         );
         let target = [
-            0x40, 0x77, 0xB1, 0x2A, 0x41, 0x0C, 0xD7, 0x11, 0x91, 0x6F, 0x00, 0x03, 0x47,
-            0x9B, 0xEB, 0x3F,
+            0x40, 0x77, 0xB1, 0x2A, 0x41, 0x0C, 0xD7, 0x11, 0x91, 0x6F, 0x00, 0x03, 0x47, 0x9B,
+            0xEB, 0x3F,
         ];
         if data.len() >= target.len() {
             for idx in 0..=data.len().saturating_sub(target.len()) {
                 if data[idx..idx + target.len()] == target {
-                    eprintln!(
-                        "[pe_vm] typelib guid bytes found at 0x{idx:08X}"
-                    );
+                    eprintln!("[pe_vm] typelib guid bytes found at 0x{idx:08X}");
                     break;
                 }
             }
@@ -221,7 +219,10 @@ fn parse_funcs(
                 let raw = param_type as u32;
                 if raw == 0 && (flags & (PARAMFLAG_FOUT | PARAMFLAG_FRETVAL)) != 0 {
                     vt = VT_I4;
-                } else if matches!(raw as u16, VT_BSTR | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_I1) {
+                } else if matches!(
+                    raw as u16,
+                    VT_BSTR | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_I1
+                ) {
                     vt = raw as u16;
                 }
             }
@@ -345,10 +346,7 @@ fn read_guid(reader: &Reader, segdir: &SegDir, offset: i32) -> Option<[u8; 16]> 
         for (index, slot) in bytes.iter_mut().enumerate() {
             *slot = reader.read_u8(base + index).ok().unwrap_or(0);
         }
-        eprintln!(
-            "[pe_vm] typelib guid raw @0x{base:08X}: {:02X?}",
-            bytes
-        );
+        eprintln!("[pe_vm] typelib guid raw @0x{base:08X}: {:02X?}", bytes);
     }
     let mut guid = [0u8; 16];
     for (index, slot) in guid.iter_mut().enumerate() {

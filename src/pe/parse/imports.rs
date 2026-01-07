@@ -68,7 +68,8 @@ pub(super) fn parse_import_directory(
             } else {
                 let name_off = pe
                     .rva_to_offset(value)
-                    .ok_or(PeParseError::Invalid("import hint/name"))? as usize;
+                    .ok_or(PeParseError::Invalid("import hint/name"))?
+                    as usize;
                 if name_off + 2 > image.len() {
                     return Err(PeParseError::UnexpectedEof("import hint"));
                 }
@@ -147,9 +148,9 @@ pub(super) fn parse_delay_import_directory(
         } else {
             va_to_rva(pe, name_rva).ok_or(PeParseError::Invalid("delay import name VA"))?
         };
-        let module_name_off = pe
-            .rva_to_offset(module_name_rva)
-            .ok_or(PeParseError::Invalid("delay import name"))? as usize;
+        let module_name_off =
+            pe.rva_to_offset(module_name_rva)
+                .ok_or(PeParseError::Invalid("delay import name"))? as usize;
         let module = read_c_string(image, module_name_off)?;
 
         let name_table_rva = if use_rva {
@@ -169,7 +170,8 @@ pub(super) fn parse_delay_import_directory(
         if name_table_rva != 0 {
             let mut thunk_off = pe
                 .rva_to_offset(name_table_rva)
-                .ok_or(PeParseError::Invalid("delay import name table"))? as usize;
+                .ok_or(PeParseError::Invalid("delay import name table"))?
+                as usize;
             let mut index = 0u32;
             loop {
                 let value = read_u32(image, thunk_off)?;
@@ -193,7 +195,8 @@ pub(super) fn parse_delay_import_directory(
                     };
                     let hint_off = pe
                         .rva_to_offset(hint_name_rva)
-                        .ok_or(PeParseError::Invalid("delay import hint"))? as usize;
+                        .ok_or(PeParseError::Invalid("delay import hint"))?
+                        as usize;
                     if hint_off + 2 > image.len() {
                         return Err(PeParseError::UnexpectedEof("delay import hint"));
                     }

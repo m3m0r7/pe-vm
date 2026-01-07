@@ -17,7 +17,11 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(2),
         get_logical_processor_information,
     );
-    vm.register_import_any_stdcall("CreateSymbolicLinkW", crate::vm::stdcall_args(3), create_symbolic_link_w);
+    vm.register_import_any_stdcall(
+        "CreateSymbolicLinkW",
+        crate::vm::stdcall_args(3),
+        create_symbolic_link_w,
+    );
     vm.register_import_any_stdcall(
         "SetDefaultDllDirectories",
         crate::vm::stdcall_args(1),

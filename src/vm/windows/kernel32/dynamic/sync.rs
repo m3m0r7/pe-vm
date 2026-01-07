@@ -6,7 +6,11 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(3),
         initialize_critical_section_ex,
     );
-    vm.register_import_any_stdcall("CreateEventExW", crate::vm::stdcall_args(4), create_event_ex_w);
+    vm.register_import_any_stdcall(
+        "CreateEventExW",
+        crate::vm::stdcall_args(4),
+        create_event_ex_w,
+    );
     vm.register_import_any_stdcall(
         "CreateSemaphoreExW",
         crate::vm::stdcall_args(6),

@@ -40,7 +40,12 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         is_dbcs_lead_byte,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "MulDiv", crate::vm::stdcall_args(3), mul_div);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "MulDiv",
+        crate::vm::stdcall_args(3),
+        mul_div,
+    );
 }
 
 fn get_string_type_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -68,7 +73,8 @@ fn get_string_type_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn compare_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_locale, _flags, left_ptr, left_len, right_ptr, right_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, i32);
+    let (_locale, _flags, left_ptr, left_len, right_ptr, right_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, i32);
     if left_ptr == 0 || right_ptr == 0 {
         return 0;
     }
@@ -82,7 +88,8 @@ fn compare_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lc_map_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
+    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -106,7 +113,8 @@ fn lc_map_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lc_map_string_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
+    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -141,6 +149,9 @@ fn mul_div(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if denominator == 0 {
         return 0;
     }
-    let value = number.saturating_mul(numerator).saturating_add(denominator / 2) / denominator;
+    let value = number
+        .saturating_mul(numerator)
+        .saturating_add(denominator / 2)
+        / denominator;
     value as u32
 }

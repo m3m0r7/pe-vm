@@ -198,10 +198,7 @@ fn exec_shift_rm8(
             let (result, cf) = if count >= 8 {
                 (0, false)
             } else {
-                (
-                    value.wrapping_shl(count),
-                    ((value >> (8 - count)) & 1) != 0,
-                )
+                (value.wrapping_shl(count), ((value >> (8 - count)) & 1) != 0)
             };
             let of = if count == 1 {
                 ((result ^ value) & 0x80) != 0
@@ -216,10 +213,7 @@ fn exec_shift_rm8(
             let (result, cf) = if count >= 8 {
                 (0, false)
             } else {
-                (
-                    value.wrapping_shr(count),
-                    ((value >> (count - 1)) & 1) != 0,
-                )
+                (value.wrapping_shr(count), ((value >> (count - 1)) & 1) != 0)
             };
             let of = if count == 1 {
                 (value & 0x80) != 0
@@ -234,10 +228,7 @@ fn exec_shift_rm8(
             let (result, cf) = if count >= 8 {
                 (0, false)
             } else {
-                (
-                    value.wrapping_shl(count),
-                    ((value >> (8 - count)) & 1) != 0,
-                )
+                (value.wrapping_shl(count), ((value >> (8 - count)) & 1) != 0)
             };
             let of = if count == 1 {
                 ((result ^ value) & 0x80) != 0

@@ -8,17 +8,42 @@ use super::constants::{
 use super::helpers::read_w_string;
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "CopyFileA", crate::vm::stdcall_args(3), copy_file_a);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "CopyFileA",
+        crate::vm::stdcall_args(3),
+        copy_file_a,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "CreateDirectoryA",
         crate::vm::stdcall_args(2),
         create_directory_a,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "CreateFileA", crate::vm::stdcall_args(7), create_file_a);
-    vm.register_import_stdcall("KERNEL32.dll", "CreateFileW", crate::vm::stdcall_args(7), create_file_w);
-    vm.register_import_stdcall("KERNEL32.dll", "DeleteFileA", crate::vm::stdcall_args(1), delete_file_a);
-    vm.register_import_stdcall("KERNEL32.dll", "RemoveDirectoryW", crate::vm::stdcall_args(1), remove_directory_w);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "CreateFileA",
+        crate::vm::stdcall_args(7),
+        create_file_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "CreateFileW",
+        crate::vm::stdcall_args(7),
+        create_file_w,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "DeleteFileA",
+        crate::vm::stdcall_args(1),
+        delete_file_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "RemoveDirectoryW",
+        crate::vm::stdcall_args(1),
+        remove_directory_w,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "SetFileAttributesA",
@@ -42,7 +67,8 @@ fn create_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (path_ptr, desired, _share_mode, _security_attrs, disposition) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let (path_ptr, desired, _share_mode, _security_attrs, disposition) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
@@ -67,7 +93,8 @@ fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn create_file_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (path_ptr, desired, _share_mode, _security_attrs, disposition) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let (path_ptr, desired, _share_mode, _security_attrs, disposition) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
@@ -99,7 +126,11 @@ fn delete_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let path = vm.read_c_string(path_ptr).unwrap_or_default();
     let existed = vm.file_exists(&path);
     vm.file_delete(&path);
-    if existed { 1 } else { 0 }
+    if existed {
+        1
+    } else {
+        0
+    }
 }
 
 fn remove_directory_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

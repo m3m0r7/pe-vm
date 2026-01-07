@@ -9,11 +9,7 @@ pub fn register(vm: &mut Vm) {
         "_initterm_e",
         initterm_e,
     );
-    vm.register_import(
-        "api-ms-win-crt-runtime-l1-1-0.dll",
-        "_initterm",
-        initterm,
-    );
+    vm.register_import("api-ms-win-crt-runtime-l1-1-0.dll", "_initterm", initterm);
 }
 
 fn initterm(vm: &mut Vm, stack_ptr: u32) -> u32 {

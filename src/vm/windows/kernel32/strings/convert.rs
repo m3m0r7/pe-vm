@@ -3,8 +3,8 @@ use crate::vm_args;
 
 use encoding_rs::{SHIFT_JIS, UTF_8, WINDOWS_1252};
 
-use super::helpers::{read_bytes, read_utf16};
 use super::codepage::resolve_code_page;
+use super::helpers::{read_bytes, read_utf16};
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -22,7 +22,8 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn multi_byte_to_wide_char(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
+    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -50,7 +51,8 @@ fn multi_byte_to_wide_char(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn wide_char_to_multi_byte(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len, _def_char, _used_default) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize, u32, u32);
+    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len, _def_char, _used_default) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize, u32, u32);
     if src_ptr == 0 {
         return 0;
     }

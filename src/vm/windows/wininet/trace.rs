@@ -17,7 +17,10 @@ pub(super) fn log_http_request(host: &str, port: u16, request: &str, body: &[u8]
         return;
     }
     let preview = body_preview(body);
-    trace_net(&format!("WinInet request body {} bytes: {preview}", body.len()));
+    trace_net(&format!(
+        "WinInet request body {} bytes: {preview}",
+        body.len()
+    ));
 }
 
 pub(super) fn log_http_response(status: u16, body: &[u8]) {
@@ -55,5 +58,7 @@ fn body_preview(body: &[u8]) -> String {
 }
 
 fn is_printable_ascii(bytes: &[u8]) -> bool {
-    bytes.iter().all(|value| matches!(value, b'\t' | b'\n' | b'\r' | 0x20..=0x7E))
+    bytes
+        .iter()
+        .all(|value| matches!(value, b'\t' | b'\n' | b'\r' | 0x20..=0x7E))
 }

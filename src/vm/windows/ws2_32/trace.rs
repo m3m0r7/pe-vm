@@ -38,5 +38,7 @@ fn bytes_preview(bytes: &[u8]) -> String {
 }
 
 fn is_printable_ascii(bytes: &[u8]) -> bool {
-    bytes.iter().all(|value| matches!(value, b'\t' | b'\n' | b'\r' | 0x20..=0x7E))
+    bytes
+        .iter()
+        .all(|value| matches!(value, b'\t' | b'\n' | b'\r' | 0x20..=0x7E))
 }

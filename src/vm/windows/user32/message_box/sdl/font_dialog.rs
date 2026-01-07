@@ -41,12 +41,7 @@ pub(super) fn try_dialog_with_font(_vm: &Vm, font: &Font, text: &str) -> bool {
         return false;
     };
     apply_blank_icon(&mut window);
-    let Ok(mut canvas) = window
-        .into_canvas()
-        .accelerated()
-        .present_vsync()
-        .build()
-    else {
+    let Ok(mut canvas) = window.into_canvas().accelerated().present_vsync().build() else {
         return false;
     };
     canvas.set_blend_mode(BlendMode::Blend);

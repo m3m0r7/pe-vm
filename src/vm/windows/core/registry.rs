@@ -17,7 +17,9 @@ impl Vm {
     }
 
     pub(crate) fn registry_handle_path(&self, handle: u32) -> Option<&str> {
-        self.registry_handles.get(&handle).map(|value| value.as_str())
+        self.registry_handles
+            .get(&handle)
+            .map(|value| value.as_str())
     }
 
     pub(crate) fn registry_close_handle(&mut self, handle: u32) {

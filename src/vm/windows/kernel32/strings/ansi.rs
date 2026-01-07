@@ -4,12 +4,42 @@ use crate::vm_args;
 use super::helpers::{compare_strings, read_bytes, read_string_arg};
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "lstrlenA", crate::vm::stdcall_args(1), lstrlen_a);
-    vm.register_import_stdcall("KERNEL32.dll", "lstrcpyA", crate::vm::stdcall_args(2), lstrcpy_a);
-    vm.register_import_stdcall("KERNEL32.dll", "lstrcatA", crate::vm::stdcall_args(2), lstrcat_a);
-    vm.register_import_stdcall("KERNEL32.dll", "lstrcmpA", crate::vm::stdcall_args(2), lstrcmp_a);
-    vm.register_import_stdcall("KERNEL32.dll", "lstrcmpiA", crate::vm::stdcall_args(2), lstrcmpi_a);
-    vm.register_import_stdcall("KERNEL32.dll", "lstrcpynA", crate::vm::stdcall_args(3), lstrcpyn_a);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrlenA",
+        crate::vm::stdcall_args(1),
+        lstrlen_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrcpyA",
+        crate::vm::stdcall_args(2),
+        lstrcpy_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrcatA",
+        crate::vm::stdcall_args(2),
+        lstrcat_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrcmpA",
+        crate::vm::stdcall_args(2),
+        lstrcmp_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrcmpiA",
+        crate::vm::stdcall_args(2),
+        lstrcmpi_a,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "lstrcpynA",
+        crate::vm::stdcall_args(3),
+        lstrcpyn_a,
+    );
 }
 
 fn lstrlen_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

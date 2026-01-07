@@ -298,7 +298,11 @@ fn parse_watch_range(token: &str) -> Option<(u32, u32)> {
     if let Some((start, end)) = token.split_once('-') {
         let start = parse_watch_addr(start)?;
         let end = parse_watch_addr(end)?;
-        let (min, max) = if start <= end { (start, end) } else { (end, start) };
+        let (min, max) = if start <= end {
+            (start, end)
+        } else {
+            (end, start)
+        };
         return Some((min, max));
     }
     let addr = parse_watch_addr(token)?;
@@ -307,7 +311,10 @@ fn parse_watch_range(token: &str) -> Option<(u32, u32)> {
 
 fn parse_watch_addr(token: &str) -> Option<u32> {
     let token = token.trim();
-    if let Some(hex) = token.strip_prefix("0x").or_else(|| token.strip_prefix("0X")) {
+    if let Some(hex) = token
+        .strip_prefix("0x")
+        .or_else(|| token.strip_prefix("0X"))
+    {
         return u32::from_str_radix(hex, 16).ok();
     }
     token.parse::<u32>().ok()

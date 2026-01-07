@@ -18,7 +18,12 @@ struct TypeLibStore {
 
 fn store() -> &'static Mutex<TypeLibStore> {
     static STORE: OnceLock<Mutex<TypeLibStore>> = OnceLock::new();
-    STORE.get_or_init(|| Mutex::new(TypeLibStore { next_id: 1, ..TypeLibStore::default() }))
+    STORE.get_or_init(|| {
+        Mutex::new(TypeLibStore {
+            next_id: 1,
+            ..TypeLibStore::default()
+        })
+    })
 }
 
 pub(super) fn store_typelib(lib: TypeLib) -> u32 {
@@ -34,7 +39,9 @@ pub(super) fn store_typeinfo(typelib_id: u32, index: usize) -> Option<u32> {
     guard.typelibs.get(&typelib_id)?;
     let id = guard.next_id;
     guard.next_id = guard.next_id.wrapping_add(1);
-    guard.typeinfos.insert(id, TypeInfoHandle { typelib_id, index });
+    guard
+        .typeinfos
+        .insert(id, TypeInfoHandle { typelib_id, index });
     Some(id)
 }
 

@@ -23,23 +23,108 @@ define_stub_fn!(DLL_NAME, reg_delete_key_a, ERROR_SUCCESS);
 define_stub_fn!(DLL_NAME, reg_delete_key_w, ERROR_SUCCESS);
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "RegOpenKeyExA", crate::vm::stdcall_args(5), reg_open_key_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegOpenKeyExW", crate::vm::stdcall_args(5), reg_open_key_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegCreateKeyExA", crate::vm::stdcall_args(9), reg_create_key_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegCreateKeyExW", crate::vm::stdcall_args(9), reg_create_key_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegQueryValueExA", crate::vm::stdcall_args(6), reg_query_value_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegQueryValueExW", crate::vm::stdcall_args(6), reg_query_value_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegSetValueExA", crate::vm::stdcall_args(6), reg_set_value_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegSetValueExW", crate::vm::stdcall_args(6), reg_set_value_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegCloseKey", crate::vm::stdcall_args(1), reg_close_key);
-    vm.register_import_stdcall(DLL_NAME, "RegDeleteValueA", crate::vm::stdcall_args(2), reg_delete_value_a);
-    vm.register_import_stdcall(DLL_NAME, "RegDeleteValueW", crate::vm::stdcall_args(2), reg_delete_value_w);
-    vm.register_import_stdcall(DLL_NAME, "RegDeleteKeyA", crate::vm::stdcall_args(2), reg_delete_key_a);
-    vm.register_import_stdcall(DLL_NAME, "RegDeleteKeyW", crate::vm::stdcall_args(2), reg_delete_key_w);
-    vm.register_import_stdcall(DLL_NAME, "RegEnumKeyExA", crate::vm::stdcall_args(8), reg_enum_key_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegEnumKeyExW", crate::vm::stdcall_args(8), reg_enum_key_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegQueryInfoKeyA", crate::vm::stdcall_args(12), reg_query_info_key_a);
-    vm.register_import_stdcall(DLL_NAME, "RegQueryInfoKeyW", crate::vm::stdcall_args(12), reg_query_info_key_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegOpenKeyExA",
+        crate::vm::stdcall_args(5),
+        reg_open_key_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegOpenKeyExW",
+        crate::vm::stdcall_args(5),
+        reg_open_key_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegCreateKeyExA",
+        crate::vm::stdcall_args(9),
+        reg_create_key_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegCreateKeyExW",
+        crate::vm::stdcall_args(9),
+        reg_create_key_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegQueryValueExA",
+        crate::vm::stdcall_args(6),
+        reg_query_value_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegQueryValueExW",
+        crate::vm::stdcall_args(6),
+        reg_query_value_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegSetValueExA",
+        crate::vm::stdcall_args(6),
+        reg_set_value_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegSetValueExW",
+        crate::vm::stdcall_args(6),
+        reg_set_value_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegCloseKey",
+        crate::vm::stdcall_args(1),
+        reg_close_key,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegDeleteValueA",
+        crate::vm::stdcall_args(2),
+        reg_delete_value_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegDeleteValueW",
+        crate::vm::stdcall_args(2),
+        reg_delete_value_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegDeleteKeyA",
+        crate::vm::stdcall_args(2),
+        reg_delete_key_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegDeleteKeyW",
+        crate::vm::stdcall_args(2),
+        reg_delete_key_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegEnumKeyExA",
+        crate::vm::stdcall_args(8),
+        reg_enum_key_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegEnumKeyExW",
+        crate::vm::stdcall_args(8),
+        reg_enum_key_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegQueryInfoKeyA",
+        crate::vm::stdcall_args(12),
+        reg_query_info_key_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegQueryInfoKeyW",
+        crate::vm::stdcall_args(12),
+        reg_query_info_key_w,
+    );
 }
 
 fn reg_open_key_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -69,9 +154,7 @@ fn reg_open_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
         path = redirected;
     }
     if std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!(
-            "[pe_vm] {api}: {path} (hkey=0x{hkey:08X} subkey_ptr=0x{subkey_ptr:08X})"
-        );
+        eprintln!("[pe_vm] {api}: {path} (hkey=0x{hkey:08X} subkey_ptr=0x{subkey_ptr:08X})");
         if subkey_ptr != 0 {
             let raw = read_raw_bytes(vm, subkey_ptr, 128);
             let ascii = read_raw_ascii(vm, subkey_ptr, 128);
@@ -80,12 +163,8 @@ fn reg_open_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
             let window_start = subkey_ptr.wrapping_sub(64);
             let window_raw = read_raw_bytes(vm, window_start, 192);
             let window_ascii = read_raw_ascii(vm, window_start, 192);
-            eprintln!(
-                "[pe_vm] {api} subkey window @0x{window_start:08X} raw: {window_raw}"
-            );
-            eprintln!(
-                "[pe_vm] {api} subkey window @0x{window_start:08X} ascii: {window_ascii}"
-            );
+            eprintln!("[pe_vm] {api} subkey window @0x{window_start:08X} raw: {window_raw}");
+            eprintln!("[pe_vm] {api} subkey window @0x{window_start:08X} ascii: {window_ascii}");
         }
     }
     let handle = vm.registry_open_handle(path);
@@ -102,7 +181,8 @@ fn reg_create_key_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_create_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let (hkey, subkey_ptr, _, _, _, _, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
+    let (hkey, subkey_ptr, _, _, _, _, _, out_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
     if out_ptr == 0 {
         return ERROR_FILE_NOT_FOUND;
     }
@@ -136,7 +216,8 @@ fn reg_query_value_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let (hkey, value_ptr, _, type_ptr, data_ptr, size_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let (hkey, value_ptr, _, type_ptr, data_ptr, size_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
 
     let prefix = match registry_prefix(vm, hkey) {
         Ok(value) => value,
@@ -150,14 +231,16 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
         } else {
             read_string_arg_a(vm, value_ptr)
         };
-        if name.is_empty() { None } else { Some(name) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name)
+        }
     };
     let key = format_registry_key(&prefix, value_name.as_deref());
     if std::env::var("PE_VM_TRACE").is_ok() {
         let name = value_name.as_deref().unwrap_or("(Default)");
-        eprintln!(
-            "[pe_vm] {api}: {key} ({name}) value_ptr=0x{value_ptr:08X}"
-        );
+        eprintln!("[pe_vm] {api}: {key} ({name}) value_ptr=0x{value_ptr:08X}");
         if size_ptr != 0 {
             let requested = vm.read_u32(size_ptr).unwrap_or(0);
             eprintln!("[pe_vm] {api} size request: {requested}");
@@ -240,7 +323,8 @@ fn reg_set_value_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_set_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let (hkey, value_ptr, _reserved, value_type, data_ptr, data_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let (hkey, value_ptr, _reserved, value_type, data_ptr, data_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
     let data_len = data_len as usize;
 
     if data_ptr == 0 {
@@ -259,22 +343,26 @@ fn reg_set_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
         } else {
             read_string_arg_a(vm, value_ptr)
         };
-        if name.is_empty() { None } else { Some(name) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name)
+        }
     };
     let key = format_registry_key(&prefix, value_name.as_deref());
 
     let data = read_bytes(vm, data_ptr, data_len);
     if std::env::var("PE_VM_TRACE").is_ok() {
         let name = value_name.as_deref().unwrap_or("(Default)");
-        eprintln!(
-            "[pe_vm] {api}: {key} ({name}) type=0x{value_type:08X} len={data_len}"
-        );
+        eprintln!("[pe_vm] {api}: {key} ({name}) type=0x{value_type:08X} len={data_len}");
     }
     let value = match value_type {
         REG_SZ => RegistryValue::String(if wide {
             decode_wide_string(&data)
         } else {
-            String::from_utf8_lossy(&data).trim_end_matches('\0').to_string()
+            String::from_utf8_lossy(&data)
+                .trim_end_matches('\0')
+                .to_string()
         }),
         REG_DWORD if data.len() >= 4 => {
             let mut bytes = [0u8; 4];
@@ -390,7 +478,8 @@ fn reg_query_info_key_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let (hkey, index, name_ptr, name_len_ptr, _, class_ptr, class_len_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
+    let (hkey, index, name_ptr, name_len_ptr, _, class_ptr, class_len_ptr, filetime_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
     let index = index as usize;
     if name_len_ptr == 0 {
         return ERROR_FILE_NOT_FOUND;
@@ -459,7 +548,20 @@ fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
 }
 
 fn reg_query_info_key(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let (hkey, class_ptr, class_len_ptr, _, subkeys_ptr, max_subkey_ptr, max_class_ptr, values_ptr, max_value_ptr, max_value_len_ptr, security_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
+    let (
+        hkey,
+        class_ptr,
+        class_len_ptr,
+        _,
+        subkeys_ptr,
+        max_subkey_ptr,
+        max_class_ptr,
+        values_ptr,
+        max_value_ptr,
+        max_value_len_ptr,
+        security_ptr,
+        filetime_ptr,
+    ) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
 
     let prefix = match registry_prefix(vm, hkey) {
         Ok(value) => value,

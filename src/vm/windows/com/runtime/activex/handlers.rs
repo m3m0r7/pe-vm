@@ -1,14 +1,14 @@
 //! ActiveX site interface handlers.
 
-use crate::vm::{Vm, VmError};
 use crate::vm::windows::guid::parse_guid;
+use crate::vm::{Vm, VmError};
 use crate::vm_args;
 
+use super::super::IID_IUNKNOWN;
 use super::constants::{
     E_NOINTERFACE, E_NOTIMPL, IID_IOLECLIENTSITE, IID_IOLEINPLACEFRAME, IID_IOLEINPLACESITE,
     IID_IOLEINPLACEUIWINDOW, IID_IOLEWINDOW, S_OK,
 };
-use super::super::IID_IUNKNOWN;
 
 pub(super) fn site_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
@@ -148,7 +148,8 @@ pub(super) fn ole_context_sensitive_help(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn in_place_site_get_window_context(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (this, frame_out, doc_out, pos_rect, clip_rect, frame_info) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let (this, frame_out, doc_out, pos_rect, clip_rect, frame_info) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
 
     let in_place_frame = read_ptr(vm, this, 8);
     let in_place_ui = read_ptr(vm, this, 12);

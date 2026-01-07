@@ -28,12 +28,7 @@ pub(super) fn try_dialog_bitmap(text: &str) -> bool {
         return false;
     };
     apply_blank_icon(&mut window);
-    let Ok(mut canvas) = window
-        .into_canvas()
-        .accelerated()
-        .present_vsync()
-        .build()
-    else {
+    let Ok(mut canvas) = window.into_canvas().accelerated().present_vsync().build() else {
         return false;
     };
     let Ok(mut event_pump) = _sdl.event_pump() else {

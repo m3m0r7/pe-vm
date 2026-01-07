@@ -195,9 +195,9 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         // Write "AB" in UTF-16 with null terminator
-        vm.write_u16(ptr, 0x0041).unwrap();     // 'A'
+        vm.write_u16(ptr, 0x0041).unwrap(); // 'A'
         vm.write_u16(ptr + 2, 0x0042).unwrap(); // 'B'
-        vm.write_u16(ptr + 4, 0).unwrap();      // null
+        vm.write_u16(ptr + 4, 0).unwrap(); // null
         let result = read_utf16_z(&vm, ptr).unwrap();
         assert_eq!(result, vec![0x0041, 0x0042]);
     }

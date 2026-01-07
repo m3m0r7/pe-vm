@@ -12,11 +12,31 @@ define_stub_fn!(DLL_NAME, destroy_accelerator_table, 1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "GetDC", crate::vm::stdcall_args(1), get_dc);
-    vm.register_import_stdcall(DLL_NAME, "ReleaseDC", crate::vm::stdcall_args(2), release_dc);
-    vm.register_import_stdcall(DLL_NAME, "BeginPaint", crate::vm::stdcall_args(2), begin_paint);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "ReleaseDC",
+        crate::vm::stdcall_args(2),
+        release_dc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "BeginPaint",
+        crate::vm::stdcall_args(2),
+        begin_paint,
+    );
     vm.register_import_stdcall(DLL_NAME, "EndPaint", crate::vm::stdcall_args(2), end_paint);
-    vm.register_import_stdcall(DLL_NAME, "CreateAcceleratorTableA", crate::vm::stdcall_args(2), create_accelerator_table_a);
-    vm.register_import_stdcall(DLL_NAME, "DestroyAcceleratorTable", crate::vm::stdcall_args(1), destroy_accelerator_table);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CreateAcceleratorTableA",
+        crate::vm::stdcall_args(2),
+        create_accelerator_table_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "DestroyAcceleratorTable",
+        crate::vm::stdcall_args(1),
+        destroy_accelerator_table,
+    );
 }
 
 pub(super) fn get_dc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

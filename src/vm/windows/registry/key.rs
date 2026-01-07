@@ -91,21 +91,36 @@ mod tests {
 
     #[test]
     fn test_registry_hive_parse_hklm() {
-        assert_eq!(RegistryHive::parse("HKLM"), Some(RegistryHive::LocalMachine));
-        assert_eq!(RegistryHive::parse("HKEY_LOCAL_MACHINE"), Some(RegistryHive::LocalMachine));
-        assert_eq!(RegistryHive::parse("hklm"), Some(RegistryHive::LocalMachine));
+        assert_eq!(
+            RegistryHive::parse("HKLM"),
+            Some(RegistryHive::LocalMachine)
+        );
+        assert_eq!(
+            RegistryHive::parse("HKEY_LOCAL_MACHINE"),
+            Some(RegistryHive::LocalMachine)
+        );
+        assert_eq!(
+            RegistryHive::parse("hklm"),
+            Some(RegistryHive::LocalMachine)
+        );
     }
 
     #[test]
     fn test_registry_hive_parse_hkcu() {
         assert_eq!(RegistryHive::parse("HKCU"), Some(RegistryHive::CurrentUser));
-        assert_eq!(RegistryHive::parse("HKEY_CURRENT_USER"), Some(RegistryHive::CurrentUser));
+        assert_eq!(
+            RegistryHive::parse("HKEY_CURRENT_USER"),
+            Some(RegistryHive::CurrentUser)
+        );
     }
 
     #[test]
     fn test_registry_hive_parse_hkcr() {
         assert_eq!(RegistryHive::parse("HKCR"), Some(RegistryHive::ClassesRoot));
-        assert_eq!(RegistryHive::parse("HKEY_CLASSES_ROOT"), Some(RegistryHive::ClassesRoot));
+        assert_eq!(
+            RegistryHive::parse("HKEY_CLASSES_ROOT"),
+            Some(RegistryHive::ClassesRoot)
+        );
     }
 
     #[test]

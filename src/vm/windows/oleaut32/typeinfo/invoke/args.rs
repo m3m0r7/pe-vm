@@ -1,5 +1,5 @@
-use crate::vm::{ComOutParam, Value, Vm};
 use crate::vm::windows::oleaut32::typelib::FuncDesc;
+use crate::vm::{ComOutParam, Value, Vm};
 
 use super::super::super::constants::{
     DISP_E_BADPARAMCOUNT, DISP_E_TYPEMISMATCH, PARAMFLAG_FOUT, PARAMFLAG_FRETVAL, VARIANT_SIZE,
@@ -53,7 +53,8 @@ pub(super) fn build_invoke_values(
         let is_retval = (flags & PARAMFLAG_FRETVAL) != 0;
         let out_only = is_out_param(param.vt, flags);
         let base_vt = param.vt & !VT_BYREF;
-        let record_out = is_retval || out_only
+        let record_out = is_retval
+            || out_only
             || ((flags & PARAMFLAG_FOUT) != 0
                 && ((param.vt & VT_BYREF) != 0
                     || (param.vt & VT_ARRAY) != 0

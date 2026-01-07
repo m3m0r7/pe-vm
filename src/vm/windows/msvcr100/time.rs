@@ -4,8 +4,6 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-
-
 // Time functions
 define_stub_fn!(DLL, time32_impl, 0);
 define_stub_fn!(DLL, time64_impl, 0);

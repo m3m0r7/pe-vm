@@ -8,8 +8,8 @@ mod utils;
 
 use crate::vm::{Value, Vm, VmError};
 
-use super::instance::query_interface;
 use super::super::object::vtable_fn;
+use super::instance::query_interface;
 use constants::{
     E_NOINTERFACE, E_NOTIMPL, IID_IOLEOBJECT, IID_IPERSISTSTREAMINIT, OLEIVERB_INPLACEACTIVATE,
 };
@@ -43,11 +43,7 @@ pub(super) fn attach_client_site(vm: &mut Vm, i_dispatch: u32) -> Result<(), VmE
     let set_client_site = vtable_fn(vm, ole_object, 3)?;
     let set_thiscall = detect_thiscall(vm, set_client_site);
     let hr = if set_thiscall {
-        vm.execute_at_with_stack_with_ecx(
-            set_client_site,
-            ole_object,
-            &[Value::U32(site_ptr)],
-        )?
+        vm.execute_at_with_stack_with_ecx(set_client_site, ole_object, &[Value::U32(site_ptr)])?
     } else {
         vm.execute_at_with_stack(
             set_client_site,
@@ -97,9 +93,7 @@ pub(super) fn attach_client_site(vm: &mut Vm, i_dispatch: u32) -> Result<(), VmE
         )?
     };
     if std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!(
-            "[pe_vm] IOleObject::DoVerb hr=0x{hr:08X} verb=0x{OLEIVERB_INPLACEACTIVATE:08X}"
-        );
+        eprintln!("[pe_vm] IOleObject::DoVerb hr=0x{hr:08X} verb=0x{OLEIVERB_INPLACEACTIVATE:08X}");
     }
     Ok(())
 }

@@ -1,7 +1,7 @@
-use crate::vm::{Vm, VmError};
 use crate::vm::windows::get_registry;
 use crate::vm::windows::guid::format_guid;
 use crate::vm::windows::registry::RegistryValue;
+use crate::vm::{Vm, VmError};
 
 use super::super::typelib;
 use super::object::alloc_typelib;
@@ -46,12 +46,8 @@ pub(super) fn resolve_typelib_path(
         format!(r"HKCR\\TypeLib\\{guid}\\{version}\\0\\win32"),
         format!(r"HKLM\\Software\\Classes\\TypeLib\\{guid}\\{version}\\0\\win32"),
         format!(r"HKCU\\Software\\Classes\\TypeLib\\{guid}\\{version}\\0\\win32"),
-        format!(
-            r"HKLM\\Software\\Classes\\WOW6432Node\\TypeLib\\{guid}\\{version}\\0\\win32"
-        ),
-        format!(
-            r"HKLM\\Software\\WOW6432Node\\Classes\\TypeLib\\{guid}\\{version}\\0\\win32"
-        ),
+        format!(r"HKLM\\Software\\Classes\\WOW6432Node\\TypeLib\\{guid}\\{version}\\0\\win32"),
+        format!(r"HKLM\\Software\\WOW6432Node\\Classes\\TypeLib\\{guid}\\{version}\\0\\win32"),
     ];
     for key in candidates {
         let value = registry

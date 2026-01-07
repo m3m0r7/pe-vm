@@ -1,14 +1,7 @@
 use crate::vm::{Vm, VmError};
 
 use crate::architecture::intel::x86::ins::core::{
-    read_rm16,
-    read_rm32,
-    read_rm8,
-    write_rm16,
-    write_rm32,
-    write_rm8,
-    ModRm,
-    Prefixes,
+    read_rm16, read_rm32, read_rm8, write_rm16, write_rm32, write_rm8, ModRm, Prefixes,
 };
 
 pub(crate) fn not_rm8(vm: &mut Vm, modrm: &ModRm, prefixes: Prefixes) -> Result<(), VmError> {

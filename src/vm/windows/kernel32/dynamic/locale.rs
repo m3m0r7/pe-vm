@@ -37,7 +37,11 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         is_valid_locale_name,
     );
-    vm.register_import_any_stdcall("LCMapStringEx", crate::vm::stdcall_args(9), lc_map_string_ex);
+    vm.register_import_any_stdcall(
+        "LCMapStringEx",
+        crate::vm::stdcall_args(9),
+        lc_map_string_ex,
+    );
 }
 
 fn enum_system_locales_ex(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -109,7 +113,8 @@ fn is_valid_locale_name(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn lc_map_string_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, i32, u32, usize);
+    let (flags, src_ptr, src_len, dst_ptr, dst_len) =
+        vm_args!(vm, stack_ptr; u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }

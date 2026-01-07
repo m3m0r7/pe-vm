@@ -26,7 +26,11 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(3),
         create_threadpool_wait,
     );
-    vm.register_import_any_stdcall("SetThreadpoolWait", crate::vm::stdcall_args(3), set_threadpool_wait);
+    vm.register_import_any_stdcall(
+        "SetThreadpoolWait",
+        crate::vm::stdcall_args(3),
+        set_threadpool_wait,
+    );
     vm.register_import_any_stdcall(
         "CloseThreadpoolWait",
         crate::vm::stdcall_args(1),

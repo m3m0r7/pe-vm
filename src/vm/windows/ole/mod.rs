@@ -8,8 +8,6 @@ const DLL: &str = DLL_NAME;
 
 use crate::vm::Vm;
 
-
-
 // OLE.dll exports (Win32::OLE Perl module)
 define_stub_fn!(DLL, create_perl_object, 0);
 define_stub_fn!(DLL, set_sv_from_variant, 0);

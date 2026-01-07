@@ -128,5 +128,7 @@ pub(crate) fn calc_ea(vm: &Vm, modrm: &ModRm, segment_base: u32) -> Result<u32, 
         base = base.wrapping_add(vm.reg32(modrm.rm));
     }
 
-    Ok(segment_base.wrapping_add(base).wrapping_add(modrm.disp as u32))
+    Ok(segment_base
+        .wrapping_add(base)
+        .wrapping_add(modrm.disp as u32))
 }

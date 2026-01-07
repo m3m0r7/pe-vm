@@ -133,7 +133,8 @@ pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpOpenRequestA(hConnect, verb, object, version, referrer, accept, flags, context).
-    let (connection_handle, verb_ptr, object_ptr, _, _, _, flags) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32);
+    let (connection_handle, verb_ptr, object_ptr, _, _, _, flags) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32);
     if std::env::var("PE_VM_TRACE").is_ok() && object_ptr != 0 {
         let mut raw = String::new();
         let mut ascii = String::new();
@@ -156,7 +157,11 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let verb = read_c_string(vm, verb_ptr);
     let object = read_c_string(vm, object_ptr);
     let secure = (flags & INTERNET_FLAG_SECURE) != 0;
-    let method = if verb.is_empty() { "GET".to_string() } else { verb };
+    let method = if verb.is_empty() {
+        "GET".to_string()
+    } else {
+        verb
+    };
     let mut path = if object.is_empty() {
         "/".to_string()
     } else if object.starts_with('/') {
@@ -187,7 +192,8 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpSendRequestA(hRequest, headers, headersLen, optional, optionalLen).
-    let (request_handle, headers_ptr, headers_len, optional_ptr, optional_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let (request_handle, headers_ptr, headers_len, optional_ptr, optional_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
 
     let headers = read_optional_string(vm, headers_ptr, headers_len);
     let mut body = read_optional_bytes(vm, optional_ptr, optional_len as usize);
@@ -197,7 +203,8 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         let Some(InternetHandle::Request(request)) = guard.handles.get(&request_handle) else {
             return 0;
         };
-        let Some(InternetHandle::Connection(connection)) = guard.handles.get(&request.connection) else {
+        let Some(InternetHandle::Connection(connection)) = guard.handles.get(&request.connection)
+        else {
             return 0;
         };
         let mut secure = request.secure || connection.secure_hint;
@@ -219,7 +226,11 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
     let mut headers = ensure_host_header(&headers, &host);
     let overrides = form_overrides();
-    if !overrides.is_empty() && headers.to_ascii_lowercase().contains("application/x-www-form-urlencoded") {
+    if !overrides.is_empty()
+        && headers
+            .to_ascii_lowercase()
+            .contains("application/x-www-form-urlencoded")
+    {
         if let Ok(body_text) = String::from_utf8(body.clone()) {
             let (updated, changed) = apply_form_overrides(&body_text, &overrides);
             if changed {
@@ -234,7 +245,16 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
 
-    let response = match send_http_request(&host, port, &method, &path, &user_agent, &headers, &body, secure) {
+    let response = match send_http_request(
+        &host,
+        port,
+        &method,
+        &path,
+        &user_agent,
+        &headers,
+        &body,
+        secure,
+    ) {
         Ok(response) => response,
         Err(err) => {
             trace_net(&format!("HttpSendRequestA failed: {err}"));
@@ -256,7 +276,8 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpQueryInfoA(hRequest, infoLevel, buffer, bufferLen, index).
-    let (request_handle, info_level, buffer, buffer_len_ptr, _index_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let (request_handle, info_level, buffer, buffer_len_ptr, _index_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
 
     let response = {
         let guard = store().lock().expect("wininet store");
@@ -283,18 +304,9 @@ pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
 
     let (text, number) = match info {
-        HTTP_QUERY_STATUS_CODE => (
-            response.status.to_string(),
-            response.status as u32,
-        ),
-        HTTP_QUERY_CONTENT_LENGTH => (
-            response.body.len().to_string(),
-            response.body.len() as u32,
-        ),
-        HTTP_QUERY_RAW_HEADERS_CRLF => (
-            response.raw_headers.clone(),
-            0,
-        ),
+        HTTP_QUERY_STATUS_CODE => (response.status.to_string(), response.status as u32),
+        HTTP_QUERY_CONTENT_LENGTH => (response.body.len().to_string(), response.body.len() as u32),
+        HTTP_QUERY_RAW_HEADERS_CRLF => (response.raw_headers.clone(), 0),
         _ => return 0,
     };
 
@@ -334,7 +346,8 @@ pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn internet_read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetReadFile(hRequest, buffer, bytesToRead, bytesRead).
-    let (request_handle, buffer, bytes_to_read, bytes_read_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let (request_handle, buffer, bytes_to_read, bytes_read_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     let bytes_to_read = bytes_to_read as usize;
     if buffer == 0 || bytes_read_ptr == 0 {
         return 0;

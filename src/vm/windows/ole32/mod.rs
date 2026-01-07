@@ -15,26 +15,96 @@ const CLASS_E_CLASSNOTAVAILABLE: u32 = 0x8004_0111;
 const CO_E_CLASSSTRING: u32 = 0x8004_010F;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "CLSIDFromString", crate::vm::stdcall_args(2), clsid_from_string);
-    vm.register_import_stdcall(DLL_NAME, "CLSIDFromProgID", crate::vm::stdcall_args(2), clsid_from_progid);
-    vm.register_import_stdcall(DLL_NAME, "StringFromGUID2", crate::vm::stdcall_args(3), string_from_guid2);
-    vm.register_import_stdcall(DLL_NAME, "CoCreateInstance", crate::vm::stdcall_args(5), co_create_instance);
-    vm.register_import_stdcall(DLL_NAME, "CoGetClassObject", crate::vm::stdcall_args(5), co_get_class_object);
-    vm.register_import_stdcall(DLL_NAME, "CoTaskMemAlloc", crate::vm::stdcall_args(1), co_task_mem_alloc);
-    vm.register_import_stdcall(DLL_NAME, "CoTaskMemRealloc", crate::vm::stdcall_args(2), co_task_mem_realloc);
-    vm.register_import_stdcall(DLL_NAME, "CoTaskMemFree", crate::vm::stdcall_args(1), co_task_mem_free);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CLSIDFromString",
+        crate::vm::stdcall_args(2),
+        clsid_from_string,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CLSIDFromProgID",
+        crate::vm::stdcall_args(2),
+        clsid_from_progid,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "StringFromGUID2",
+        crate::vm::stdcall_args(3),
+        string_from_guid2,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoCreateInstance",
+        crate::vm::stdcall_args(5),
+        co_create_instance,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoGetClassObject",
+        crate::vm::stdcall_args(5),
+        co_get_class_object,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemAlloc",
+        crate::vm::stdcall_args(1),
+        co_task_mem_alloc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemRealloc",
+        crate::vm::stdcall_args(2),
+        co_task_mem_realloc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemFree",
+        crate::vm::stdcall_args(1),
+        co_task_mem_free,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "CreateDataAdviseHolder",
         crate::vm::stdcall_args(1),
         create_data_advise_holder,
     );
-    vm.register_import_stdcall(DLL_NAME, "ReadClassStm", crate::vm::stdcall_args(2), read_class_stm);
-    vm.register_import_stdcall(DLL_NAME, "WriteClassStm", crate::vm::stdcall_args(2), write_class_stm);
-    vm.register_import_stdcall(DLL_NAME, "OleInitialize", crate::vm::stdcall_args(1), ole_initialize);
-    vm.register_import_stdcall(DLL_NAME, "OleUninitialize", crate::vm::stdcall_args(0), ole_uninitialize);
-    vm.register_import_stdcall(DLL_NAME, "OleSaveToStream", crate::vm::stdcall_args(2), ole_save_to_stream);
-    vm.register_import_stdcall(DLL_NAME, "OleLockRunning", crate::vm::stdcall_args(3), ole_lock_running);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "ReadClassStm",
+        crate::vm::stdcall_args(2),
+        read_class_stm,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "WriteClassStm",
+        crate::vm::stdcall_args(2),
+        write_class_stm,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleInitialize",
+        crate::vm::stdcall_args(1),
+        ole_initialize,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleUninitialize",
+        crate::vm::stdcall_args(0),
+        ole_uninitialize,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleSaveToStream",
+        crate::vm::stdcall_args(2),
+        ole_save_to_stream,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleLockRunning",
+        crate::vm::stdcall_args(3),
+        ole_lock_running,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "CreateOleAdviseHolder",
@@ -53,7 +123,12 @@ pub fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(3),
         ole_reg_get_misc_status,
     );
-    vm.register_import_stdcall(DLL_NAME, "OleRegEnumVerbs", crate::vm::stdcall_args(2), ole_reg_enum_verbs);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleRegEnumVerbs",
+        crate::vm::stdcall_args(2),
+        ole_reg_enum_verbs,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "CreateStreamOnHGlobal",
@@ -327,8 +402,8 @@ mod tests {
     fn test_string_from_guid2_null_ptr_returns_zero() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, 0).unwrap();  // null guid ptr
-        vm.write_u32(stack + 8, 0).unwrap();  // null output ptr
+        vm.write_u32(stack + 4, 0).unwrap(); // null guid ptr
+        vm.write_u32(stack + 8, 0).unwrap(); // null output ptr
         vm.write_u32(stack + 12, 0).unwrap(); // max_len = 0
         let result = string_from_guid2(&mut vm, stack);
         assert_eq!(result, 0);

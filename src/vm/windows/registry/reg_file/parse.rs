@@ -1,6 +1,6 @@
+use super::super::{Registry, RegistryError, RegistryHive, RegistryMergeMode};
 use super::string::parse_string_literal;
 use super::value::parse_registry_value;
-use super::super::{Registry, RegistryError, RegistryHive, RegistryMergeMode};
 
 pub(super) fn merge_reg_str(
     registry: &mut Registry,
@@ -123,7 +123,10 @@ fn parse_key_path(line: &str) -> Result<(RegistryHive, Vec<String>), RegistryErr
         .ok_or_else(|| RegistryError::InvalidKey("missing hive".to_string()))?;
     let hive = RegistryHive::parse(hive_name)
         .ok_or_else(|| RegistryError::InvalidHive(hive_name.to_string()))?;
-    let path = parts.filter(|part| !part.is_empty()).map(|part| part.to_string()).collect();
+    let path = parts
+        .filter(|part| !part.is_empty())
+        .map(|part| part.to_string())
+        .collect();
     Ok((hive, path))
 }
 

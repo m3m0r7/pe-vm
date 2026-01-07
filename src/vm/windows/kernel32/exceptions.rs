@@ -13,14 +13,54 @@ define_stub_fn!(DLL_NAME, add_vectored_continue_handler, 1);
 define_stub_fn!(DLL_NAME, remove_vectored_continue_handler, 1);
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "SetUnhandledExceptionFilter", crate::vm::stdcall_args(1), set_unhandled_exception_filter);
-    vm.register_import_stdcall(DLL_NAME, "UnhandledExceptionFilter", crate::vm::stdcall_args(1), unhandled_exception_filter);
-    vm.register_import_stdcall(DLL_NAME, "RaiseException", crate::vm::stdcall_args(4), raise_exception);
-    vm.register_import_stdcall(DLL_NAME, "RtlUnwind", crate::vm::stdcall_args(4), rtl_unwind);
-    vm.register_import_stdcall(DLL_NAME, "AddVectoredExceptionHandler", crate::vm::stdcall_args(2), add_vectored_exception_handler);
-    vm.register_import_stdcall(DLL_NAME, "RemoveVectoredExceptionHandler", crate::vm::stdcall_args(1), remove_vectored_exception_handler);
-    vm.register_import_stdcall(DLL_NAME, "AddVectoredContinueHandler", crate::vm::stdcall_args(2), add_vectored_continue_handler);
-    vm.register_import_stdcall(DLL_NAME, "RemoveVectoredContinueHandler", crate::vm::stdcall_args(1), remove_vectored_continue_handler);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetUnhandledExceptionFilter",
+        crate::vm::stdcall_args(1),
+        set_unhandled_exception_filter,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "UnhandledExceptionFilter",
+        crate::vm::stdcall_args(1),
+        unhandled_exception_filter,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RaiseException",
+        crate::vm::stdcall_args(4),
+        raise_exception,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RtlUnwind",
+        crate::vm::stdcall_args(4),
+        rtl_unwind,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "AddVectoredExceptionHandler",
+        crate::vm::stdcall_args(2),
+        add_vectored_exception_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RemoveVectoredExceptionHandler",
+        crate::vm::stdcall_args(1),
+        remove_vectored_exception_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "AddVectoredContinueHandler",
+        crate::vm::stdcall_args(2),
+        add_vectored_continue_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RemoveVectoredContinueHandler",
+        crate::vm::stdcall_args(1),
+        remove_vectored_continue_handler,
+    );
 }
 
 fn set_unhandled_exception_filter(vm: &mut Vm, stack_ptr: u32) -> u32 {

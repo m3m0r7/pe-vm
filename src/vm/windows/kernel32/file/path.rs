@@ -4,7 +4,12 @@ use crate::vm_args;
 use super::constants::DRIVE_FIXED;
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "GetDriveTypeA", crate::vm::stdcall_args(1), get_drive_type_a);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetDriveTypeA",
+        crate::vm::stdcall_args(1),
+        get_drive_type_a,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "GetLogicalDriveStringsA",
@@ -23,7 +28,12 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(2),
         get_windows_directory_a,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "SearchPathA", crate::vm::stdcall_args(6), search_path_a);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "SearchPathA",
+        crate::vm::stdcall_args(6),
+        search_path_a,
+    );
 }
 
 fn get_drive_type_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -60,7 +70,8 @@ fn get_windows_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn search_path_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (path_ptr, file_ptr, ext_ptr, buffer_len, buffer_ptr, file_part_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let (path_ptr, file_ptr, ext_ptr, buffer_len, buffer_ptr, file_part_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
     let buffer_len = buffer_len as usize;
 
     if file_ptr == 0 {
@@ -136,10 +147,7 @@ fn search_path_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     bytes.push(0);
     let _ = vm.write_bytes(buffer_ptr, &bytes);
     if file_part_ptr != 0 {
-        let part_offset = result
-            .rfind(['\\', '/'])
-            .map(|idx| idx + 1)
-            .unwrap_or(0);
+        let part_offset = result.rfind(['\\', '/']).map(|idx| idx + 1).unwrap_or(0);
         let _ = vm.write_u32(file_part_ptr, buffer_ptr + part_offset as u32);
     }
     required as u32

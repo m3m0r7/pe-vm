@@ -1,5 +1,5 @@
-use super::string::parse_string_literal;
 use super::super::{RegistryError, RegistryValue};
+use super::string::parse_string_literal;
 
 pub(super) fn parse_registry_value(value_raw: &str) -> Result<RegistryValue, RegistryError> {
     let lowered = value_raw.to_ascii_lowercase();
@@ -8,9 +8,8 @@ pub(super) fn parse_registry_value(value_raw: &str) -> Result<RegistryValue, Reg
     }
     if lowered.starts_with("dword:") {
         let hex = value_raw[6..].trim();
-        let value = u32::from_str_radix(hex, 16).map_err(|_| {
-            RegistryError::InvalidValue(format!("invalid dword value: {hex}"))
-        })?;
+        let value = u32::from_str_radix(hex, 16)
+            .map_err(|_| RegistryError::InvalidValue(format!("invalid dword value: {hex}")))?;
         return Ok(RegistryValue::Dword(value));
     }
     if lowered.starts_with("hex") {
@@ -36,9 +35,9 @@ fn split_hex_value(value_raw: &str) -> Result<(Option<String>, &str), RegistryEr
         .next()
         .ok_or_else(|| RegistryError::InvalidValue("missing hex data".to_string()))?;
     let kind = if prefix.starts_with("hex(") {
-        let end = prefix.find(')').ok_or_else(|| {
-            RegistryError::InvalidValue("invalid hex type".to_string())
-        })?;
+        let end = prefix
+            .find(')')
+            .ok_or_else(|| RegistryError::InvalidValue("invalid hex type".to_string()))?;
         Some(prefix[4..end].to_string())
     } else {
         None
@@ -54,9 +53,8 @@ fn parse_hex_bytes(data: &str) -> Result<Vec<u8>, RegistryError> {
             continue;
         }
         let token = token.trim_start_matches('\u{feff}');
-        let value = u8::from_str_radix(token, 16).map_err(|_| {
-            RegistryError::InvalidValue(format!("invalid hex byte: {token}"))
-        })?;
+        let value = u8::from_str_radix(token, 16)
+            .map_err(|_| RegistryError::InvalidValue(format!("invalid hex byte: {token}")))?;
         bytes.push(value);
     }
     Ok(bytes)

@@ -8,8 +8,18 @@ define_stub_fn!(DLL_NAME, load_cursor_a, 1);
 define_stub_fn!(DLL_NAME, load_cursor_w, 1);
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "LoadCursorA", crate::vm::stdcall_args(2), load_cursor_a);
-    vm.register_import_stdcall(DLL_NAME, "LoadCursorW", crate::vm::stdcall_args(2), load_cursor_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadCursorA",
+        crate::vm::stdcall_args(2),
+        load_cursor_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadCursorW",
+        crate::vm::stdcall_args(2),
+        load_cursor_w,
+    );
 }
 
 #[cfg(test)]

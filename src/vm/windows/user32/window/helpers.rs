@@ -43,10 +43,10 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         write_rect(&mut vm, ptr, 10, 20, 100, 200);
-        assert_eq!(vm.read_u32(ptr).unwrap() as i32, 10);      // left
-        assert_eq!(vm.read_u32(ptr + 4).unwrap() as i32, 20);  // top
+        assert_eq!(vm.read_u32(ptr).unwrap() as i32, 10); // left
+        assert_eq!(vm.read_u32(ptr + 4).unwrap() as i32, 20); // top
         assert_eq!(vm.read_u32(ptr + 8).unwrap() as i32, 100); // right
-        assert_eq!(vm.read_u32(ptr + 12).unwrap() as i32, 200);// bottom
+        assert_eq!(vm.read_u32(ptr + 12).unwrap() as i32, 200); // bottom
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         write_point(&mut vm, ptr, 150, 250);
-        assert_eq!(vm.read_u32(ptr).unwrap() as i32, 150);     // x
+        assert_eq!(vm.read_u32(ptr).unwrap() as i32, 150); // x
         assert_eq!(vm.read_u32(ptr + 4).unwrap() as i32, 250); // y
     }
 

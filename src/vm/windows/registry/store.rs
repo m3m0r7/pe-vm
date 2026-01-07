@@ -130,33 +130,21 @@ impl Registry {
     }
 
     fn ensure_key_mut(&mut self, hive: RegistryHive, path: &[String]) -> &mut RegistryNode {
-        let root = self
-            .hives
-            .entry(hive)
-            .or_default();
+        let root = self.hives.entry(hive).or_default();
         let mut cursor = root;
         for segment in path {
             let key = normalize_segment(segment);
-            cursor = cursor
-                .children
-                .entry(key)
-                .or_default();
+            cursor = cursor.children.entry(key).or_default();
         }
         cursor
     }
 
     fn ensure_path(&mut self, hive: RegistryHive, path: &[&str]) {
-        let root = self
-            .hives
-            .entry(hive)
-            .or_default();
+        let root = self.hives.entry(hive).or_default();
         let mut cursor = root;
         for segment in path {
             let key = normalize_segment(segment);
-            cursor = cursor
-                .children
-                .entry(key)
-                .or_default();
+            cursor = cursor.children.entry(key).or_default();
         }
     }
 
@@ -269,7 +257,10 @@ mod tests {
     fn test_registry_set_and_get() {
         let mut registry = Registry::new();
         registry
-            .set("HKLM\\Software\\Test@Value", RegistryValue::String("hello".to_string()))
+            .set(
+                "HKLM\\Software\\Test@Value",
+                RegistryValue::String("hello".to_string()),
+            )
             .unwrap();
         let value = registry.get("HKLM\\Software\\Test@Value").unwrap();
         assert_eq!(value, Some(&RegistryValue::String("hello".to_string())));
@@ -296,12 +287,18 @@ mod tests {
     fn test_registry_append() {
         let mut registry = Registry::new();
         let result = registry
-            .append("HKLM\\Test@Value", RegistryValue::String("first".to_string()))
+            .append(
+                "HKLM\\Test@Value",
+                RegistryValue::String("first".to_string()),
+            )
             .unwrap();
         assert!(result); // Should succeed (value didn't exist)
 
         let result = registry
-            .append("HKLM\\Test@Value", RegistryValue::String("second".to_string()))
+            .append(
+                "HKLM\\Test@Value",
+                RegistryValue::String("second".to_string()),
+            )
             .unwrap();
         assert!(!result); // Should fail (value already exists)
 
@@ -332,10 +329,16 @@ mod tests {
     fn test_registry_stats() {
         let mut registry = Registry::new();
         registry
-            .set("HKLM\\Test@ShortName", RegistryValue::String("a".to_string()))
+            .set(
+                "HKLM\\Test@ShortName",
+                RegistryValue::String("a".to_string()),
+            )
             .unwrap();
         registry
-            .set("HKLM\\Test@LongerValueName", RegistryValue::String("longer value".to_string()))
+            .set(
+                "HKLM\\Test@LongerValueName",
+                RegistryValue::String("longer value".to_string()),
+            )
             .unwrap();
 
         let stats = registry.stats("HKLM\\Test", false).unwrap();

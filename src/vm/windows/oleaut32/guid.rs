@@ -1,7 +1,7 @@
 //! GUID helpers for COM interfaces.
 
-use crate::vm::Vm;
 use crate::vm::windows::guid::parse_guid;
+use crate::vm::Vm;
 
 pub(super) fn read_guid_bytes(vm: &Vm, ptr: u32) -> Option<[u8; 16]> {
     let mut bytes = [0u8; 16];
@@ -55,11 +55,15 @@ mod tests {
         let ptr = vm.heap_start as u32;
         // IUnknown GUID: {00000000-0000-0000-C000-000000000046}
         let guid_bytes: [u8; 16] = [
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x46,
         ];
         vm.write_bytes(ptr, &guid_bytes).unwrap();
-        assert!(guid_matches(&vm, ptr, "{00000000-0000-0000-C000-000000000046}"));
+        assert!(guid_matches(
+            &vm,
+            ptr,
+            "{00000000-0000-0000-C000-000000000046}"
+        ));
     }
 
     #[test]
@@ -68,7 +72,11 @@ mod tests {
         let ptr = vm.heap_start as u32;
         let guid_bytes: [u8; 16] = [0; 16];
         vm.write_bytes(ptr, &guid_bytes).unwrap();
-        assert!(!guid_matches(&vm, ptr, "{00000001-0000-0000-0000-000000000000}"));
+        assert!(!guid_matches(
+            &vm,
+            ptr,
+            "{00000001-0000-0000-0000-000000000000}"
+        ));
     }
 
     #[test]

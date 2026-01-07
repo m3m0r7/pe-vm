@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use serde_yaml::Value as YamlValue;
 
-use crate::vm::{Architecture, Os, PathMapping, SandboxConfig, VmConfig, VmError};
 use crate::vm::windows;
+use crate::vm::{Architecture, Os, PathMapping, SandboxConfig, VmConfig, VmError};
 
 const SETTINGS_FILES: [SettingsFileSpec; 2] = [
     SettingsFileSpec {
@@ -167,7 +167,10 @@ pub(crate) fn load_default_settings() -> Option<Settings> {
     }
 }
 
-pub(crate) fn apply_vm_settings(mut config: VmConfig, settings: &Settings) -> Result<VmConfig, VmError> {
+pub(crate) fn apply_vm_settings(
+    mut config: VmConfig,
+    settings: &Settings,
+) -> Result<VmConfig, VmError> {
     if let Some(os) = settings.vm.os {
         config = config.os(os);
     }
@@ -326,7 +329,9 @@ fn parse_paths(value: &YamlValue) -> PathMapping {
 fn merge_yaml_map(out: &mut PathMapping, map: &serde_yaml::Mapping) {
     for (key, value) in map {
         let Some(key) = key.as_str() else { continue };
-        let Some(value) = value.as_str() else { continue };
+        let Some(value) = value.as_str() else {
+            continue;
+        };
         out.insert(key.to_string(), value.to_string());
     }
 }
@@ -438,7 +443,9 @@ fn settings_search_candidates() -> Vec<SettingsCandidate> {
             .cmp(&right.dir_priority)
             .then_with(|| left.file_priority.cmp(&right.file_priority));
         if order.is_eq() {
-            left.path.to_string_lossy().cmp(&right.path.to_string_lossy())
+            left.path
+                .to_string_lossy()
+                .cmp(&right.path.to_string_lossy())
         } else {
             order
         }

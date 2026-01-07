@@ -3,7 +3,12 @@ use crate::vm::Vm;
 use super::constants::INVALID_HANDLE_VALUE;
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "FindClose", crate::vm::stdcall_args(1), find_close);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "FindClose",
+        crate::vm::stdcall_args(1),
+        find_close,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "FindFirstFileA",

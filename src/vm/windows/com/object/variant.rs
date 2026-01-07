@@ -1,8 +1,8 @@
 //! VARIANT array and argument helpers for COM dispatch.
 
-use crate::vm::{ComOutParam, Vm, VmError};
 use crate::vm::windows::oleaut32;
 use crate::vm::windows::oleaut32::typelib::FuncDesc;
+use crate::vm::{ComOutParam, Vm, VmError};
 
 use super::{ComArg, ComValue};
 use super::{
@@ -73,7 +73,12 @@ pub(super) fn build_variant_array_typed(
     let total = params.len() * VARIANT_SIZE;
     let base = vm.alloc_bytes(&vec![0u8; total], 4)?;
     for (index, param) in params.iter().rev().enumerate() {
-        write_variant_raw(vm, base + (index as u32) * VARIANT_SIZE as u32, param.vt, param.value)?;
+        write_variant_raw(
+            vm,
+            base + (index as u32) * VARIANT_SIZE as u32,
+            param.vt,
+            param.value,
+        )?;
     }
     Ok((base, params.len(), out_params))
 }
@@ -159,7 +164,10 @@ fn build_param_variant(
         } else {
             base_value
         }
-    } else if force_out || (vt & VT_BYREF) != 0 || base_vt == VT_VARIANT || base_vt == VT_USERDEFINED
+    } else if force_out
+        || (vt & VT_BYREF) != 0
+        || base_vt == VT_VARIANT
+        || base_vt == VT_USERDEFINED
     {
         let ptr = alloc_param_buffer(vm, vt)?;
         out_ptr = Some(ptr);

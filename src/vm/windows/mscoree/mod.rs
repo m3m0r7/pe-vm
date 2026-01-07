@@ -11,9 +11,24 @@ define_stub_fn!(DLL_NAME, _CorImageUnloading, 0);
 define_stub_fn!(DLL_NAME, _CorValidateImage, 0);
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "_CorDllMain", crate::vm::stdcall_args(3), cor_dll_main);
-    vm.register_import_stdcall(DLL_NAME, "_CorExeMain", crate::vm::stdcall_args(2), _CorExeMain);
-    vm.register_import_stdcall(DLL_NAME, "_CorExeMain2", crate::vm::stdcall_args(5), _CorExeMain2);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "_CorDllMain",
+        crate::vm::stdcall_args(3),
+        cor_dll_main,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "_CorExeMain",
+        crate::vm::stdcall_args(2),
+        _CorExeMain,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "_CorExeMain2",
+        crate::vm::stdcall_args(5),
+        _CorExeMain2,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "_CorImageUnloading",

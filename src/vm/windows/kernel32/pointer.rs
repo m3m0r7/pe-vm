@@ -7,8 +7,18 @@ use crate::vm_args;
 const POINTER_COOKIE: u32 = 0xA5A5_A5A5;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "EncodePointer", crate::vm::stdcall_args(1), encode_pointer);
-    vm.register_import_stdcall(DLL_NAME, "DecodePointer", crate::vm::stdcall_args(1), decode_pointer);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "EncodePointer",
+        crate::vm::stdcall_args(1),
+        encode_pointer,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "DecodePointer",
+        crate::vm::stdcall_args(1),
+        decode_pointer,
+    );
 }
 
 fn encode_pointer(vm: &mut Vm, stack_ptr: u32) -> u32 {

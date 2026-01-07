@@ -37,21 +37,11 @@ impl Vm {
         self.register_import_any_with_cleanup(name, func, 0);
     }
 
-    pub fn register_import_any_stdcall(
-        &mut self,
-        name: &str,
-        stack_cleanup: u32,
-        func: HostCall,
-    ) {
+    pub fn register_import_any_stdcall(&mut self, name: &str, stack_cleanup: u32, func: HostCall) {
         self.register_import_any_with_cleanup(name, func, stack_cleanup);
     }
 
-    fn register_import_any_with_cleanup(
-        &mut self,
-        name: &str,
-        func: HostCall,
-        stack_cleanup: u32,
-    ) {
+    fn register_import_any_with_cleanup(&mut self, name: &str, func: HostCall, stack_cleanup: u32) {
         self.imports_by_any.insert(
             name.to_ascii_lowercase(),
             HostFunction {
@@ -111,10 +101,8 @@ impl Vm {
                     .copied()
                 {
                     resolved = Some(func);
-                } else if let Some(func) = self
-                    .imports_by_any
-                    .get(&name.to_ascii_lowercase())
-                    .copied()
+                } else if let Some(func) =
+                    self.imports_by_any.get(&name.to_ascii_lowercase()).copied()
                 {
                     resolved = Some(func);
                 }
@@ -188,19 +176,14 @@ impl Vm {
             self.call_host(host, return_eip)?;
             if std::env::var("PE_VM_TRACE_IMPORTS").is_ok() {
                 if let Some(name) = self.imports_by_iat_name.get(&addr) {
-                    eprintln!(
-                        "[pe_vm] Import return: {name} eax=0x{:08X}",
-                        self.regs.eax
-                    );
+                    eprintln!("[pe_vm] Import return: {name} eax=0x{:08X}", self.regs.eax);
                 }
             }
             Ok(true)
         } else {
             if std::env::var("PE_VM_TRACE").is_ok() {
                 if let Some(name) = self.imports_by_iat_name.get(&addr) {
-                    eprintln!(
-                        "[pe_vm] Missing import call: {name} addr=0x{addr:08X}"
-                    );
+                    eprintln!("[pe_vm] Missing import call: {name} addr=0x{addr:08X}");
                 }
             }
             if std::env::var("PE_VM_ABORT_ON_MISSING_IMPORT").is_ok()
@@ -223,7 +206,11 @@ impl Vm {
 }
 
 fn import_key(module: &str, name: &str) -> String {
-    format!("{}!{}", module.to_ascii_lowercase(), name.to_ascii_lowercase())
+    format!(
+        "{}!{}",
+        module.to_ascii_lowercase(),
+        name.to_ascii_lowercase()
+    )
 }
 
 fn import_ordinal_key(module: &str, ordinal: u16) -> String {

@@ -5,14 +5,14 @@ mod dispatch;
 mod layout;
 mod variants;
 
-use crate::vm::{Value, Vm};
 use crate::vm::windows::oleaut32::typelib;
+use crate::vm::{Value, Vm};
 
-use super::helpers::resolve_typeinfo_info;
 use super::super::constants::{
     DISP_E_MEMBERNOTFOUND, DISP_E_TYPEMISMATCH, E_NOTIMPL, PARAMFLAG_FRETVAL, S_OK, VT_EMPTY,
     VT_HRESULT, VT_I4, VT_VOID,
 };
+use super::helpers::resolve_typeinfo_info;
 
 use args::{build_invoke_values, trace_values};
 use dispatch::{detect_thiscall, valid_vtable, vtable_entry};
@@ -59,9 +59,7 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
         .unwrap_or(0);
     if arg_count > max_expected {
         if std::env::var("PE_VM_TRACE_COM").is_ok() {
-            eprintln!(
-                "[pe_vm] ITypeInfo::Invoke cargs clamped from {arg_count} to {max_expected}"
-            );
+            eprintln!("[pe_vm] ITypeInfo::Invoke cargs clamped from {arg_count} to {max_expected}");
         }
         arg_count = max_expected;
     }
@@ -142,17 +140,13 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             if valid_vtable(vm, dispatch, func.vtable_offset) {
                 instance_ptr = dispatch;
                 if std::env::var("PE_VM_TRACE_COM").is_ok() {
-                    eprintln!(
-                        "[pe_vm] ITypeInfo::Invoke dispatch_instance=0x{instance_ptr:08X}"
-                    );
+                    eprintln!("[pe_vm] ITypeInfo::Invoke dispatch_instance=0x{instance_ptr:08X}");
                 }
             }
         }
     }
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
-        eprintln!(
-            "[pe_vm] ITypeInfo::Invoke instance_ptr=0x{instance_ptr:08X}"
-        );
+        eprintln!("[pe_vm] ITypeInfo::Invoke instance_ptr=0x{instance_ptr:08X}");
     }
     if !valid_vtable(vm, instance_ptr, func.vtable_offset) {
         return E_NOTIMPL;
@@ -164,9 +158,7 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             if fallback != 0 && fallback != instance_ptr {
                 instance_ptr = fallback;
                 if std::env::var("PE_VM_TRACE_COM").is_ok() {
-                    eprintln!(
-                        "[pe_vm] ITypeInfo::Invoke fallback instance=0x{instance_ptr:08X}"
-                    );
+                    eprintln!("[pe_vm] ITypeInfo::Invoke fallback instance=0x{instance_ptr:08X}");
                 }
                 vtable_entry(vm, instance_ptr, func.vtable_offset).unwrap_or(0)
             } else {

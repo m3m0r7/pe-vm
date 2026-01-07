@@ -16,7 +16,12 @@ impl Vm {
         if end > self.heap_end {
             return Err(VmError::OutOfMemory);
         }
-        self.trace_write("alloc_bytes", self.base + offset as u32, bytes.len(), Some(bytes));
+        self.trace_write(
+            "alloc_bytes",
+            self.base + offset as u32,
+            bytes.len(),
+            Some(bytes),
+        );
         self.memory[offset..end].copy_from_slice(bytes);
         self.heap_cursor = end;
         Ok(self.base + offset as u32)

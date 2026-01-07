@@ -5,7 +5,12 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "PathFileExistsA", crate::vm::stdcall_args(1), path_file_exists_a);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "PathFileExistsA",
+        crate::vm::stdcall_args(1),
+        path_file_exists_a,
+    );
 }
 
 // BOOL PathFileExistsA(LPCSTR pszPath)
@@ -20,7 +25,11 @@ fn path_file_exists_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] PathFileExistsA: {path} -> {exists}");
     }
-    if exists { 1 } else { 0 }
+    if exists {
+        1
+    } else {
+        0
+    }
 }
 
 #[cfg(test)]
@@ -54,7 +63,8 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
         let path_ptr = vm.heap_start as u32;
-        vm.write_bytes(path_ptr, b"C:\\nonexistent\\path\\file.txt\0").unwrap();
+        vm.write_bytes(path_ptr, b"C:\\nonexistent\\path\\file.txt\0")
+            .unwrap();
         vm.write_u32(stack + 4, path_ptr).unwrap();
         let result = path_file_exists_a(&mut vm, stack);
         assert_eq!(result, 0);

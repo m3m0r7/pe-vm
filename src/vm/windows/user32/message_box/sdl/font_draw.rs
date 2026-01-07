@@ -38,9 +38,8 @@ pub(super) fn draw_centered_label(
     // Center the label within the button rect.
     let text_width = measure_text_width(font, size, text);
     let line_height = line_metrics.new_line_size;
-    let baseline_y = rect.y() as f32
-        + (rect.height() as f32 - line_height) / 2.0
-        + line_metrics.ascent;
+    let baseline_y =
+        rect.y() as f32 + (rect.height() as f32 - line_height) / 2.0 + line_metrics.ascent;
     let baseline_y = baseline_y.round() as i32;
     let x = rect.x() as f32 + (rect.width() as f32 - text_width) / 2.0;
     draw_text_font(canvas, font, text, x, baseline_y, color, size);
@@ -83,12 +82,7 @@ pub(super) fn draw_text_font(
                     continue;
                 }
                 canvas.set_draw_color(sdl2::pixels::Color::RGBA(r, g, b, alpha));
-                let rect = sdl2::rect::Rect::new(
-                    glyph_x + col as i32,
-                    glyph_y + row as i32,
-                    1,
-                    1,
-                );
+                let rect = sdl2::rect::Rect::new(glyph_x + col as i32, glyph_y + row as i32, 1, 1);
                 let _ = canvas.fill_rect(rect);
             }
         }

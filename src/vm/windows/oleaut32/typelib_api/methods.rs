@@ -1,6 +1,6 @@
+use crate::vm::windows::guid::format_guid;
 use crate::vm::Vm;
 use crate::vm_args;
-use crate::vm::windows::guid::format_guid;
 
 use super::super::constants::{
     E_INVALIDARG, E_NOINTERFACE, E_NOTIMPL, IID_ITYPELIB, IID_IUNKNOWN, S_OK,

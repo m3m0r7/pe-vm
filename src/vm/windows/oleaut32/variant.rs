@@ -56,7 +56,12 @@ pub(super) fn variant_change_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 // Write a VARIANT with a 32-bit value.
-pub(super) fn write_variant_u32(vm: &mut Vm, dest: u32, vt: u16, value: u32) -> Result<(), VmError> {
+pub(super) fn write_variant_u32(
+    vm: &mut Vm,
+    dest: u32,
+    vt: u16,
+    value: u32,
+) -> Result<(), VmError> {
     vm.write_u16(dest, vt)?;
     vm.write_u16(dest + 2, 0)?;
     vm.write_u16(dest + 4, 0)?;
@@ -150,8 +155,8 @@ mod tests {
     fn test_variant_change_type_null_ptrs() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 20;
-        vm.write_u32(stack + 4, 0).unwrap();  // null dest
-        vm.write_u32(stack + 8, 0).unwrap();  // null src
+        vm.write_u32(stack + 4, 0).unwrap(); // null dest
+        vm.write_u32(stack + 8, 0).unwrap(); // null src
         let result = variant_change_type(&mut vm, stack);
         assert_eq!(result, E_INVALIDARG);
     }

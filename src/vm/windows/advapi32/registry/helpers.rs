@@ -79,8 +79,10 @@ pub(super) fn redirect_wow6432_key(vm: &Vm, key: &str) -> Option<String> {
         return None;
     }
     let hive = parts[0];
-    let is_hklm = hive.eq_ignore_ascii_case("HKLM") || hive.eq_ignore_ascii_case("HKEY_LOCAL_MACHINE");
-    let is_hkcu = hive.eq_ignore_ascii_case("HKCU") || hive.eq_ignore_ascii_case("HKEY_CURRENT_USER");
+    let is_hklm =
+        hive.eq_ignore_ascii_case("HKLM") || hive.eq_ignore_ascii_case("HKEY_LOCAL_MACHINE");
+    let is_hkcu =
+        hive.eq_ignore_ascii_case("HKCU") || hive.eq_ignore_ascii_case("HKEY_CURRENT_USER");
     if !(is_hklm || is_hkcu) {
         return None;
     }
@@ -163,7 +165,11 @@ fn read_w_string(vm: &Vm, ptr: u32) -> String {
 pub(super) fn is_root_hive(hkey: u32) -> bool {
     matches!(
         hkey,
-        HKEY_CLASSES_ROOT | HKEY_CURRENT_USER | HKEY_LOCAL_MACHINE | HKEY_USERS | HKEY_CURRENT_CONFIG
+        HKEY_CLASSES_ROOT
+            | HKEY_CURRENT_USER
+            | HKEY_LOCAL_MACHINE
+            | HKEY_USERS
+            | HKEY_CURRENT_CONFIG
     )
 }
 
@@ -184,7 +190,10 @@ mod tests {
 
     #[test]
     fn test_format_registry_key_without_value() {
-        assert_eq!(format_registry_key("HKLM\\Software", None), "HKLM\\Software");
+        assert_eq!(
+            format_registry_key("HKLM\\Software", None),
+            "HKLM\\Software"
+        );
     }
 
     #[test]

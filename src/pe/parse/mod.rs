@@ -5,8 +5,8 @@ mod debug;
 mod exports;
 mod headers;
 mod helpers;
-mod imports;
 mod iat;
+mod imports;
 mod load_config;
 mod raw;
 mod reloc;
@@ -150,10 +150,13 @@ impl PeFile {
             None
         };
         pe.directories.tls = tls::parse_tls_directory(image, &pe, tls_dir)?;
-        pe.directories.load_config = load_config::parse_load_config_directory(image, &pe, load_config_dir)?;
-        pe.directories.bound_import = imports::parse_bound_import_directory(image, &pe, bound_import_dir)?;
+        pe.directories.load_config =
+            load_config::parse_load_config_directory(image, &pe, load_config_dir)?;
+        pe.directories.bound_import =
+            imports::parse_bound_import_directory(image, &pe, bound_import_dir)?;
         pe.directories.iat = iat::parse_iat_directory(image, &pe, iat_dir)?;
-        pe.directories.delay_import = imports::parse_delay_import_directory(image, &pe, delay_import_dir)?;
+        pe.directories.delay_import =
+            imports::parse_delay_import_directory(image, &pe, delay_import_dir)?;
         pe.directories.clr = clr::parse_clr_directory(image, &pe, clr_dir)?;
 
         Ok(pe)
@@ -188,7 +191,11 @@ impl PeFile {
             .map(|symbol| symbol.rva)
     }
 
-    pub fn load_image(&self, image: &[u8], load_base: Option<u32>) -> Result<PeImage, PeParseError> {
+    pub fn load_image(
+        &self,
+        image: &[u8],
+        load_base: Option<u32>,
+    ) -> Result<PeImage, PeParseError> {
         let mut base = load_base.unwrap_or(self.optional_header.image_base);
         base &= !0xFFF;
         if base == 0 {

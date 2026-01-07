@@ -2,18 +2,18 @@
 
 #[macro_use]
 pub mod macros;
-pub mod core;
-pub mod kernel32;
-pub mod ntdll;
-pub mod com;
 pub mod advapi32;
-mod guid;
+pub mod com;
+pub mod comdlg32;
+pub mod core;
 pub mod gdi32;
+mod guid;
 pub mod imagehlp;
 pub mod imm32;
-pub mod comdlg32;
-pub mod msvcr100;
+pub mod kernel32;
 pub mod mscoree;
+pub mod msvcr100;
+pub mod ntdll;
 pub mod ole;
 pub mod ole32;
 pub mod oleaut32;
@@ -21,8 +21,8 @@ pub mod registry;
 pub mod shell32;
 pub mod shlwapi;
 pub mod stkit432;
-pub mod user32;
 pub mod ucrt;
+pub mod user32;
 pub mod vcruntime;
 pub mod version;
 pub mod wininet;

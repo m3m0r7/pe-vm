@@ -77,11 +77,7 @@ pub(super) fn build_site_objects(vm: &mut Vm) -> Result<u32, VmError> {
 
     let in_place_frame = build_object(vm, in_place_frame_vtable, &[])?;
     let in_place_ui = build_object(vm, in_place_ui_vtable, &[])?;
-    let in_place_site = build_object(
-        vm,
-        in_place_site_vtable,
-        &[0, in_place_frame, in_place_ui],
-    )?;
+    let in_place_site = build_object(vm, in_place_site_vtable, &[0, in_place_frame, in_place_ui])?;
     let client_site = build_object(
         vm,
         client_vtable,

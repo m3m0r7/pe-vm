@@ -3,8 +3,8 @@ use std::os::raw::c_char;
 
 use crate::vm::{windows, Architecture, ExecuteOptions, Value, Vm, VmConfig};
 
-use super::handle::PeHandle;
 use super::super::error::{clear_last_error, set_last_error};
+use super::handle::PeHandle;
 
 /// # Safety
 /// `handle` and `symbol` must be valid pointers, and `args` must point to

@@ -3,12 +3,14 @@
 use crate::vm::Vm;
 use crate::vm_args;
 
-use crate::vm::windows::oleaut32::typelib;
 use crate::vm::windows::guid::format_guid;
+use crate::vm::windows::oleaut32::typelib;
 
-use super::helpers::{resolve_typeinfo_info, resolve_typeinfo_this};
-use super::super::constants::{E_INVALIDARG, E_NOINTERFACE, E_NOTIMPL, IID_ITYPEINFO, IID_ITYPEINFO2, IID_IUNKNOWN, S_OK};
+use super::super::constants::{
+    E_INVALIDARG, E_NOINTERFACE, E_NOTIMPL, IID_ITYPEINFO, IID_ITYPEINFO2, IID_IUNKNOWN, S_OK,
+};
 use super::super::guid::guid_matches;
+use super::helpers::{resolve_typeinfo_info, resolve_typeinfo_this};
 
 pub(super) fn typeinfo_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (this, thiscall) = resolve_typeinfo_this(vm, stack_ptr).unwrap_or((0, false));

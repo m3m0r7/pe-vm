@@ -68,11 +68,7 @@ pub(crate) fn lea(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), Vm
     Ok(())
 }
 
-pub(crate) fn mov_r8_imm8(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn mov_r8_imm8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0xB0;
     let imm = vm.read_u8(cursor + 1)?;
@@ -81,11 +77,7 @@ pub(crate) fn mov_r8_imm8(
     Ok(())
 }
 
-pub(crate) fn mov_r32_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn mov_r32_imm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0xB8;
     if prefixes.operand_size_16 {
@@ -128,7 +120,11 @@ pub(crate) fn mov_rm32_imm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Re
     Ok(())
 }
 
-pub(crate) fn mov_moffs_to_eax(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+pub(crate) fn mov_moffs_to_eax(
+    vm: &mut Vm,
+    cursor: u32,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
     let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
     if prefixes.operand_size_16 {
         let value = vm.read_u16(addr)?;
@@ -141,7 +137,11 @@ pub(crate) fn mov_moffs_to_eax(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> 
     Ok(())
 }
 
-pub(crate) fn mov_eax_to_moffs(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+pub(crate) fn mov_eax_to_moffs(
+    vm: &mut Vm,
+    cursor: u32,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
     let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
     if prefixes.operand_size_16 {
         let value = vm.reg16(0);
@@ -154,11 +154,7 @@ pub(crate) fn mov_eax_to_moffs(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> 
     Ok(())
 }
 
-pub(crate) fn movsd(
-    vm: &mut Vm,
-    cursor: u32,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn movsd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     let size = if prefixes.operand_size_16 { 2 } else { 4 };
     let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
     let mut src = vm.reg32(REG_ESI);
@@ -282,11 +278,7 @@ fn scas_common(vm: &mut Vm, cursor: u32, prefixes: Prefixes, size: u32) -> Resul
         if !repeats {
             break;
         }
-        let condition = if prefixes.rep {
-            vm.zf()
-        } else {
-            !vm.zf()
-        };
+        let condition = if prefixes.rep { vm.zf() } else { !vm.zf() };
         if !condition || remaining == 0 {
             break;
         }

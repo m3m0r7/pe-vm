@@ -29,7 +29,11 @@ impl Vm {
         if remainder.is_empty() {
             return host_prefix.clone();
         }
-        let sep = if host_prefix.contains('\\') { '\\' } else { '/' };
+        let sep = if host_prefix.contains('\\') {
+            '\\'
+        } else {
+            '/'
+        };
         if sep == '/' {
             remainder = remainder.replace('\\', "/");
         } else {

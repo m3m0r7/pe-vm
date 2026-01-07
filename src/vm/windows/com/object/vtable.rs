@@ -19,7 +19,11 @@ pub(super) fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
     }
 
     for idx in 0..bytes.len().saturating_sub(3) {
-        if bytes[idx] == 0x8B && bytes[idx + 1] == 0x44 && bytes[idx + 2] == 0x24 && bytes[idx + 3] == 0x04 {
+        if bytes[idx] == 0x8B
+            && bytes[idx + 1] == 0x44
+            && bytes[idx + 2] == 0x24
+            && bytes[idx + 3] == 0x04
+        {
             return false;
         }
     }

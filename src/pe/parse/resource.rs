@@ -1,6 +1,8 @@
 use super::super::error::PeParseError;
 use super::super::io::{read_u16, read_u32, read_utf16_string};
-use super::super::types::{DataDirectory, ResourceData, ResourceDirectory, ResourceId, ResourceNode};
+use super::super::types::{
+    DataDirectory, ResourceData, ResourceDirectory, ResourceId, ResourceNode,
+};
 use super::PeFile;
 
 pub(super) fn parse_resource_directory(

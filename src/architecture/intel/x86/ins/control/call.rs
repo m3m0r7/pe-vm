@@ -2,19 +2,13 @@ use crate::vm::{Vm, VmError, REG_EAX, REG_ECX, REG_EDX, REG_ESP};
 
 use crate::architecture::intel::x86::ins::core::{calc_ea, ModRm, Prefixes};
 
-pub(crate) fn call_rel32(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn call_rel32(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let rel = vm.read_u32(cursor + 1)? as i32;
     let next = cursor + 5;
     let target = (next as i32).wrapping_add(rel) as u32;
     if target == 0 && std::env::var("PE_VM_ABORT_ON_NULL_CALL").is_ok() {
         if std::env::var("PE_VM_TRACE").is_ok() {
-            eprintln!(
-                "[pe_vm] null call_rel32 target at eip=0x{cursor:08X} next=0x{next:08X}"
-            );
+            eprintln!("[pe_vm] null call_rel32 target at eip=0x{cursor:08X} next=0x{next:08X}");
         }
         return Err(VmError::InvalidConfig("null call"));
     }
@@ -50,9 +44,7 @@ pub(crate) fn call_rm32(
         }
         if target == 0 && std::env::var("PE_VM_ABORT_ON_NULL_CALL").is_ok() {
             if std::env::var("PE_VM_TRACE").is_ok() {
-                eprintln!(
-                    "[pe_vm] null call_rm32 target reg at next=0x{next:08X}"
-                );
+                eprintln!("[pe_vm] null call_rm32 target reg at next=0x{next:08X}");
             }
             return Err(VmError::InvalidConfig("null call"));
         }
@@ -88,9 +80,7 @@ pub(crate) fn call_rm32(
         }
         if target == 0 && std::env::var("PE_VM_ABORT_ON_NULL_CALL").is_ok() {
             if std::env::var("PE_VM_TRACE").is_ok() {
-                eprintln!(
-                    "[pe_vm] null call_rm32 target mem=0x{mem_addr:08X} next=0x{next:08X}"
-                );
+                eprintln!("[pe_vm] null call_rm32 target mem=0x{mem_addr:08X} next=0x{next:08X}");
             }
             return Err(VmError::InvalidConfig("null call"));
         }

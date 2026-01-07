@@ -19,9 +19,24 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         get_file_attributes_a,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "GetFileSize", crate::vm::stdcall_args(2), get_file_size);
-    vm.register_import_stdcall("KERNEL32.dll", "GetFileTime", crate::vm::stdcall_args(4), get_file_time);
-    vm.register_import_stdcall("KERNEL32.dll", "GetFileType", crate::vm::stdcall_args(1), get_file_type);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetFileSize",
+        crate::vm::stdcall_args(2),
+        get_file_size,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetFileTime",
+        crate::vm::stdcall_args(4),
+        get_file_time,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetFileType",
+        crate::vm::stdcall_args(1),
+        get_file_type,
+    );
 }
 
 fn flush_file_buffers(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

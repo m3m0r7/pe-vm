@@ -5,14 +5,14 @@ mod vtable;
 
 use std::sync::Arc;
 
-use crate::vm::{Value, Vm, VmError};
 use crate::vm::windows::oleaut32;
 use crate::vm::windows::oleaut32::typelib::{FuncDesc, TypeLib};
+use crate::vm::{Value, Vm, VmError};
 
 use super::{ComArg, ComValue, DispatchTable};
 
-pub(crate) use vtable::vtable_fn;
 use vtable::detect_thiscall;
+pub(crate) use vtable::vtable_fn;
 
 const DISPATCH_METHOD: u16 = 0x1;
 const DISPATCH_PROPERTYGET: u16 = 0x2;
@@ -109,21 +109,11 @@ impl ComObject {
         vm.write_bytes(base.wrapping_add(offset), bytes)
     }
 
-    pub fn invoke(
-        &self,
-        vm: &mut Vm,
-        dispid: u32,
-        args: &[ComArg],
-    ) -> Result<ComValue, VmError> {
+    pub fn invoke(&self, vm: &mut Vm, dispid: u32, args: &[ComArg]) -> Result<ComValue, VmError> {
         self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD)
     }
 
-    pub fn invoke_i4(
-        &self,
-        vm: &mut Vm,
-        dispid: u32,
-        args: &[ComArg],
-    ) -> Result<i32, VmError> {
+    pub fn invoke_i4(&self, vm: &mut Vm, dispid: u32, args: &[ComArg]) -> Result<i32, VmError> {
         match self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD)? {
             ComValue::I4(value) => Ok(value),
             ComValue::Void => Ok(0),
@@ -150,24 +140,14 @@ impl ComObject {
         }
     }
 
-    pub fn invoke_void(
-        &self,
-        vm: &mut Vm,
-        dispid: u32,
-        args: &[ComArg],
-    ) -> Result<(), VmError> {
+    pub fn invoke_void(&self, vm: &mut Vm, dispid: u32, args: &[ComArg]) -> Result<(), VmError> {
         match self.invoke_with_flags(vm, dispid, args, DISPATCH_METHOD)? {
             ComValue::Void => Ok(()),
             _ => Err(VmError::InvalidConfig("dispatch return type mismatch")),
         }
     }
 
-    pub fn set_property_bstr(
-        &self,
-        vm: &mut Vm,
-        dispid: u32,
-        value: &str,
-    ) -> Result<i32, VmError> {
+    pub fn set_property_bstr(&self, vm: &mut Vm, dispid: u32, value: &str) -> Result<i32, VmError> {
         match self.invoke_with_flags(
             vm,
             dispid,
@@ -264,7 +244,11 @@ impl InProcObject {
                 }
                 variant::build_variant_array_typed(vm, args, func)?
             }
-            None => (variant::build_variant_array(vm, args)?, args.len(), Vec::new()),
+            None => (
+                variant::build_variant_array(vm, args)?,
+                args.len(),
+                Vec::new(),
+            ),
         };
         if !out_params.is_empty() {
             vm.set_last_com_out_params(out_params);
@@ -331,9 +315,7 @@ impl InProcObject {
             let vt = vm.read_u16(result_ptr).unwrap_or(0);
             let raw = vm.read_u32(result_ptr + 8).unwrap_or(0);
             // Trace the raw VARIANT payload to debug COM return types.
-            eprintln!(
-                "[pe_vm] IDispatch::Invoke result vt=0x{vt:04X} raw=0x{raw:08X}"
-            );
+            eprintln!("[pe_vm] IDispatch::Invoke result vt=0x{vt:04X} raw=0x{raw:08X}");
             if vt == VT_BSTR {
                 if let Ok(text) = oleaut32::read_bstr(vm, raw) {
                     if !text.is_empty() {
@@ -417,7 +399,9 @@ impl InProcObject {
                 let expected_inputs = func
                     .params
                     .iter()
-                    .filter(|param| (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags))
+                    .filter(|param| {
+                        (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags)
+                    })
                     .count();
                 if args_len > expected_inputs {
                     continue;
@@ -447,7 +431,9 @@ impl InProcObject {
                 let expected_inputs = func
                     .params
                     .iter()
-                    .filter(|param| (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags))
+                    .filter(|param| {
+                        (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags)
+                    })
                     .count();
                 if args_len > expected_inputs {
                     continue;
@@ -463,7 +449,6 @@ impl InProcObject {
         }
         best
     }
-
 }
 
 fn is_out_only(flags: u32) -> bool {

@@ -33,8 +33,16 @@ pub(super) const TYPEINFO_METHODS: &[OleMethod] = &[
     ("pe_vm.typeinfo.CreateInstance", 4, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetMops", 3, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetContainingTypeLib", 3, typeinfo_not_impl),
-    ("pe_vm.typeinfo.ReleaseTypeAttr", 2, typeinfo_release_type_attr),
-    ("pe_vm.typeinfo.ReleaseFuncDesc", 2, typeinfo_release_func_desc),
+    (
+        "pe_vm.typeinfo.ReleaseTypeAttr",
+        2,
+        typeinfo_release_type_attr,
+    ),
+    (
+        "pe_vm.typeinfo.ReleaseFuncDesc",
+        2,
+        typeinfo_release_func_desc,
+    ),
     ("pe_vm.typeinfo.ReleaseVarDesc", 2, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetTypeKind", 2, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetTypeFlags", 2, typeinfo_not_impl),
@@ -50,5 +58,9 @@ pub(super) const TYPEINFO_METHODS: &[OleMethod] = &[
     ("pe_vm.typeinfo.GetAllFuncCustData", 3, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetAllParamCustData", 4, typeinfo_not_impl),
     ("pe_vm.typeinfo.GetAllVarCustData", 3, typeinfo_not_impl),
-    ("pe_vm.typeinfo.GetAllImplTypeCustData", 3, typeinfo_not_impl),
+    (
+        "pe_vm.typeinfo.GetAllImplTypeCustData",
+        3,
+        typeinfo_not_impl,
+    ),
 ];

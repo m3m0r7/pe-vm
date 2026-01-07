@@ -15,7 +15,10 @@ fn memset(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     for offset in 0..size {
-        if vm.write_u8(dest.wrapping_add(offset as u32), value).is_err() {
+        if vm
+            .write_u8(dest.wrapping_add(offset as u32), value)
+            .is_err()
+        {
             break;
         }
     }

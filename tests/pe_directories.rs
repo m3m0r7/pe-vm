@@ -77,7 +77,11 @@ fn build_directory_dll() -> Vec<u8> {
     let opt_off = file_off + 20;
     write_u16(&mut image, opt_off + 0x00, 0x10B);
     write_u32(&mut image, opt_off + 0x04, TEXT_RAW_SIZE); // SizeOfCode
-    write_u32(&mut image, opt_off + 0x08, RDATA_RAW_SIZE + RSRC_RAW_SIZE + RELOC_RAW_SIZE);
+    write_u32(
+        &mut image,
+        opt_off + 0x08,
+        RDATA_RAW_SIZE + RSRC_RAW_SIZE + RELOC_RAW_SIZE,
+    );
     write_u32(&mut image, opt_off + 0x10, TEXT_RVA); // EntryPoint
     write_u32(&mut image, opt_off + 0x14, TEXT_RVA); // BaseOfCode
     write_u32(&mut image, opt_off + 0x18, RDATA_RVA); // BaseOfData
@@ -178,8 +182,16 @@ fn build_directory_dll() -> Vec<u8> {
     write_u16(&mut image, rdata.raw(debug_off) + 10, 0);
     write_u32(&mut image, rdata.raw(debug_off) + 12, 2); // CodeView
     write_u32(&mut image, rdata.raw(debug_off) + 16, 0x10);
-    write_u32(&mut image, rdata.raw(debug_off) + 20, rdata.rva(debug_data_off));
-    write_u32(&mut image, rdata.raw(debug_off) + 24, rdata.raw(debug_data_off) as u32);
+    write_u32(
+        &mut image,
+        rdata.raw(debug_off) + 20,
+        rdata.rva(debug_data_off),
+    );
+    write_u32(
+        &mut image,
+        rdata.raw(debug_off) + 24,
+        rdata.raw(debug_data_off) as u32,
+    );
     write_bytes(&mut image, rdata.raw(debug_data_off), b"DEBUGDATA-TEST");
 
     // TLS directory.
@@ -192,7 +204,11 @@ fn build_directory_dll() -> Vec<u8> {
     write_u32(&mut image, rdata.raw(tls_off) + 12, tls_callbacks_va);
     write_u32(&mut image, rdata.raw(tls_off) + 16, 0);
     write_u32(&mut image, rdata.raw(tls_off) + 20, 0);
-    write_u32(&mut image, rdata.raw(tls_callbacks_off), IMAGE_BASE + TEXT_RVA + 0x10);
+    write_u32(
+        &mut image,
+        rdata.raw(tls_callbacks_off),
+        IMAGE_BASE + TEXT_RVA + 0x10,
+    );
     write_u32(&mut image, rdata.raw(tls_callbacks_off) + 4, 0);
     write_bytes(&mut image, rdata.raw(tls_raw_off), b"TLS-DATA");
 
@@ -203,7 +219,11 @@ fn build_directory_dll() -> Vec<u8> {
     write_u16(&mut image, rdata.raw(load_config_off) + 10, 1);
     write_u32(&mut image, rdata.raw(load_config_off) + 12, 0x10);
     write_u32(&mut image, rdata.raw(load_config_off) + 16, 0x20);
-    write_u32(&mut image, rdata.raw(load_config_off) + 60, IMAGE_BASE + TEXT_RVA);
+    write_u32(
+        &mut image,
+        rdata.raw(load_config_off) + 60,
+        IMAGE_BASE + TEXT_RVA,
+    );
 
     // Bound import directory.
     let bound_module_name = b"bound.dll\0";
@@ -211,10 +231,18 @@ fn build_directory_dll() -> Vec<u8> {
     let bound_module_off = bound_str_off - bound_off;
     let bound_forward_off = bound_module_off + bound_module_name.len();
     write_u32(&mut image, rdata.raw(bound_off) + 0, 0x01020304);
-    write_u16(&mut image, rdata.raw(bound_off) + 4, bound_module_off as u16);
+    write_u16(
+        &mut image,
+        rdata.raw(bound_off) + 4,
+        bound_module_off as u16,
+    );
     write_u16(&mut image, rdata.raw(bound_off) + 6, 1);
     write_u32(&mut image, rdata.raw(bound_off) + 8, 0x05060708);
-    write_u16(&mut image, rdata.raw(bound_off) + 12, bound_forward_off as u16);
+    write_u16(
+        &mut image,
+        rdata.raw(bound_off) + 12,
+        bound_forward_off as u16,
+    );
     write_u16(&mut image, rdata.raw(bound_off) + 14, 0);
     write_bytes(&mut image, rdata.raw(bound_str_off), bound_module_name);
     write_bytes(
@@ -229,14 +257,30 @@ fn build_directory_dll() -> Vec<u8> {
 
     // Delay import directory.
     write_u32(&mut image, rdata.raw(delay_off) + 0, 1);
-    write_u32(&mut image, rdata.raw(delay_off) + 4, rdata.rva(delay_dll_name_off));
+    write_u32(
+        &mut image,
+        rdata.raw(delay_off) + 4,
+        rdata.rva(delay_dll_name_off),
+    );
     write_u32(&mut image, rdata.raw(delay_off) + 8, 0);
-    write_u32(&mut image, rdata.raw(delay_off) + 12, rdata.rva(delay_iat_off));
-    write_u32(&mut image, rdata.raw(delay_off) + 16, rdata.rva(delay_name_table_off));
+    write_u32(
+        &mut image,
+        rdata.raw(delay_off) + 12,
+        rdata.rva(delay_iat_off),
+    );
+    write_u32(
+        &mut image,
+        rdata.raw(delay_off) + 16,
+        rdata.rva(delay_name_table_off),
+    );
     write_u32(&mut image, rdata.raw(delay_off) + 20, 0);
     write_u32(&mut image, rdata.raw(delay_off) + 24, 0);
     write_u32(&mut image, rdata.raw(delay_off) + 28, 0);
-    write_u32(&mut image, rdata.raw(delay_name_table_off), rdata.rva(delay_hint_name_off));
+    write_u32(
+        &mut image,
+        rdata.raw(delay_name_table_off),
+        rdata.rva(delay_hint_name_off),
+    );
     write_u32(&mut image, rdata.raw(delay_name_table_off) + 4, 0);
     write_u32(&mut image, rdata.raw(delay_iat_off), 0);
     write_u32(&mut image, rdata.raw(delay_iat_off) + 4, 0);
@@ -262,7 +306,11 @@ fn build_directory_dll() -> Vec<u8> {
     write_bytes(&mut image, rdata.raw(arch_off), b"ARCHTEST");
 
     // Global pointer.
-    write_u32(&mut image, rdata.raw(global_ptr_off), IMAGE_BASE + TEXT_RVA + 0x20);
+    write_u32(
+        &mut image,
+        rdata.raw(global_ptr_off),
+        IMAGE_BASE + TEXT_RVA + 0x20,
+    );
 
     // Resource section.
     let rsrc_raw = RSRC_RAW as usize;
@@ -315,11 +363,19 @@ fn build_directory_dll() -> Vec<u8> {
     write_u32(&mut image, data_dir_off + 0x50, rdata.rva(load_config_off)); // Load Config
     write_u32(&mut image, data_dir_off + 0x54, 0x40);
     write_u32(&mut image, data_dir_off + 0x58, rdata.rva(bound_off)); // Bound Import
-    write_u32(&mut image, data_dir_off + 0x5C, (bound_end - bound_off) as u32);
+    write_u32(
+        &mut image,
+        data_dir_off + 0x5C,
+        (bound_end - bound_off) as u32,
+    );
     write_u32(&mut image, data_dir_off + 0x60, rdata.rva(iat_off)); // IAT
     write_u32(&mut image, data_dir_off + 0x64, 8);
     write_u32(&mut image, data_dir_off + 0x68, rdata.rva(delay_off)); // Delay Import
-    write_u32(&mut image, data_dir_off + 0x6C, (delay_end - delay_off) as u32);
+    write_u32(
+        &mut image,
+        data_dir_off + 0x6C,
+        (delay_end - delay_off) as u32,
+    );
     write_u32(&mut image, data_dir_off + 0x70, rdata.rva(clr_off)); // CLR
     write_u32(&mut image, data_dir_off + 0x74, 0x48);
 
@@ -366,7 +422,10 @@ fn parse_all_directories() {
     assert_eq!(delay.descriptors.len(), 1);
     assert_eq!(delay.descriptors[0].module, "delay.dll");
     assert_eq!(delay.descriptors[0].symbols.len(), 1);
-    assert_eq!(delay.descriptors[0].symbols[0].name.as_deref(), Some("delay_func"));
+    assert_eq!(
+        delay.descriptors[0].symbols[0].name.as_deref(),
+        Some("delay_func")
+    );
 
     let reloc = dirs.reloc.unwrap();
     assert_eq!(reloc.blocks.len(), 1);

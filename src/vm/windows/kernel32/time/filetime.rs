@@ -13,7 +13,12 @@ pub(super) fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         get_system_time_as_filetime,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "GetLocalTime", crate::vm::stdcall_args(1), get_local_time);
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
+        "GetLocalTime",
+        crate::vm::stdcall_args(1),
+        get_local_time,
+    );
     vm.register_import_stdcall(
         "KERNEL32.dll",
         "SystemTimeToFileTime",

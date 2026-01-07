@@ -5,7 +5,12 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "RtlInitializeSListHead", crate::vm::stdcall_args(1), rtl_initialize_slist_head);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RtlInitializeSListHead",
+        crate::vm::stdcall_args(1),
+        rtl_initialize_slist_head,
+    );
 }
 
 fn rtl_initialize_slist_head(vm: &mut Vm, stack_ptr: u32) -> u32 {

@@ -49,11 +49,7 @@ pub(crate) fn sub_r32_rm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Resu
     Ok(())
 }
 
-pub(crate) fn sub_al_imm8(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn sub_al_imm8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let imm = vm.read_u8(cursor + 1)?;
     let lhs = vm.reg8(REG_AL);
     let result = lhs.wrapping_sub(imm);
@@ -63,11 +59,7 @@ pub(crate) fn sub_al_imm8(
     Ok(())
 }
 
-pub(crate) fn sub_eax_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn sub_eax_imm32(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let imm = vm.read_u32(cursor + 1)?;
     let lhs = vm.reg32(REG_EAX);
     let result = lhs.wrapping_sub(imm);

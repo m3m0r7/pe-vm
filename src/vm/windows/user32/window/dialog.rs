@@ -1,5 +1,5 @@
-use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
 use crate::define_stub_fn;
+use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
@@ -13,14 +13,54 @@ define_stub_fn!(DLL_NAME, dialog_box_indirect_param_a, 1);
 define_stub_fn!(DLL_NAME, map_window_points, 0);
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "GetDlgItem", crate::vm::stdcall_args(2), get_dlg_item);
-    vm.register_import_stdcall(DLL_NAME, "GetDlgItemTextA", crate::vm::stdcall_args(4), get_dlg_item_text_a);
-    vm.register_import_stdcall(DLL_NAME, "SendDlgItemMessageA", crate::vm::stdcall_args(5), send_dlg_item_message_a);
-    vm.register_import_stdcall(DLL_NAME, "EndDialog", crate::vm::stdcall_args(2), end_dialog);
-    vm.register_import_stdcall(DLL_NAME, "DialogBoxIndirectParamA", crate::vm::stdcall_args(5), dialog_box_indirect_param_a);
-    vm.register_import_stdcall(DLL_NAME, "MapWindowPoints", crate::vm::stdcall_args(4), map_window_points);
-    vm.register_import_stdcall(DLL_NAME, "MapDialogRect", crate::vm::stdcall_args(2), map_dialog_rect);
-    vm.register_import_stdcall(DLL_NAME, "LoadStringA", crate::vm::stdcall_args(4), load_string_a);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetDlgItem",
+        crate::vm::stdcall_args(2),
+        get_dlg_item,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetDlgItemTextA",
+        crate::vm::stdcall_args(4),
+        get_dlg_item_text_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SendDlgItemMessageA",
+        crate::vm::stdcall_args(5),
+        send_dlg_item_message_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "EndDialog",
+        crate::vm::stdcall_args(2),
+        end_dialog,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "DialogBoxIndirectParamA",
+        crate::vm::stdcall_args(5),
+        dialog_box_indirect_param_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "MapWindowPoints",
+        crate::vm::stdcall_args(4),
+        map_window_points,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "MapDialogRect",
+        crate::vm::stdcall_args(2),
+        map_dialog_rect,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadStringA",
+        crate::vm::stdcall_args(4),
+        load_string_a,
+    );
     vm.register_import(DLL_NAME, "wsprintfA", wsprintf_a);
 }
 
@@ -145,7 +185,9 @@ pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         }
         while let Some(next) = chars.peek().copied() {
             if next.is_ascii_digit() {
-                width = width.saturating_mul(10).saturating_add((next as u8 - b'0') as usize);
+                width = width
+                    .saturating_mul(10)
+                    .saturating_add((next as u8 - b'0') as usize);
                 chars.next();
             } else {
                 break;
@@ -222,7 +264,10 @@ pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         output.push_str(&formatted);
     }
     if std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!("[pe_vm] wsprintfA fmt={fmt:?} args=[{}]", arg_log.join(", "));
+        eprintln!(
+            "[pe_vm] wsprintfA fmt={fmt:?} args=[{}]",
+            arg_log.join(", ")
+        );
     }
     let mut bytes = output.into_bytes();
     bytes.push(0);

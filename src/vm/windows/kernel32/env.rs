@@ -5,14 +5,54 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentVariableA", crate::vm::stdcall_args(3), get_environment_variable_a);
-    vm.register_import_stdcall(DLL_NAME, "SetEnvironmentVariableA", crate::vm::stdcall_args(2), set_environment_variable_a);
-    vm.register_import_stdcall(DLL_NAME, "ExpandEnvironmentStringsA", crate::vm::stdcall_args(3), expand_environment_strings_a);
-    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentStrings", crate::vm::stdcall_args(0), get_environment_strings_a);
-    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentStringsA", crate::vm::stdcall_args(0), get_environment_strings_a);
-    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentStringsW", crate::vm::stdcall_args(0), get_environment_strings_w);
-    vm.register_import_stdcall(DLL_NAME, "FreeEnvironmentStringsA", crate::vm::stdcall_args(1), free_environment_strings_a);
-    vm.register_import_stdcall(DLL_NAME, "FreeEnvironmentStringsW", crate::vm::stdcall_args(1), free_environment_strings_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentVariableA",
+        crate::vm::stdcall_args(3),
+        get_environment_variable_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetEnvironmentVariableA",
+        crate::vm::stdcall_args(2),
+        set_environment_variable_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "ExpandEnvironmentStringsA",
+        crate::vm::stdcall_args(3),
+        expand_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStrings",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStringsA",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStringsW",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FreeEnvironmentStringsA",
+        crate::vm::stdcall_args(1),
+        free_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FreeEnvironmentStringsW",
+        crate::vm::stdcall_args(1),
+        free_environment_strings_w,
+    );
 }
 
 fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -76,7 +116,10 @@ fn expand_environment_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn get_environment_strings_w(vm: &mut Vm, _stack_ptr: u32) -> u32 {
     let strings = [0u16, 0u16];
-    let bytes: Vec<u8> = strings.iter().flat_map(|value| value.to_le_bytes()).collect();
+    let bytes: Vec<u8> = strings
+        .iter()
+        .flat_map(|value| value.to_le_bytes())
+        .collect();
     vm.alloc_bytes(&bytes, 2).unwrap_or(0)
 }
 

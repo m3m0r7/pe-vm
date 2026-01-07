@@ -1,16 +1,12 @@
 use crate::vm::{ComOutParam, Vm, VmError};
 
 use super::super::super::constants::{
-    PARAMFLAG_FIN, PARAMFLAG_FOUT, VARIANT_SIZE, VT_ARRAY, VT_BSTR, VT_BYREF, VT_INT, VT_I4,
+    PARAMFLAG_FIN, PARAMFLAG_FOUT, VARIANT_SIZE, VT_ARRAY, VT_BSTR, VT_BYREF, VT_I4, VT_INT,
     VT_NULL, VT_UI1, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
 };
 use super::super::super::variant::write_variant_u32;
 
-pub(super) fn read_variant_arg(
-    vm: &Vm,
-    var_ptr: u32,
-    expected_vt: u16,
-) -> Result<u32, VmError> {
+pub(super) fn read_variant_arg(vm: &Vm, var_ptr: u32, expected_vt: u16) -> Result<u32, VmError> {
     if var_ptr == 0 {
         return Err(VmError::InvalidConfig("variant pointer is null"));
     }
@@ -172,10 +168,7 @@ pub(super) fn trace_out_params(vm: &Vm, params: &[ComOutParam]) {
         };
         eprintln!(
             "[pe_vm] ITypeInfo::Invoke out[{}] vt=0x{:04X} flags=0x{:08X} ptr=0x{:08X} {rendered}",
-            param.index,
-            param.vt,
-            param.flags,
-            param.ptr,
+            param.index, param.vt, param.flags, param.ptr,
         );
     }
 }

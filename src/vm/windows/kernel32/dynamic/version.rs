@@ -3,8 +3,16 @@ use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_any_stdcall("GetVersion", crate::vm::stdcall_args(0), get_version);
-    vm.register_import_any_stdcall("GetVersionExA", crate::vm::stdcall_args(1), get_version_ex_a);
-    vm.register_import_any_stdcall("GetVersionExW", crate::vm::stdcall_args(1), get_version_ex_w);
+    vm.register_import_any_stdcall(
+        "GetVersionExA",
+        crate::vm::stdcall_args(1),
+        get_version_ex_a,
+    );
+    vm.register_import_any_stdcall(
+        "GetVersionExW",
+        crate::vm::stdcall_args(1),
+        get_version_ex_w,
+    );
     vm.register_import_any_stdcall(
         "RtlGetNtVersionNumbers",
         crate::vm::stdcall_args(3),

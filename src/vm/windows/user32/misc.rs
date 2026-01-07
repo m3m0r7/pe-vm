@@ -9,11 +9,31 @@ define_stub_fn!(DLL_NAME, enable_window, 1);
 
 // Register smaller helpers that don't warrant their own module.
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "EnableWindow", crate::vm::stdcall_args(2), enable_window);
-    vm.register_import_stdcall(DLL_NAME, "CharNextA", crate::vm::stdcall_args(1), char_next_a);
-    vm.register_import_stdcall(DLL_NAME, "CharNextW", crate::vm::stdcall_args(1), char_next_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "EnableWindow",
+        crate::vm::stdcall_args(2),
+        enable_window,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CharNextA",
+        crate::vm::stdcall_args(1),
+        char_next_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CharNextW",
+        crate::vm::stdcall_args(1),
+        char_next_w,
+    );
     vm.register_import_stdcall(DLL_NAME, "SetTimer", crate::vm::stdcall_args(4), set_timer);
-    vm.register_import_stdcall(DLL_NAME, "KillTimer", crate::vm::stdcall_args(2), kill_timer);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "KillTimer",
+        crate::vm::stdcall_args(2),
+        kill_timer,
+    );
 }
 
 fn char_next_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

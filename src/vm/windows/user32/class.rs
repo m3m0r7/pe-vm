@@ -11,10 +11,30 @@ define_stub_fn!(DLL_NAME, register_class_ex_a, 1);
 define_stub_fn!(DLL_NAME, register_class_ex_w, 1);
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "GetClassInfoExA", crate::vm::stdcall_args(3), get_class_info_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "GetClassInfoExW", crate::vm::stdcall_args(3), get_class_info_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "RegisterClassExA", crate::vm::stdcall_args(1), register_class_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "RegisterClassExW", crate::vm::stdcall_args(1), register_class_ex_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetClassInfoExA",
+        crate::vm::stdcall_args(3),
+        get_class_info_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetClassInfoExW",
+        crate::vm::stdcall_args(3),
+        get_class_info_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegisterClassExA",
+        crate::vm::stdcall_args(1),
+        register_class_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RegisterClassExW",
+        crate::vm::stdcall_args(1),
+        register_class_ex_w,
+    );
 }
 
 fn get_class_info_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

@@ -1,7 +1,7 @@
 //! Opaque handle types for the C ABI.
 
-use crate::vm::Vm;
 use crate::vm::windows;
+use crate::vm::Vm;
 
 #[repr(C)]
 pub struct VmHandle {

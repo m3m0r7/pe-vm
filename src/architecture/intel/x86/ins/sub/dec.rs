@@ -5,11 +5,7 @@ use crate::architecture::intel::x86::ins::core::{
     Prefixes,
 };
 
-pub(crate) fn dec_reg(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn dec_reg(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0x48;
     let value = vm.reg32(reg);

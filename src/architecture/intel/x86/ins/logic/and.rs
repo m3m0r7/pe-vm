@@ -1,18 +1,8 @@
 use crate::vm::{Vm, VmError, REG_AL, REG_EAX};
 
 use crate::architecture::intel::x86::ins::core::{
-    decode_modrm,
-    read_rm16,
-    read_rm32,
-    read_rm8,
-    update_flags_logic16,
-    update_flags_logic32,
-    update_flags_logic8,
-    write_rm16,
-    write_rm32,
-    write_rm8,
-    ModRm,
-    Prefixes,
+    decode_modrm, read_rm16, read_rm32, read_rm8, update_flags_logic16, update_flags_logic32,
+    update_flags_logic8, write_rm16, write_rm32, write_rm8, ModRm, Prefixes,
 };
 
 pub(crate) fn and_rm32_r32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
@@ -77,11 +67,7 @@ pub(crate) fn and_r8_rm8(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result
     Ok(())
 }
 
-pub(crate) fn and_eax_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn and_eax_imm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     // Honor operand-size override for 16-bit AND.
     if prefixes.operand_size_16 {
         let imm = vm.read_u16(cursor + 1)?;

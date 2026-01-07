@@ -6,24 +6,114 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleA", crate::vm::stdcall_args(1), get_module_handle_a);
-    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleW", crate::vm::stdcall_args(1), get_module_handle_w);
-    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleExW", crate::vm::stdcall_args(3), get_module_handle_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "GetModuleFileNameA", crate::vm::stdcall_args(3), get_module_file_name_a);
-    vm.register_import_stdcall(DLL_NAME, "GetModuleFileNameW", crate::vm::stdcall_args(3), get_module_file_name_w);
-    vm.register_import_stdcall(DLL_NAME, "LoadLibraryA", crate::vm::stdcall_args(1), load_library_a);
-    vm.register_import_stdcall(DLL_NAME, "LoadLibraryExA", crate::vm::stdcall_args(3), load_library_ex_a);
-    vm.register_import_stdcall(DLL_NAME, "LoadLibraryExW", crate::vm::stdcall_args(3), load_library_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "FreeLibrary", crate::vm::stdcall_args(1), free_library);
-    vm.register_import_stdcall(DLL_NAME, "GetProcAddress", crate::vm::stdcall_args(2), get_proc_address);
-    vm.register_import_stdcall(DLL_NAME, "DisableThreadLibraryCalls", crate::vm::stdcall_args(1), disable_thread_library_calls);
-    vm.register_import_stdcall(DLL_NAME, "GetCommandLineA", crate::vm::stdcall_args(0), get_command_line_a);
-    vm.register_import_stdcall(DLL_NAME, "FindResourceA", crate::vm::stdcall_args(3), find_resource_a);
-    vm.register_import_stdcall(DLL_NAME, "FindResourceW", crate::vm::stdcall_args(3), find_resource_w);
-    vm.register_import_stdcall(DLL_NAME, "FindResourceExW", crate::vm::stdcall_args(4), find_resource_ex_w);
-    vm.register_import_stdcall(DLL_NAME, "LoadResource", crate::vm::stdcall_args(2), load_resource);
-    vm.register_import_stdcall(DLL_NAME, "LockResource", crate::vm::stdcall_args(1), lock_resource);
-    vm.register_import_stdcall(DLL_NAME, "SizeofResource", crate::vm::stdcall_args(2), sizeof_resource);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetModuleHandleA",
+        crate::vm::stdcall_args(1),
+        get_module_handle_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetModuleHandleW",
+        crate::vm::stdcall_args(1),
+        get_module_handle_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetModuleHandleExW",
+        crate::vm::stdcall_args(3),
+        get_module_handle_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetModuleFileNameA",
+        crate::vm::stdcall_args(3),
+        get_module_file_name_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetModuleFileNameW",
+        crate::vm::stdcall_args(3),
+        get_module_file_name_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadLibraryA",
+        crate::vm::stdcall_args(1),
+        load_library_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadLibraryExA",
+        crate::vm::stdcall_args(3),
+        load_library_ex_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadLibraryExW",
+        crate::vm::stdcall_args(3),
+        load_library_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FreeLibrary",
+        crate::vm::stdcall_args(1),
+        free_library,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetProcAddress",
+        crate::vm::stdcall_args(2),
+        get_proc_address,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "DisableThreadLibraryCalls",
+        crate::vm::stdcall_args(1),
+        disable_thread_library_calls,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetCommandLineA",
+        crate::vm::stdcall_args(0),
+        get_command_line_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FindResourceA",
+        crate::vm::stdcall_args(3),
+        find_resource_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FindResourceW",
+        crate::vm::stdcall_args(3),
+        find_resource_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FindResourceExW",
+        crate::vm::stdcall_args(4),
+        find_resource_ex_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadResource",
+        crate::vm::stdcall_args(2),
+        load_resource,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LockResource",
+        crate::vm::stdcall_args(1),
+        lock_resource,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SizeofResource",
+        crate::vm::stdcall_args(2),
+        sizeof_resource,
+    );
 }
 
 fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -56,9 +146,7 @@ fn get_module_file_name_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if buffer == 0 || size == 0 {
         return 0;
     }
-    let path = vm
-        .image_path()
-        .unwrap_or("C:\\pe_vm\\module.dll");
+    let path = vm.image_path().unwrap_or("C:\\pe_vm\\module.dll");
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] GetModuleFileNameA: {path}");
     }
@@ -77,9 +165,7 @@ fn get_module_file_name_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if buffer == 0 || size == 0 {
         return 0;
     }
-    let path = vm
-        .image_path()
-        .unwrap_or("C:\\pe_vm\\module.dll");
+    let path = vm.image_path().unwrap_or("C:\\pe_vm\\module.dll");
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] GetModuleFileNameW: {path}");
     }
@@ -118,9 +204,7 @@ fn get_proc_address(vm: &mut Vm, stack_ptr: u32) -> u32 {
         vm.read_c_string(name_ptr).unwrap_or_default()
     };
     if std::env::var("PE_VM_TRACE_IMPORTS").is_ok() || std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!(
-            "[pe_vm] GetProcAddress: module=0x{module:08X} name={name}"
-        );
+        eprintln!("[pe_vm] GetProcAddress: module=0x{module:08X} name={name}");
     }
     vm.resolve_dynamic_import(&name).unwrap_or(0)
 }
@@ -215,7 +299,9 @@ fn lookup_resource<'a>(
     type_id: &ResourceId,
     name_id: &ResourceId,
 ) -> Option<&'a ResourceData> {
-    let type_node = roots.iter().find(|node| resource_id_eq(&node.id, type_id))?;
+    let type_node = roots
+        .iter()
+        .find(|node| resource_id_eq(&node.id, type_id))?;
     let name_node = type_node
         .children
         .iter()

@@ -4,8 +4,6 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-
-
 // CRT initialization
 define_stub_fn!(DLL, dllonexit_impl, 0);
 define_stub_fn!(DLL, encode_pointer, 0);

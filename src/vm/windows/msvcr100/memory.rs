@@ -4,8 +4,6 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-
-
 // Memory allocation
 define_stub_fn!(DLL, malloc_impl, 0);
 define_stub_fn!(DLL, calloc_impl, 0);
@@ -121,7 +119,11 @@ pub fn register(vm: &mut Vm) {
     vm.register_import(DLL, "_CrtSetReportMode", crt_set_report_mode);
     vm.register_import(DLL, "_CrtMemCheckpoint", crt_mem_checkpoint);
     vm.register_import(DLL, "_CrtMemDifference", crt_mem_difference);
-    vm.register_import(DLL, "_CrtMemDumpAllObjectsSince", crt_mem_dump_all_objects_since);
+    vm.register_import(
+        DLL,
+        "_CrtMemDumpAllObjectsSince",
+        crt_mem_dump_all_objects_since,
+    );
     vm.register_import(DLL, "_CrtMemDumpStatistics", crt_mem_dump_statistics);
     vm.register_import(DLL, "_CrtIsValidHeapPointer", crt_is_valid_heap_pointer);
     vm.register_import(DLL, "_CrtIsValidPointer", crt_is_valid_pointer);

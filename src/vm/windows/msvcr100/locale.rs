@@ -4,8 +4,6 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-
-
 // Locale functions
 define_stub_fn!(DLL, setlocale_impl, 0);
 define_stub_fn!(DLL, wsetlocale_impl, 0);
@@ -363,7 +361,11 @@ pub fn register(vm: &mut Vm) {
     vm.register_import(DLL, "___lc_collate_cp_func", lc_collate_cp_func);
     vm.register_import(DLL, "___lc_handle_func", lc_handle_func);
     vm.register_import(DLL, "___setlc_active_func", setlc_active_func);
-    vm.register_import(DLL, "___unguarded_readlc_active_add_func", unguarded_readlc_active_add_func);
+    vm.register_import(
+        DLL,
+        "___unguarded_readlc_active_add_func",
+        unguarded_readlc_active_add_func,
+    );
     vm.register_import(DLL, "__setlc_active", setlc_active);
     vm.register_import(DLL, "__unguarded_readlc_active", unguarded_readlc_active);
     vm.register_import(DLL, "__p__pctype", pctype);

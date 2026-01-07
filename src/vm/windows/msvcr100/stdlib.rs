@@ -4,8 +4,6 @@ use crate::vm::Vm;
 
 const DLL: &str = "MSVCR100.dll";
 
-
-
 // Conversion functions
 define_stub_fn!(DLL, atoi_impl, 0);
 define_stub_fn!(DLL, atoi_l_impl, 0);
@@ -311,7 +309,11 @@ pub fn register(vm: &mut Vm) {
     vm.register_import(DLL, "_amsg_exit", amsg_exit);
     vm.register_import(DLL, "_invalid_parameter", invalid_parameter);
     vm.register_import(DLL, "_invalid_parameter_noinfo", invalid_parameter_noinfo);
-    vm.register_import(DLL, "_invalid_parameter_noinfo_noreturn", invalid_parameter_noinfo_noreturn);
+    vm.register_import(
+        DLL,
+        "_invalid_parameter_noinfo_noreturn",
+        invalid_parameter_noinfo_noreturn,
+    );
     vm.register_import(DLL, "_invoke_watson", invoke_watson);
     vm.register_import(DLL, "_errno", errno_impl);
     vm.register_import(DLL, "__doserrno", doserrno_impl);

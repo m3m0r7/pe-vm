@@ -23,7 +23,12 @@ pub fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(4),
         get_file_version_info_a,
     );
-    vm.register_import_stdcall(DLL_NAME, "VerQueryValueA", crate::vm::stdcall_args(4), ver_query_value_a);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "VerQueryValueA",
+        crate::vm::stdcall_args(4),
+        ver_query_value_a,
+    );
 }
 
 fn get_file_version_info_size_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

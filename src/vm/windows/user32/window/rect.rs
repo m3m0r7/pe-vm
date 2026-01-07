@@ -11,10 +11,30 @@ define_stub_fn!(DLL_NAME, fill_rect, 1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "PtInRect", crate::vm::stdcall_args(3), pt_in_rect);
-    vm.register_import_stdcall(DLL_NAME, "EqualRect", crate::vm::stdcall_args(2), equal_rect);
-    vm.register_import_stdcall(DLL_NAME, "OffsetRect", crate::vm::stdcall_args(3), offset_rect);
-    vm.register_import_stdcall(DLL_NAME, "UnionRect", crate::vm::stdcall_args(3), union_rect);
-    vm.register_import_stdcall(DLL_NAME, "IntersectRect", crate::vm::stdcall_args(3), intersect_rect);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "EqualRect",
+        crate::vm::stdcall_args(2),
+        equal_rect,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OffsetRect",
+        crate::vm::stdcall_args(3),
+        offset_rect,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "UnionRect",
+        crate::vm::stdcall_args(3),
+        union_rect,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "IntersectRect",
+        crate::vm::stdcall_args(3),
+        intersect_rect,
+    );
     vm.register_import_stdcall(DLL_NAME, "FillRect", crate::vm::stdcall_args(3), fill_rect);
 }
 
@@ -125,11 +145,11 @@ mod tests {
         // rect = {10, 20, 100, 200}
         write_rect_to_mem(&mut vm, rect_ptr, 10, 20, 100, 200);
         vm.write_u32(stack + 4, rect_ptr).unwrap();
-        vm.write_u32(stack + 8, 5u32).unwrap();  // dx = 5
+        vm.write_u32(stack + 8, 5u32).unwrap(); // dx = 5
         vm.write_u32(stack + 12, 10u32).unwrap(); // dy = 10
         let result = offset_rect(&mut vm, stack);
         assert_eq!(result, 1);
-        assert_eq!(vm.read_u32(rect_ptr).unwrap() as i32, 15);   // left + dx
+        assert_eq!(vm.read_u32(rect_ptr).unwrap() as i32, 15); // left + dx
         assert_eq!(vm.read_u32(rect_ptr + 4).unwrap() as i32, 30); // top + dy
         assert_eq!(vm.read_u32(rect_ptr + 8).unwrap() as i32, 105); // right + dx
         assert_eq!(vm.read_u32(rect_ptr + 12).unwrap() as i32, 210); // bottom + dy
@@ -197,7 +217,7 @@ mod tests {
         vm.write_u32(stack + 12, src2).unwrap();
         let result = intersect_rect(&mut vm, stack);
         assert_eq!(result, 0); // no intersection
-        // dst should be {0, 0, 0, 0}
+                               // dst should be {0, 0, 0, 0}
         assert_eq!(vm.read_u32(dst).unwrap(), 0);
         assert_eq!(vm.read_u32(dst + 4).unwrap(), 0);
         assert_eq!(vm.read_u32(dst + 8).unwrap(), 0);

@@ -45,20 +45,75 @@ fn free_handle(handle: u32) -> bool {
 // Register minimal GDI32 entry points needed by basic GUI flows.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "SaveDC", crate::vm::stdcall_args(1), save_dc);
-    vm.register_import_stdcall(DLL_NAME, "RestoreDC", crate::vm::stdcall_args(2), restore_dc);
-    vm.register_import_stdcall(DLL_NAME, "SelectObject", crate::vm::stdcall_args(2), select_object);
-    vm.register_import_stdcall(DLL_NAME, "SetBkColor", crate::vm::stdcall_args(2), set_bk_color);
-    vm.register_import_stdcall(DLL_NAME, "SetTextColor", crate::vm::stdcall_args(2), set_text_color);
-    vm.register_import_stdcall(DLL_NAME, "SetTextAlign", crate::vm::stdcall_args(2), set_text_align);
-    vm.register_import_stdcall(DLL_NAME, "SetMapMode", crate::vm::stdcall_args(2), set_map_mode);
-    vm.register_import_stdcall(DLL_NAME, "SetWindowOrgEx", crate::vm::stdcall_args(4), set_window_org_ex);
-    vm.register_import_stdcall(DLL_NAME, "SetWindowExtEx", crate::vm::stdcall_args(4), set_window_ext_ex);
-    vm.register_import_stdcall(DLL_NAME, "SetViewportOrgEx", crate::vm::stdcall_args(4), set_viewport_org_ex);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RestoreDC",
+        crate::vm::stdcall_args(2),
+        restore_dc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SelectObject",
+        crate::vm::stdcall_args(2),
+        select_object,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetBkColor",
+        crate::vm::stdcall_args(2),
+        set_bk_color,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetTextColor",
+        crate::vm::stdcall_args(2),
+        set_text_color,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetTextAlign",
+        crate::vm::stdcall_args(2),
+        set_text_align,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetMapMode",
+        crate::vm::stdcall_args(2),
+        set_map_mode,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetWindowOrgEx",
+        crate::vm::stdcall_args(4),
+        set_window_org_ex,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetWindowExtEx",
+        crate::vm::stdcall_args(4),
+        set_window_ext_ex,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "SetViewportOrgEx",
+        crate::vm::stdcall_args(4),
+        set_viewport_org_ex,
+    );
     vm.register_import_stdcall(DLL_NAME, "LPtoDP", crate::vm::stdcall_args(3), lp_to_dp);
     vm.register_import_stdcall(DLL_NAME, "TextOutA", crate::vm::stdcall_args(5), text_out_a);
-    vm.register_import_stdcall(DLL_NAME, "GetObjectA", crate::vm::stdcall_args(3), get_object_a);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetObjectA",
+        crate::vm::stdcall_args(3),
+        get_object_a,
+    );
     vm.register_import_stdcall(DLL_NAME, "BitBlt", crate::vm::stdcall_args(9), bit_blt);
-    vm.register_import_stdcall(DLL_NAME, "CloseMetaFile", crate::vm::stdcall_args(1), close_meta_file);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CloseMetaFile",
+        crate::vm::stdcall_args(1),
+        close_meta_file,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "CreateCompatibleBitmap",
@@ -71,7 +126,12 @@ pub fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         create_compatible_dc,
     );
-    vm.register_import_stdcall(DLL_NAME, "CreateDCA", crate::vm::stdcall_args(4), create_dca);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CreateDCA",
+        crate::vm::stdcall_args(4),
+        create_dca,
+    );
     vm.register_import_stdcall(
         DLL_NAME,
         "CreateFontIndirectA",
@@ -103,9 +163,24 @@ pub fn register(vm: &mut Vm) {
         crate::vm::stdcall_args(1),
         delete_meta_file,
     );
-    vm.register_import_stdcall(DLL_NAME, "DeleteObject", crate::vm::stdcall_args(1), delete_object);
-    vm.register_import_stdcall(DLL_NAME, "GetDeviceCaps", crate::vm::stdcall_args(2), get_device_caps);
-    vm.register_import_stdcall(DLL_NAME, "GetStockObject", crate::vm::stdcall_args(1), get_stock_object);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "DeleteObject",
+        crate::vm::stdcall_args(1),
+        delete_object,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetDeviceCaps",
+        crate::vm::stdcall_args(2),
+        get_device_caps,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetStockObject",
+        crate::vm::stdcall_args(1),
+        get_stock_object,
+    );
     vm.register_import_stdcall(DLL_NAME, "Rectangle", crate::vm::stdcall_args(5), rectangle);
 }
 

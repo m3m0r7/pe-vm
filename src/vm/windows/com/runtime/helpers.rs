@@ -1,7 +1,7 @@
 //! Helper utilities for COM runtime tasks.
 
-use crate::vm::{Vm, VmError};
 use crate::vm::windows::guid::parse_guid;
+use crate::vm::{Vm, VmError};
 
 pub(super) fn alloc_guid(vm: &mut Vm, guid: &str) -> Result<u32, VmError> {
     let bytes = parse_guid(guid).ok_or(VmError::InvalidConfig("invalid GUID"))?;

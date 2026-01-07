@@ -1,5 +1,5 @@
-use crate::vm::Vm;
 use crate::vm::windows::oleaut32::typelib::TypeInfoData;
+use crate::vm::Vm;
 
 #[derive(Clone, Copy)]
 pub(super) struct InvokeArgs {
@@ -15,7 +15,9 @@ pub(super) struct InvokeArgs {
 pub(super) fn read_stack_slots(vm: &Vm, stack_ptr: u32) -> [u32; 9] {
     let mut slots = [0u32; 9];
     for (idx, slot) in slots.iter_mut().enumerate() {
-        *slot = vm.read_u32(stack_ptr.wrapping_add((idx * 4) as u32)).unwrap_or(0);
+        *slot = vm
+            .read_u32(stack_ptr.wrapping_add((idx * 4) as u32))
+            .unwrap_or(0);
     }
     slots
 }
@@ -74,10 +76,7 @@ pub(super) fn select_invoke_args(
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
         eprintln!(
             "[pe_vm] ITypeInfo::Invoke layout={} memid=0x{:08X} flags=0x{:04X} disp=0x{:08X}",
-            selected.layout,
-            selected.memid,
-            selected.flags,
-            selected.disp_params
+            selected.layout, selected.memid, selected.flags, selected.disp_params
         );
     }
 

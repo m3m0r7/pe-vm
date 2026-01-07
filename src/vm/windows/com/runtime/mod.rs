@@ -1,15 +1,15 @@
 //! COM runtime entry points backed by registry/path mappings.
 
+mod activex;
 mod helpers;
 mod instance;
 mod loader;
 mod scan;
-mod activex;
 
-use crate::pe::PeFile;
-use crate::vm::{Vm, VmError};
-use crate::vm::windows;
 use super::{ComObject, DispatchHandle, DispatchTable};
+use crate::pe::PeFile;
+use crate::vm::windows;
+use crate::vm::{Vm, VmError};
 
 pub(super) const IID_ICLASSFACTORY: &str = "{00000001-0000-0000-C000-000000000046}";
 pub(super) const IID_IDISPATCH: &str = "{00020400-0000-0000-C000-000000000046}";
@@ -69,10 +69,7 @@ impl Com {
         let inproc = instance::create_inproc_object(vm, &file, &normalized, typelib)?;
         let _ = activex::attach_client_site(vm, inproc.dispatch_ptr());
         Ok(ComObject::new_inproc(
-            normalized,
-            dll_path,
-            host_path,
-            inproc,
+            normalized, dll_path, host_path, inproc,
         ))
     }
 }

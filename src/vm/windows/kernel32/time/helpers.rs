@@ -21,8 +21,7 @@ pub(super) fn filetime_now() -> u64 {
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
-    (duration.as_secs() + SEC_TO_UNIX_EPOCH) * WINDOWS_TICK
-        + (duration.subsec_nanos() as u64 / 100)
+    (duration.as_secs() + SEC_TO_UNIX_EPOCH) * WINDOWS_TICK + (duration.subsec_nanos() as u64 / 100)
 }
 
 pub(super) fn now_parts() -> SystemTimeParts {
@@ -130,10 +129,7 @@ fn parts_from_unix_seconds(seconds: i64, millis: u32) -> SystemTimeParts {
 
 fn unix_seconds_from_parts(parts: &SystemTimeParts) -> i64 {
     let days = days_from_civil(parts.year, parts.month, parts.day);
-    days * 86_400
-        + parts.hour as i64 * 3_600
-        + parts.minute as i64 * 60
-        + parts.second as i64
+    days * 86_400 + parts.hour as i64 * 3_600 + parts.minute as i64 * 60 + parts.second as i64
 }
 
 fn civil_from_days(days: i64) -> (i32, u32, u32) {

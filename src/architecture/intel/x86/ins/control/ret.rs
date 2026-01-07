@@ -2,11 +2,7 @@ use crate::vm::{Vm, VmError, REG_EAX, REG_ESP};
 
 use crate::architecture::intel::x86::ins::core::Prefixes;
 
-pub(crate) fn ret_near(
-    vm: &mut Vm,
-    _cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn ret_near(vm: &mut Vm, _cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     if std::env::var("PE_VM_TRACE_RET_INTERNAL").is_ok()
         && matches!(_cursor, 0x1000C608 | 0x1000C6EB)
     {
@@ -18,19 +14,13 @@ pub(crate) fn ret_near(
     }
     let ret = vm.pop()?;
     if ret != 0 && !vm.contains_addr(ret) && std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!(
-            "[pe_vm] ret_near target outside vm: ret=0x{ret:08X} from=0x{_cursor:08X}"
-        );
+        eprintln!("[pe_vm] ret_near target outside vm: ret=0x{ret:08X} from=0x{_cursor:08X}");
     }
     vm.set_eip(ret);
     Ok(())
 }
 
-pub(crate) fn ret_imm16(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn ret_imm16(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     if std::env::var("PE_VM_TRACE_RET_INTERNAL").is_ok()
         && matches!(cursor, 0x1000C659 | 0x1000C74F)
     {

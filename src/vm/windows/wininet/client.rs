@@ -21,9 +21,7 @@ pub(super) fn send_http_request(
     if secure {
         let tcp = TcpStream::connect((host, port))?;
         let connector = tls_connector()?;
-        let tls = connector
-            .connect(host, tcp)
-            .map_err(tls_handshake_error)?;
+        let tls = connector.connect(host, tcp).map_err(tls_handshake_error)?;
         send_request_over_stream(tls, host, port, method, path, user_agent, headers, body)
     } else {
         let tcp = TcpStream::connect((host, port))?;
@@ -111,10 +109,9 @@ fn parse_http_response(bytes: &[u8]) -> Response {
         }
     }
     let mut body_bytes = body.to_vec();
-    if headers
-        .iter()
-        .any(|(key, value)| key.eq_ignore_ascii_case("transfer-encoding") && value.eq_ignore_ascii_case("chunked"))
-    {
+    if headers.iter().any(|(key, value)| {
+        key.eq_ignore_ascii_case("transfer-encoding") && value.eq_ignore_ascii_case("chunked")
+    }) {
         body_bytes = decode_chunked(&body_bytes);
     }
     Response {
@@ -171,9 +168,7 @@ fn find_crlf(bytes: &[u8], start: usize) -> Option<usize> {
 
 fn has_header(headers: &str, name: &str) -> bool {
     let needle = format!("{name}:");
-    headers.lines().any(|line| {
-        line.trim_start()
-            .to_ascii_lowercase()
-            .starts_with(&needle)
-    })
+    headers
+        .lines()
+        .any(|line| line.trim_start().to_ascii_lowercase().starts_with(&needle))
 }

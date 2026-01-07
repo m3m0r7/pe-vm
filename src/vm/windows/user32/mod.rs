@@ -2,11 +2,11 @@
 
 pub const DLL_NAME: &str = "USER32.dll";
 
-mod message_box;
-mod cursor;
 mod class;
-mod window;
+mod cursor;
+mod message_box;
 mod misc;
+mod window;
 
 use crate::vm::Vm;
 

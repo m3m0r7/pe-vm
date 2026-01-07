@@ -124,7 +124,9 @@ impl Vm {
             if self.stack_top == 0 {
                 return Err(VmError::NoImage);
             }
-            let depth = saved_stack_depth.checked_add(1).ok_or(VmError::OutOfMemory)?;
+            let depth = saved_stack_depth
+                .checked_add(1)
+                .ok_or(VmError::OutOfMemory)?;
             let slice_offset = NESTED_STACK_SLICE_SIZE
                 .checked_mul(depth)
                 .ok_or(VmError::OutOfMemory)?;
@@ -185,7 +187,9 @@ impl Vm {
             if self.stack_top == 0 {
                 return Err(VmError::NoImage);
             }
-            let depth = saved_stack_depth.checked_add(1).ok_or(VmError::OutOfMemory)?;
+            let depth = saved_stack_depth
+                .checked_add(1)
+                .ok_or(VmError::OutOfMemory)?;
             let slice_offset = NESTED_STACK_SLICE_SIZE
                 .checked_mul(depth)
                 .ok_or(VmError::OutOfMemory)?;
@@ -231,11 +235,7 @@ impl Vm {
         result
     }
 
-    pub(crate) fn call_host(
-        &mut self,
-        host: HostFunction,
-        return_eip: u32,
-    ) -> Result<(), VmError> {
+    pub(crate) fn call_host(&mut self, host: HostFunction, return_eip: u32) -> Result<(), VmError> {
         self.push(return_eip)?;
         let stack_ptr = self.regs.esp;
         let ret = (host.func)(self, stack_ptr);

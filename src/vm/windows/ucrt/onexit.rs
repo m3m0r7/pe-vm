@@ -9,11 +9,7 @@ pub fn register(vm: &mut Vm) {
         "_initialize_onexit_table",
         initialize_onexit_table,
     );
-    vm.register_import(
-        "api-ms-win-crt-runtime-l1-1-0.dll",
-        "_cexit",
-        cexit,
-    );
+    vm.register_import("api-ms-win-crt-runtime-l1-1-0.dll", "_cexit", cexit);
     vm.register_import(
         "api-ms-win-crt-runtime-l1-1-0.dll",
         "_crt_atexit",

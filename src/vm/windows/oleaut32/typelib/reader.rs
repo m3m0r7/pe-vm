@@ -34,10 +34,7 @@ impl SegDir {
                     for (bidx, slot) in bytes.iter_mut().enumerate() {
                         *slot = reader.read_u8(seg_offset as usize + bidx).unwrap_or(0);
                     }
-                    eprintln!(
-                        "[pe_vm] typelib seg[{idx}] first16={:02X?}",
-                        bytes
-                    );
+                    eprintln!("[pe_vm] typelib seg[{idx}] first16={:02X?}", bytes);
                 }
             }
         } else {
@@ -65,7 +62,10 @@ impl SegDir {
             })
             .cloned()
             .or_else(|| entries.get(10).cloned())
-            .unwrap_or(SegEntry { offset: 0, length: 0 });
+            .unwrap_or(SegEntry {
+                offset: 0,
+                length: 0,
+            });
         let guid_tab = entries
             .iter()
             .filter(|entry| {
@@ -78,7 +78,10 @@ impl SegDir {
             .max_by_key(|entry| entry.length)
             .cloned()
             .or_else(|| entries.get(5).cloned())
-            .unwrap_or(SegEntry { offset: 0, length: 0 });
+            .unwrap_or(SegEntry {
+                offset: 0,
+                length: 0,
+            });
         Ok(Self {
             typeinfo_tab,
             guid_tab,
@@ -98,14 +101,20 @@ impl<'a> Reader<'a> {
     }
 
     pub(super) fn read_u8(&self, offset: usize) -> Result<u8, VmError> {
-        self.data.get(offset).copied().ok_or(VmError::MemoryOutOfRange)
+        self.data
+            .get(offset)
+            .copied()
+            .ok_or(VmError::MemoryOutOfRange)
     }
 
     pub(super) fn read_u16(&self, offset: usize) -> Result<u16, VmError> {
         if offset + 2 > self.data.len() {
             return Err(VmError::MemoryOutOfRange);
         }
-        Ok(u16::from_le_bytes([self.data[offset], self.data[offset + 1]]))
+        Ok(u16::from_le_bytes([
+            self.data[offset],
+            self.data[offset + 1],
+        ]))
     }
 
     pub(super) fn read_u32(&self, offset: usize) -> Result<u32, VmError> {
