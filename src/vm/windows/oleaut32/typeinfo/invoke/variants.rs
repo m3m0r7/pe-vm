@@ -150,9 +150,13 @@ pub(super) fn trace_out_params(vm: &Vm, params: &[ComOutParam]) {
             match base {
                 VT_BSTR => {
                     let bstr_ptr = vm.read_u32(param.ptr).unwrap_or(0);
-                    match vm.read_bstr(bstr_ptr) {
-                        Ok(value) => format!("bstr={value:?}"),
-                        Err(_) => format!("bstr_ptr=0x{bstr_ptr:08X}"),
+                    if bstr_ptr == 0 {
+                        "bstr=NULL".to_string()
+                    } else {
+                        match vm.read_bstr(bstr_ptr) {
+                            Ok(value) => format!("bstr={value:?} (ptr=0x{bstr_ptr:08X})"),
+                            Err(_) => format!("bstr_ptr=0x{bstr_ptr:08X} (invalid)"),
+                        }
                     }
                 }
                 VT_VARIANT => {

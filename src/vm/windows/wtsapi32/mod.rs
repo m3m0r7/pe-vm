@@ -38,16 +38,77 @@ pub fn register(vm: &mut Vm) {
     );
 }
 
+// WTS_CONNECTSTATE_CLASS values
+const WTS_ACTIVE: u32 = 0;
+
+// WTS_SESSION_INFOA structure:
+// - SessionId: DWORD (4 bytes)
+// - pWinStationName: LPSTR (4 bytes - pointer)
+// - State: WTS_CONNECTSTATE_CLASS (4 bytes)
+const WTS_SESSION_INFO_SIZE: usize = 12;
+
 // BOOL WTSEnumerateSessionsA(HANDLE, DWORD, DWORD, PWTS_SESSION_INFO*, DWORD*)
 fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     check_stub(vm, DLL_NAME, "WTSEnumerateSessionsA");
-    let (_, _, _, sessions_ptr, count_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let (h_server, reserved, version, sessions_ptr, count_ptr) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!(
+            "[pe_vm] WTSEnumerateSessionsA: hServer=0x{h_server:08X} reserved={reserved} version={version} \
+             ppSessions=0x{sessions_ptr:08X} pCount=0x{count_ptr:08X}"
+        );
+    }
+
+    // Allocate and return a single console session to simulate a valid terminal environment
     if sessions_ptr != 0 {
-        let _ = vm.write_u32(sessions_ptr, 0);
+        // Allocate WTS_SESSION_INFOA structure
+        let session_info = match vm.alloc_bytes(&vec![0u8; WTS_SESSION_INFO_SIZE], 4) {
+            Ok(ptr) => ptr,
+            Err(_) => {
+                if count_ptr != 0 {
+                    let _ = vm.write_u32(count_ptr, 0);
+                }
+                return 0; // Failure
+            }
+        };
+
+        // Allocate station name "Console"
+        let station_name = match vm.alloc_bytes(b"Console\0", 1) {
+            Ok(ptr) => ptr,
+            Err(_) => {
+                if count_ptr != 0 {
+                    let _ = vm.write_u32(count_ptr, 0);
+                }
+                return 0; // Failure
+            }
+        };
+
+        // Fill WTS_SESSION_INFOA
+        // Use SessionId = 0 - Console session typically has ID 0
+        let _ = vm.write_u32(session_info, 0); // SessionId = 0
+        let _ = vm.write_u32(session_info + 4, station_name); // pWinStationName
+        let _ = vm.write_u32(session_info + 8, WTS_ACTIVE); // State = Active
+
+        // Return pointer to session info array
+        let _ = vm.write_u32(sessions_ptr, session_info);
+
+        if std::env::var("PE_VM_TRACE").is_ok() {
+            eprintln!(
+                "[pe_vm] WTSEnumerateSessionsA: allocated session_info=0x{session_info:08X} \
+                 station_name=0x{station_name:08X}"
+            );
+        }
     }
+
     if count_ptr != 0 {
-        let _ = vm.write_u32(count_ptr, 0);
+        let _ = vm.write_u32(count_ptr, 1); // One session
     }
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] WTSEnumerateSessionsA: returning 1 (success), count=1");
+    }
+
     1 // WTS_SUCCESS
 }
 
@@ -96,8 +157,13 @@ mod tests {
         vm.write_u32(stack + 20, count_ptr).unwrap();
         let result = wts_enumerate_sessions_a(&mut vm, stack);
         assert_eq!(result, 1); // WTS_SUCCESS
-        assert_eq!(vm.read_u32(sessions_ptr).unwrap(), 0);
-        assert_eq!(vm.read_u32(count_ptr).unwrap(), 0);
+        // Now returns 1 session instead of 0
+        assert_eq!(vm.read_u32(count_ptr).unwrap(), 1);
+        // Session info pointer should be non-zero
+        let session_info = vm.read_u32(sessions_ptr).unwrap();
+        assert_ne!(session_info, 0);
+        // SessionId should be 1
+        assert_eq!(vm.read_u32(session_info).unwrap(), 1);
     }
 
     #[test]

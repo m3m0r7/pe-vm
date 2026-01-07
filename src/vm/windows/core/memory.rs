@@ -85,10 +85,9 @@ impl Vm {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
-        self.memory
-            .get(offset)
-            .copied()
-            .ok_or(VmError::MemoryOutOfRange)
+        let value = self.memory.get(offset).copied().ok_or(VmError::MemoryOutOfRange)?;
+        self.trace_read("read_u8", addr, 1, value as u32);
+        Ok(value)
     }
 
     pub fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
@@ -113,12 +112,14 @@ impl Vm {
         if offset + 4 > self.memory.len() {
             return Err(VmError::MemoryOutOfRange);
         }
-        Ok(u32::from_le_bytes([
+        let value = u32::from_le_bytes([
             self.memory[offset],
             self.memory[offset + 1],
             self.memory[offset + 2],
             self.memory[offset + 3],
-        ]))
+        ]);
+        self.trace_read("read_u32", addr, 4, value);
+        Ok(value)
     }
 
     pub fn read_u64(&self, addr: u32) -> Result<u64, VmError> {
@@ -169,7 +170,7 @@ impl Vm {
         Ok(())
     }
 
-    pub(crate) fn write_u32(&mut self, addr: u32, value: u32) -> Result<(), VmError> {
+    pub fn write_u32(&mut self, addr: u32, value: u32) -> Result<(), VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(());
         }
@@ -288,6 +289,39 @@ impl Vm {
         }
     }
 
+    pub(crate) fn trace_read(&self, label: &str, addr: u32, len: usize, value: u32) {
+        let Ok(watch) = std::env::var("PE_VM_TRACE_ADDR") else {
+            return;
+        };
+        let mut hit = false;
+        for token in watch.split(|ch: char| ch == ',' || ch.is_whitespace()) {
+            let token = token.trim();
+            if token.is_empty() {
+                continue;
+            }
+            let (start, end) = match parse_watch_range(token) {
+                Some(range) => range,
+                None => continue,
+            };
+            let read_end = addr.saturating_add(len.saturating_sub(1) as u32);
+            if read_end < start || addr > end {
+                continue;
+            }
+            hit = true;
+            break;
+        }
+        if !hit {
+            return;
+        }
+        let end = addr.saturating_add(len.saturating_sub(1) as u32);
+        let inst = read_inst_bytes(self, self.regs.eip, 8);
+        eprintln!(
+            "[pe_vm] trace_read {label} addr=0x{addr:08X}..0x{end:08X} len={len} eip=0x{:08X} eax=0x{:08X} value=0x{value:08X} inst={inst}",
+            self.regs.eip,
+            self.regs.eax
+        );
+    }
+
     pub(crate) fn trace_write(&self, label: &str, addr: u32, len: usize, bytes: Option<&[u8]>) {
         let Ok(watch) = std::env::var("PE_VM_TRACE_ADDR") else {
             return;
@@ -318,9 +352,10 @@ impl Vm {
             .unwrap_or_else(|| "<none>".to_string());
         let inst = read_inst_bytes(self, self.regs.eip, 8);
         eprintln!(
-            "[pe_vm] trace_write {label} addr=0x{addr:08X}..0x{end:08X} len={len} eip=0x{:08X} esp=0x{:08X} inst={inst} preview={preview}",
+            "[pe_vm] trace_write {label} addr=0x{addr:08X}..0x{end:08X} len={len} eip=0x{:08X} esp=0x{:08X} eax=0x{:08X} inst={inst} preview={preview}",
             self.regs.eip,
-            self.regs.esp
+            self.regs.esp,
+            self.regs.eax
         );
     }
 }
