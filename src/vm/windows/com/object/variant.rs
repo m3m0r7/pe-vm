@@ -33,10 +33,24 @@ pub(super) fn build_variant_array_typed(
         return Ok((0, 0, Vec::new()));
     }
 
+    // Detect if TypeLib incorrectly marks input params as FRETVAL.
+    // If method has explicit return type and only one FRETVAL param AND we have args, treat it as input.
+    // If caller passed no args, the FRETVAL param is a true output (not an input).
+    let has_explicit_return = func.ret_vt != VT_EMPTY && func.ret_vt != 0;
+    let only_fretval = func.params.len() == 1
+        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+    let fretval_is_input = has_explicit_return && only_fretval && !args.is_empty();
+
     let expected_inputs = func
         .params
         .iter()
-        .filter(|param| (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags))
+        .filter(|param| {
+            let is_fretval = (param.flags & PARAMFLAG_FRETVAL) != 0;
+            if !is_fretval {
+                return !is_out_only(param.flags);
+            }
+            fretval_is_input
+        })
         .count();
     if args.len() > expected_inputs {
         let base = build_variant_array(vm, args)?;
@@ -48,7 +62,8 @@ pub(super) fn build_variant_array_typed(
     let mut input_iter = args.iter();
     for (index, param) in func.params.iter().enumerate() {
         let is_retval = (param.flags & PARAMFLAG_FRETVAL) != 0;
-        if is_retval {
+        // Skip FRETVAL params unless they should be treated as inputs
+        if is_retval && !fretval_is_input {
             continue;
         }
         let out_only = is_out_only(param.flags);

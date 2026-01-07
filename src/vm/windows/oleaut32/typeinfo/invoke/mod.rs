@@ -17,7 +17,7 @@ use super::helpers::resolve_typeinfo_info;
 use args::{build_invoke_values, trace_values};
 use dispatch::{detect_thiscall, valid_vtable, vtable_entry};
 use layout::{read_stack_slots, select_invoke_args};
-use variants::{is_out_only, read_retval_value, trace_out_params, write_variant_value};
+use variants::{read_retval_value, trace_out_params, write_variant_value};
 
 pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let Some((_this, info_id, thiscall)) = resolve_typeinfo_info(vm, stack_ptr) else {
@@ -295,8 +295,29 @@ where
 }
 
 fn expected_inputs(func: &typelib::FuncDesc) -> usize {
-    func.params
+    // Count parameters that could be inputs.
+    // FRETVAL params are normally not inputs, but some TypeLibs incorrectly mark input params
+    // with FRETVAL. If a method already has a return type (not VOID/HRESULT), treat all
+    // non-FRETVAL params and single FRETVAL params as potential inputs.
+    let has_explicit_return = func.ret_vt != VT_VOID && func.ret_vt != VT_EMPTY;
+    let only_fretval = func.params.len() == 1
+        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+
+    let count = func.params
         .iter()
-        .filter(|param| (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags))
-        .count()
+        .filter(|param| {
+            let is_fretval = (param.flags & PARAMFLAG_FRETVAL) != 0;
+            // If it's not FRETVAL, count it as input
+            if !is_fretval {
+                return true;
+            }
+            // If there's an explicit return type and only one FRETVAL param,
+            // the FRETVAL might be incorrectly applied - count it as input
+            if has_explicit_return && only_fretval {
+                return true;
+            }
+            false
+        })
+        .count();
+    count
 }

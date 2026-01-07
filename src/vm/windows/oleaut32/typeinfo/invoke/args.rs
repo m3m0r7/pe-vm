@@ -62,9 +62,35 @@ pub(super) fn build_invoke_values(
                     || base_vt == VT_VARIANT
                     || base_vt == VT_BSTR));
         if positional_fallback {
+            // For out-only params (including FRETVAL), always allocate our own buffer
+            // rather than reading from caller-provided VARIANTs which may not match.
+            if out_only {
+                let value = match alloc_out_arg(vm, param.vt) {
+                    Ok(value) => value,
+                    Err(_) => return Err(DISP_E_TYPEMISMATCH),
+                };
+                if is_retval && retval_param.is_none() {
+                    retval_param = Some((index, param.vt));
+                }
+                values.push(Value::U32(value));
+                if record_out {
+                    out_params.push(ComOutParam {
+                        index,
+                        vt: param.vt,
+                        flags,
+                        ptr: value,
+                    });
+                }
+                continue;
+            }
             if index < arg_count {
                 let arg_index = arg_count.saturating_sub(1).saturating_sub(index);
                 let var_ptr = args_ptr.wrapping_add((arg_index * VARIANT_SIZE) as u32);
+                if std::env::var("PE_VM_TRACE_COM").is_ok() {
+                    let actual_vt = vm.read_u16(var_ptr).unwrap_or(0);
+                    let actual_val = vm.read_u32(var_ptr + 8).unwrap_or(0);
+                    eprintln!("[pe_vm] build_invoke_values positional idx={index} arg_index={arg_index} var_ptr=0x{var_ptr:08X} actual_vt=0x{actual_vt:04X} val=0x{actual_val:08X} expected_vt=0x{:04X}", param.vt);
+                }
                 let value = match read_variant_arg(vm, var_ptr, param.vt) {
                     Ok(value) => value,
                     Err(_) => {

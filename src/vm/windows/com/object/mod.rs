@@ -396,13 +396,7 @@ impl InProcObject {
                 if func.invkind != 0 && (flags & func.invkind) == 0 {
                     continue;
                 }
-                let expected_inputs = func
-                    .params
-                    .iter()
-                    .filter(|param| {
-                        (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags)
-                    })
-                    .count();
+                let expected_inputs = expected_inputs_for_func(func);
                 if args_len > expected_inputs {
                     continue;
                 }
@@ -428,13 +422,7 @@ impl InProcObject {
                 if func.memid != dispid {
                     continue;
                 }
-                let expected_inputs = func
-                    .params
-                    .iter()
-                    .filter(|param| {
-                        (param.flags & PARAMFLAG_FRETVAL) == 0 && !is_out_only(param.flags)
-                    })
-                    .count();
+                let expected_inputs = expected_inputs_for_func(func);
                 if args_len > expected_inputs {
                     continue;
                 }
@@ -449,6 +437,32 @@ impl InProcObject {
         }
         best
     }
+}
+
+fn expected_inputs_for_func(func: &FuncDesc) -> usize {
+    // Count parameters that could be inputs.
+    // FRETVAL params are normally not inputs, but some TypeLibs incorrectly mark input params
+    // with FRETVAL. If a method already has a return type (not VOID/EMPTY), treat single
+    // FRETVAL params as potential inputs.
+    let has_explicit_return = func.ret_vt != VT_EMPTY && func.ret_vt != 0;
+    let only_fretval = func.params.len() == 1
+        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+
+    func.params
+        .iter()
+        .filter(|param| {
+            let is_fretval = (param.flags & PARAMFLAG_FRETVAL) != 0;
+            if !is_fretval {
+                return !is_out_only(param.flags);
+            }
+            // If there's an explicit return type and only one FRETVAL param,
+            // treat it as a potential input
+            if has_explicit_return && only_fretval {
+                return true;
+            }
+            false
+        })
+        .count()
 }
 
 fn is_out_only(flags: u32) -> bool {
