@@ -2,6 +2,7 @@
 
 mod fadd;
 mod fild;
+mod fistp;
 mod fld;
 mod fldcw;
 mod fmul;
@@ -29,10 +30,18 @@ pub(super) enum FpuInstruction {
     Fstp,
     /// FILD m32int (DB /0)
     Fild,
+    /// FIST m32int (DB /2)
+    Fist,
+    /// FISTP m32int (DB /3)
+    Fistp,
     /// FLDCW m2byte (D9 /5)
     Fldcw,
     /// FSTCW m2byte (D9 /7)
     Fstcw,
+    /// FNCLEX/FCLEX - Clear FPU exception flags (DB E2)
+    Fnclex,
+    /// FNINIT/FINIT - Initialize FPU (DB E3)
+    Fninit,
 }
 
 impl FpuInstruction {
@@ -44,10 +53,27 @@ impl FpuInstruction {
                 7 => Some(Self::Fstcw),
                 _ => None,
             },
-            0xDB => match modrm.reg {
-                0 => Some(Self::Fild),
-                _ => None,
-            },
+            0xDB => {
+                // Register mode (mod_bits == 3) has different encoding
+                if modrm.mod_bits == 3 {
+                    // DB E0-E7 range: Check full modrm byte
+                    // DB E2 = FNCLEX (reg=4, rm=2)
+                    // DB E3 = FNINIT (reg=4, rm=3)
+                    match (modrm.reg, modrm.rm) {
+                        (4, 2) => Some(Self::Fnclex),
+                        (4, 3) => Some(Self::Fninit),
+                        _ => None,
+                    }
+                } else {
+                    // Memory mode
+                    match modrm.reg {
+                        0 => Some(Self::Fild),
+                        2 => Some(Self::Fist),
+                        3 => Some(Self::Fistp),
+                        _ => None,
+                    }
+                }
+            }
             0xDC => match modrm.reg {
                 0 => Some(Self::Fadd),
                 1 => Some(Self::Fmul),
@@ -104,8 +130,19 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
         FpuInstruction::Fld => fld::fld_m64(vm, &modrm, prefixes.segment_base)?,
         FpuInstruction::Fstp => fstp::fstp_m64(vm, &modrm, prefixes.segment_base)?,
         FpuInstruction::Fild => fild::fild_m32(vm, &modrm, prefixes.segment_base)?,
+        FpuInstruction::Fist => fistp::fist_m32(vm, &modrm, prefixes.segment_base)?,
+        FpuInstruction::Fistp => fistp::fistp_m32(vm, &modrm, prefixes.segment_base)?,
         FpuInstruction::Fldcw => fldcw::fldcw(vm, &modrm, prefixes.segment_base)?,
         FpuInstruction::Fstcw => fstcw::fstcw(vm, &modrm, prefixes.segment_base)?,
+        FpuInstruction::Fnclex => {
+            // Clear FPU exception flags - clear exception bits in status word
+            let status = vm.fpu_status();
+            vm.fpu_set_status(status & 0xFF00); // Clear lower 8 bits (exception flags)
+        }
+        FpuInstruction::Fninit => {
+            // Initialize FPU
+            vm.fpu_reset();
+        }
     }
 
     vm.set_eip(next);

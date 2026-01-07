@@ -1,6 +1,8 @@
 //! x86 executor and instruction registry.
 
 mod ins;
+#[cfg(test)]
+mod tests;
 
 use std::sync::OnceLock;
 

@@ -74,13 +74,13 @@ pub(crate) struct PendingThread {
 pub struct Vm {
     pub(super) config: VmConfig,
     pub(super) os_state: OsState,
-    pub(super) base: u32,
-    pub(super) memory: Vec<u8>,
-    pub(super) regs: Registers,
+    pub(crate) base: u32,
+    pub(crate) memory: Vec<u8>,
+    pub(crate) regs: Registers,
     // Minimal SSE state for XMM register operations.
     pub(super) xmm: [[u8; 16]; 8],
     pub(super) flags: Flags,
-    pub(super) stack_top: u32,
+    pub(crate) stack_top: u32,
     pub(super) stack_depth: u32,
     pub(super) heap_start: usize,
     pub(super) heap_end: usize,

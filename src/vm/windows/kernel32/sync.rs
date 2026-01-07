@@ -1,15 +1,141 @@
-//! Kernel32 synchronization stubs.
+//! Kernel32 synchronization primitives.
+//!
+//! This module provides basic synchronization primitives for the VM.
+//! Since the VM is single-threaded, most operations are no-ops but we
+//! maintain proper state for critical sections.
 
 use crate::define_stub_fn;
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 
 define_stub_fn!(DLL_NAME, create_event_a, 1);
-define_stub_fn!(DLL_NAME, initialize_critical_section_and_spin_count, 1);
-define_stub_fn!(DLL_NAME, enter_critical_section, 0);
-define_stub_fn!(DLL_NAME, leave_critical_section, 0);
-define_stub_fn!(DLL_NAME, delete_critical_section, 0);
 define_stub_fn!(DLL_NAME, set_event, 1);
+
+// Critical Section implementation
+// CRITICAL_SECTION structure (simplified for single-threaded VM):
+// Offset 0: DebugInfo (PRTL_CRITICAL_SECTION_DEBUG)
+// Offset 4: LockCount (LONG)
+// Offset 8: RecursionCount (LONG)
+// Offset 12: OwningThread (HANDLE)
+// Offset 16: LockSemaphore (HANDLE)
+// Offset 20: SpinCount (ULONG_PTR)
+const CS_LOCK_COUNT_OFFSET: u32 = 4;
+const CS_RECURSION_COUNT_OFFSET: u32 = 8;
+
+/// InitializeCriticalSection - Initialize a critical section object.
+/// void InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+fn initialize_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        // Initialize the critical section structure
+        // Set LockCount to -1 (unlocked state) - use u32 cast for -1i32
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, (-1i32) as u32);
+        // Set RecursionCount to 0
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, 0);
+    }
+    0 // void return
+}
+
+/// InitializeCriticalSectionAndSpinCount - Initialize with spin count.
+/// BOOL InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount);
+fn initialize_critical_section_and_spin_count(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    // dwSpinCount at stack_ptr + 8 (ignored in single-threaded VM)
+    if cs_ptr != 0 {
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, (-1i32) as u32);
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, 0);
+    }
+    1 // TRUE - success
+}
+
+/// InitializeCriticalSectionEx - Initialize with spin count and flags.
+/// BOOL InitializeCriticalSectionEx(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount, DWORD Flags);
+fn initialize_critical_section_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, (-1i32) as u32);
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, 0);
+    }
+    1 // TRUE - success
+}
+
+/// EnterCriticalSection - Enter a critical section.
+/// void EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+fn enter_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        // In single-threaded VM, just increment recursion count
+        let recursion = vm
+            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
+            .unwrap_or(0);
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion.wrapping_add(1));
+        // Increment lock count (from -1 to 0, or higher if recursive)
+        let lock_count = vm
+            .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
+            .unwrap_or((-1i32) as u32) as i32;
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_add(1) as u32);
+    }
+    0 // void return
+}
+
+/// TryEnterCriticalSection - Try to enter a critical section without blocking.
+/// BOOL TryEnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+fn try_enter_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        // In single-threaded VM, always succeeds
+        let recursion = vm
+            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
+            .unwrap_or(0);
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion.wrapping_add(1));
+        let lock_count = vm
+            .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
+            .unwrap_or((-1i32) as u32) as i32;
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_add(1) as u32);
+    }
+    1 // TRUE - successfully entered
+}
+
+/// LeaveCriticalSection - Leave a critical section.
+/// void LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+fn leave_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        // Decrement recursion count
+        let recursion = vm
+            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
+            .unwrap_or(1);
+        if recursion > 0 {
+            let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion - 1);
+        }
+        // Decrement lock count
+        let lock_count = vm
+            .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
+            .unwrap_or(0) as i32;
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_sub(1) as u32);
+    }
+    0 // void return
+}
+
+/// DeleteCriticalSection - Delete a critical section object.
+/// void DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+fn delete_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    if cs_ptr != 0 {
+        // Clear the structure
+        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, (-1i32) as u32);
+        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, 0);
+    }
+    0 // void return
+}
+
+/// SetCriticalSectionSpinCount - Set spin count for a critical section.
+/// DWORD SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount);
+fn set_critical_section_spin_count(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    // In single-threaded VM, spin count is ignored
+    // Return previous spin count (0)
+    0
+}
 
 // Additional stubs
 define_stub_fn!(DLL_NAME, create_event_w, 1);
@@ -32,10 +158,6 @@ define_stub_fn!(DLL_NAME, open_event_a, 1);
 define_stub_fn!(DLL_NAME, open_event_w, 1);
 define_stub_fn!(DLL_NAME, reset_event, 1);
 define_stub_fn!(DLL_NAME, pulse_event, 1);
-define_stub_fn!(DLL_NAME, initialize_critical_section, 0);
-define_stub_fn!(DLL_NAME, initialize_critical_section_ex, 1);
-define_stub_fn!(DLL_NAME, try_enter_critical_section, 1);
-define_stub_fn!(DLL_NAME, set_critical_section_spin_count, 0);
 define_stub_fn!(DLL_NAME, wait_for_multiple_objects, 0);
 define_stub_fn!(DLL_NAME, wait_for_multiple_objects_ex, 0);
 define_stub_fn!(DLL_NAME, wait_for_single_object_ex, 0);

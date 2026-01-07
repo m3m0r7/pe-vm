@@ -63,3 +63,108 @@ pub(crate) fn cdq(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), V
     vm.set_eip(cursor + 1);
     Ok(())
 }
+
+/// OUT DX, AL (EE) - Output byte to I/O port
+/// In VM, this is a no-op as we don't support I/O ports
+pub(crate) fn out_dx_al(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// OUT DX, EAX (EF) - Output dword to I/O port
+/// In VM, this is a no-op as we don't support I/O ports
+pub(crate) fn out_dx_eax(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// IN AL, DX (EC) - Input byte from I/O port
+/// In VM, returns 0 as we don't support I/O ports
+pub(crate) fn in_al_dx(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_reg8(REG_AL, 0);
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// IN EAX, DX (ED) - Input dword from I/O port
+/// In VM, returns 0 as we don't support I/O ports
+pub(crate) fn in_eax_dx(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_reg32(REG_EAX, 0);
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// OUTSB (6E) - Output string byte to I/O port
+/// In VM, this is a no-op as we don't support I/O ports
+pub(crate) fn outsb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    use crate::vm::{REG_ECX, REG_ESI};
+    let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
+    let esi = vm.reg32(REG_ESI);
+    // Just advance ESI by count bytes (we don't actually output anything)
+    vm.set_reg32(REG_ESI, esi.wrapping_add(count));
+    if prefixes.rep {
+        vm.set_reg32(REG_ECX, 0);
+    }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// OUTSD (6F) - Output string dword to I/O port
+/// In VM, this is a no-op as we don't support I/O ports
+pub(crate) fn outsd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    use crate::vm::{REG_ECX, REG_ESI};
+    let size = if prefixes.operand_size_16 { 2u32 } else { 4u32 };
+    let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
+    let esi = vm.reg32(REG_ESI);
+    // Just advance ESI by count * size bytes (we don't actually output anything)
+    vm.set_reg32(REG_ESI, esi.wrapping_add(count.wrapping_mul(size)));
+    if prefixes.rep {
+        vm.set_reg32(REG_ECX, 0);
+    }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// INSB (6C) - Input string byte from I/O port
+/// In VM, fills with zeros as we don't support I/O ports
+pub(crate) fn insb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    use crate::vm::{REG_ECX, REG_EDI};
+    let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
+    let mut edi = vm.reg32(REG_EDI);
+    // Fill destination with zeros
+    for _ in 0..count {
+        vm.write_u8(edi, 0)?;
+        edi = edi.wrapping_add(1);
+    }
+    vm.set_reg32(REG_EDI, edi);
+    if prefixes.rep {
+        vm.set_reg32(REG_ECX, 0);
+    }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+/// INSD (6D) - Input string dword from I/O port
+/// In VM, fills with zeros as we don't support I/O ports
+pub(crate) fn insd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    use crate::vm::{REG_ECX, REG_EDI};
+    let size = if prefixes.operand_size_16 { 2u32 } else { 4u32 };
+    let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
+    let mut edi = vm.reg32(REG_EDI);
+    // Fill destination with zeros
+    for _ in 0..count {
+        if size == 2 {
+            vm.write_u16(edi, 0)?;
+            edi = edi.wrapping_add(2);
+        } else {
+            vm.write_u32(edi, 0)?;
+            edi = edi.wrapping_add(4);
+        }
+    }
+    vm.set_reg32(REG_EDI, edi);
+    if prefixes.rep {
+        vm.set_reg32(REG_ECX, 0);
+    }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
