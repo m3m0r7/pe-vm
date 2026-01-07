@@ -25,3 +25,9 @@
 #  network:
 #    # Host name used when a target host is empty in WinInet calls.
 #    fallback_host: 127.0.0.1
+
+#bypass:
+#  # Bypass configuration for unimplemented or stub features.
+#  # If true, do not panic when calling an unimplemented module function.
+#  # This is useful for running PEs that call Windows APIs not yet implemented.
+#  not_implemented_module: true
