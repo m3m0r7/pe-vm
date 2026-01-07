@@ -1,4 +1,5 @@
 //! Exception handling stubs for MSVCR100.dll.
+#![allow(dead_code)]
 
 use crate::vm::Vm;
 

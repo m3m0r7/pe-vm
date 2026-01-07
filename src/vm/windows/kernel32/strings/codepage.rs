@@ -173,6 +173,7 @@ fn default_ansi_codepage(vm: &Vm) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -268,8 +269,7 @@ mod tests {
     fn test_get_cp_info_null_ptr_returns_zero() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
-        vm.write_u32(stack + 4, 932).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap(); // null info ptr
+        vm_set_args!(vm, stack; 932u32, 0u32);
         let result = get_cp_info(&mut vm, stack);
         assert_eq!(result, 0);
     }
@@ -279,8 +279,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
         let info_ptr = vm.heap_start as u32;
-        vm.write_u32(stack + 4, 932).unwrap();
-        vm.write_u32(stack + 8, info_ptr).unwrap();
+        vm_set_args!(vm, stack; 932u32, info_ptr);
         let result = get_cp_info(&mut vm, stack);
         assert_eq!(result, 1);
         // MaxCharSize should be 2 for Shift-JIS
@@ -292,8 +291,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
         let info_ptr = vm.heap_start as u32;
-        vm.write_u32(stack + 4, 1252).unwrap(); // Latin-1
-        vm.write_u32(stack + 8, info_ptr).unwrap();
+        vm_set_args!(vm, stack; 1252u32, info_ptr);
         let result = get_cp_info(&mut vm, stack);
         assert_eq!(result, 1);
         // MaxCharSize should be 1 for Latin-1

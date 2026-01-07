@@ -404,8 +404,10 @@ macro_rules! define_stub_fn {
 }
 
 /// Wrapper for wide (UTF-16) string arguments in vm_set_args!.
+#[cfg(test)]
 pub struct VmWideStr<'a>(pub &'a str);
 
+#[cfg(test)]
 impl<'a> VmWideStr<'a> {
     pub fn new(value: &'a str) -> Self {
         Self(value)
@@ -420,22 +422,26 @@ macro_rules! vm_wstr {
     };
 }
 
+#[cfg(test)]
 pub(crate) trait VmSetArg {
     fn write(self, vm: &mut Vm, offset: u32);
 }
 
+#[cfg(test)]
 impl Vm {
     pub(crate) fn write_arg<T: VmSetArg>(&mut self, offset: u32, value: T) {
         value.write(self, offset);
     }
 }
 
+#[cfg(test)]
 fn alloc_c_string(vm: &mut Vm, value: &str) -> u32 {
     let mut bytes = value.as_bytes().to_vec();
     bytes.push(0);
     vm.alloc_bytes(&bytes, 1).unwrap()
 }
 
+#[cfg(test)]
 fn alloc_wide_string(vm: &mut Vm, value: &str) -> u32 {
     let mut bytes = Vec::new();
     for unit in value.encode_utf16() {
@@ -445,30 +451,35 @@ fn alloc_wide_string(vm: &mut Vm, value: &str) -> u32 {
     vm.alloc_bytes(&bytes, 2).unwrap()
 }
 
+#[cfg(test)]
 impl VmSetArg for u32 {
     fn write(self, vm: &mut Vm, offset: u32) {
         vm.write_u32(offset, self).unwrap();
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for i32 {
     fn write(self, vm: &mut Vm, offset: u32) {
         vm.write_u32(offset, self as u32).unwrap();
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for u16 {
     fn write(self, vm: &mut Vm, offset: u32) {
         vm.write_u32(offset, self as u32).unwrap();
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for usize {
     fn write(self, vm: &mut Vm, offset: u32) {
         vm.write_u32(offset, self as u32).unwrap();
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for &str {
     fn write(self, vm: &mut Vm, offset: u32) {
         let ptr = alloc_c_string(vm, self);
@@ -476,6 +487,7 @@ impl VmSetArg for &str {
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for String {
     fn write(self, vm: &mut Vm, offset: u32) {
         let ptr = alloc_c_string(vm, &self);
@@ -483,6 +495,7 @@ impl VmSetArg for String {
     }
 }
 
+#[cfg(test)]
 impl<'a> VmSetArg for &'a [u8] {
     fn write(self, vm: &mut Vm, offset: u32) {
         let ptr = vm.alloc_bytes(self, 1).unwrap();
@@ -490,6 +503,7 @@ impl<'a> VmSetArg for &'a [u8] {
     }
 }
 
+#[cfg(test)]
 impl VmSetArg for Vec<u8> {
     fn write(self, vm: &mut Vm, offset: u32) {
         let ptr = vm.alloc_bytes(&self, 1).unwrap();
@@ -497,6 +511,7 @@ impl VmSetArg for Vec<u8> {
     }
 }
 
+#[cfg(test)]
 impl<'a> VmSetArg for VmWideStr<'a> {
     fn write(self, vm: &mut Vm, offset: u32) {
         let ptr = alloc_wide_string(vm, self.0);
@@ -527,77 +542,16 @@ impl<'a> VmSetArg for VmWideStr<'a> {
 /// ```
 #[macro_export]
 macro_rules! vm_set_args {
-    // Internal: write single value
-    (@write $vm:expr, $offset:expr, $val:expr) => {
-        $vm.write_arg($offset, $val);
-    };
-
-    // 1 argument
-    ($vm:expr, $sp:expr; $v1:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+    // Internal: recursive implementation with offset tracking
+    (@impl $vm:expr, $offset:expr,) => {};
+    (@impl $vm:expr, $offset:expr, $head:expr $(, $tail:expr)* $(,)?) => {{
+        $vm.write_arg($offset, $head);
+        $crate::vm_set_args!(@impl $vm, $offset + 4, $($tail),*);
     }};
 
-    // 2 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-    }};
-
-    // 3 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-    }};
-
-    // 4 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
-    }};
-
-    // 5 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
-        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
-    }};
-
-    // 6 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
-        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
-        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
-    }};
-
-    // 7 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr, $v7:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
-        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
-        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
-        $crate::vm_set_args!(@write $vm, $sp + 28, $v7);
-    }};
-
-    // 8 arguments
-    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr, $v7:expr, $v8:expr) => {{
-        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
-        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
-        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
-        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
-        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
-        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
-        $crate::vm_set_args!(@write $vm, $sp + 28, $v7);
-        $crate::vm_set_args!(@write $vm, $sp + 32, $v8);
+    // Entry point: start at sp + 4
+    ($vm:expr, $sp:expr; $($args:expr),+ $(,)?) => {{
+        $crate::vm_set_args!(@impl $vm, $sp + 4, $($args),+);
     }};
 }
 

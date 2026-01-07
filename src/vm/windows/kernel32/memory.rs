@@ -218,6 +218,7 @@ fn flush_instruction_cache(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -243,9 +244,7 @@ mod tests {
         let mut vm = create_test_vm();
         // Setup stack: heap handle, flags, size
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap(); // flags
-        vm.write_u32(stack + 12, 64).unwrap(); // size
+        vm_set_args!(vm, stack; HEAP_HANDLE, 0u32, 64u32);
         let ptr = heap_alloc(&mut vm, stack);
         assert_ne!(ptr, 0);
     }
@@ -254,9 +253,7 @@ mod tests {
     fn test_heap_alloc_and_free() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, 64).unwrap();
+        vm_set_args!(vm, stack; HEAP_HANDLE, 0u32, 64u32);
         let ptr = heap_alloc(&mut vm, stack);
         assert_ne!(ptr, 0);
 
@@ -279,9 +276,7 @@ mod tests {
     fn test_heap_size_returns_size() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, 128).unwrap();
+        vm_set_args!(vm, stack; HEAP_HANDLE, 0u32, 128u32);
         let ptr = heap_alloc(&mut vm, stack);
 
         vm.write_u32(stack + 12, ptr).unwrap();
@@ -302,8 +297,7 @@ mod tests {
     fn test_global_alloc_returns_nonzero() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
-        vm.write_u32(stack + 4, 0).unwrap(); // flags
-        vm.write_u32(stack + 8, 32).unwrap(); // size
+        vm_set_args!(vm, stack; 0u32, 32u32);
         let ptr = global_alloc(&mut vm, stack);
         assert_ne!(ptr, 0);
     }
@@ -329,10 +323,7 @@ mod tests {
     fn test_virtual_alloc_returns_nonzero() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 20;
-        vm.write_u32(stack + 4, 0).unwrap(); // addr (NULL = let system choose)
-        vm.write_u32(stack + 8, 0x1000).unwrap(); // size
-        vm.write_u32(stack + 12, 0x1000).unwrap(); // MEM_COMMIT
-        vm.write_u32(stack + 16, 0x04).unwrap(); // PAGE_READWRITE
+        vm_set_args!(vm, stack; 0u32, 0x1000u32, 0x1000u32, 0x04u32);
         let ptr = virtual_alloc(&mut vm, stack);
         assert_ne!(ptr, 0);
     }

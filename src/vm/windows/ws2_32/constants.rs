@@ -7,6 +7,7 @@ pub(super) const AF_INET: u16 = 2;
 pub(super) const WSAEINVAL: u32 = 10022;
 pub(super) const WSAEWOULDBLOCK: u32 = 10035;
 pub(super) const WSAENOTSOCK: u32 = 10038;
+#[cfg(test)]
 pub(super) const WSAETIMEDOUT: u32 = 10060;
 
 pub(super) const WSADATA_SIZE: usize = 400;

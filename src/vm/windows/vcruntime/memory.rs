@@ -29,6 +29,7 @@ fn memset(vm: &mut Vm, stack_ptr: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -46,9 +47,7 @@ mod tests {
     fn test_memset_null_dest() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, 0).unwrap(); // null dest
-        vm.write_u32(stack + 8, 0xFF).unwrap(); // value
-        vm.write_u32(stack + 12, 10).unwrap(); // size
+        vm_set_args!(vm, stack; 0u32, 0xFFu32, 10u32);
         let result = memset(&mut vm, stack);
         assert_eq!(result, 0);
     }
@@ -58,9 +57,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
         let dest = vm.heap_start as u32;
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, 0xAB).unwrap(); // value
-        vm.write_u32(stack + 12, 5).unwrap(); // size
+        vm_set_args!(vm, stack; dest, 0xABu32, 5u32);
         let result = memset(&mut vm, stack);
         assert_eq!(result, dest);
         // Check memory was filled
@@ -74,9 +71,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
         let dest = vm.heap_start as u32;
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, 1).unwrap();
+        vm_set_args!(vm, stack; dest, 0u32, 1u32);
         let result = memset(&mut vm, stack);
         assert_eq!(result, dest);
     }

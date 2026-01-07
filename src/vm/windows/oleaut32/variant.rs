@@ -75,6 +75,7 @@ pub(super) fn write_variant_u32(
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -155,8 +156,7 @@ mod tests {
     fn test_variant_change_type_null_ptrs() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 20;
-        vm.write_u32(stack + 4, 0).unwrap(); // null dest
-        vm.write_u32(stack + 8, 0).unwrap(); // null src
+        vm_set_args!(vm, stack; 0u32, 0u32);
         let result = variant_change_type(&mut vm, stack);
         assert_eq!(result, E_INVALIDARG);
     }
@@ -171,9 +171,7 @@ mod tests {
         vm.write_u16(src, VT_I4).unwrap();
         vm.write_u32(src + 8, 42).unwrap();
         // Setup stack
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, src).unwrap();
-        vm.write_u32(stack + 16, VT_I4 as u32).unwrap();
+        vm_set_args!(vm, stack; dest, src, 0u32, VT_I4 as u32);
         let result = variant_change_type(&mut vm, stack);
         assert_eq!(result, S_OK);
         assert_eq!(vm.read_u16(dest).unwrap(), VT_I4);

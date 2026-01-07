@@ -1,4 +1,5 @@
 //! mscoree stubs (CLR loader entry points).
+#![allow(non_snake_case)]
 
 use crate::define_stub_fn;
 use crate::vm::Vm;

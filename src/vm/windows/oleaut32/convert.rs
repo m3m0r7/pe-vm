@@ -40,6 +40,7 @@ pub(super) fn var_bstr_cat(vm: &mut Vm, stack_ptr: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -69,8 +70,7 @@ mod tests {
         let out_ptr = vm.heap_start as u32;
         // Create BSTR with "42"
         let bstr = alloc_bstr(&mut vm, "42").unwrap();
-        vm.write_u32(stack + 4, bstr).unwrap();
-        vm.write_u32(stack + 16, out_ptr).unwrap();
+        vm_set_args!(vm, stack; bstr, 0u32, 0u32, out_ptr);
         let result = var_ui4_from_str(&mut vm, stack);
         assert_eq!(result, S_OK);
         assert_eq!(vm.read_u32(out_ptr).unwrap(), 42);
@@ -83,8 +83,7 @@ mod tests {
         let out_ptr = vm.heap_start as u32;
         // Create BSTR with "abc"
         let bstr = alloc_bstr(&mut vm, "abc").unwrap();
-        vm.write_u32(stack + 4, bstr).unwrap();
-        vm.write_u32(stack + 16, out_ptr).unwrap();
+        vm_set_args!(vm, stack; bstr, 0u32, 0u32, out_ptr);
         let result = var_ui4_from_str(&mut vm, stack);
         assert_eq!(result, DISP_E_TYPEMISMATCH);
     }
@@ -106,9 +105,7 @@ mod tests {
         // Create BSTRs
         let left = alloc_bstr(&mut vm, "Hello").unwrap();
         let right = alloc_bstr(&mut vm, "World").unwrap();
-        vm.write_u32(stack + 4, left).unwrap();
-        vm.write_u32(stack + 8, right).unwrap();
-        vm.write_u32(stack + 12, out_ptr).unwrap();
+        vm_set_args!(vm, stack; left, right, out_ptr);
         let result = var_bstr_cat(&mut vm, stack);
         assert_eq!(result, S_OK);
         // Read the result BSTR
@@ -123,9 +120,7 @@ mod tests {
         let stack = vm.stack_top - 16;
         let out_ptr = vm.heap_start as u32;
         // Both inputs are null (0)
-        vm.write_u32(stack + 4, 0).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, out_ptr).unwrap();
+        vm_set_args!(vm, stack; 0u32, 0u32, out_ptr);
         let result = var_bstr_cat(&mut vm, stack);
         assert_eq!(result, S_OK);
         // Result should be empty string

@@ -153,6 +153,7 @@ fn render_bytes(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -210,8 +211,7 @@ mod tests {
         let dest = vm.heap_start as u32;
         let src = dest + 64;
         write_string(&mut vm, src, "Hello");
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, src).unwrap();
+        vm_set_args!(vm, stack; dest, src);
         let result = lstrcpy_a(&mut vm, stack);
         assert_eq!(result, dest);
         assert_eq!(vm.read_c_string(dest).unwrap(), "Hello");
@@ -222,8 +222,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
         let dest = vm.heap_start as u32;
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap(); // null src
+        vm_set_args!(vm, stack; dest, 0u32);
         let result = lstrcpy_a(&mut vm, stack);
         assert_eq!(result, dest);
     }
@@ -236,8 +235,7 @@ mod tests {
         let src = dest + 64;
         write_string(&mut vm, dest, "Hello");
         write_string(&mut vm, src, "World");
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, src).unwrap();
+        vm_set_args!(vm, stack; dest, src);
         let result = lstrcat_a(&mut vm, stack);
         assert_eq!(result, dest);
         assert_eq!(vm.read_c_string(dest).unwrap(), "HelloWorld");
@@ -251,8 +249,7 @@ mod tests {
         let s2 = s1 + 32;
         write_string(&mut vm, s1, "test");
         write_string(&mut vm, s2, "test");
-        vm.write_u32(stack + 4, s1).unwrap();
-        vm.write_u32(stack + 8, s2).unwrap();
+        vm_set_args!(vm, stack; s1, s2);
         let result = lstrcmp_a(&mut vm, stack) as i32;
         assert_eq!(result, 0);
     }
@@ -265,8 +262,7 @@ mod tests {
         let s2 = s1 + 32;
         write_string(&mut vm, s1, "aaa");
         write_string(&mut vm, s2, "bbb");
-        vm.write_u32(stack + 4, s1).unwrap();
-        vm.write_u32(stack + 8, s2).unwrap();
+        vm_set_args!(vm, stack; s1, s2);
         let result = lstrcmp_a(&mut vm, stack) as i32;
         assert!(result < 0);
     }
@@ -279,8 +275,7 @@ mod tests {
         let s2 = s1 + 32;
         write_string(&mut vm, s1, "zzz");
         write_string(&mut vm, s2, "aaa");
-        vm.write_u32(stack + 4, s1).unwrap();
-        vm.write_u32(stack + 8, s2).unwrap();
+        vm_set_args!(vm, stack; s1, s2);
         let result = lstrcmp_a(&mut vm, stack) as i32;
         assert!(result > 0);
     }
@@ -293,8 +288,7 @@ mod tests {
         let s2 = s1 + 32;
         write_string(&mut vm, s1, "TEST");
         write_string(&mut vm, s2, "test");
-        vm.write_u32(stack + 4, s1).unwrap();
-        vm.write_u32(stack + 8, s2).unwrap();
+        vm_set_args!(vm, stack; s1, s2);
         let result = lstrcmpi_a(&mut vm, stack) as i32;
         assert_eq!(result, 0);
     }
@@ -306,9 +300,7 @@ mod tests {
         let dest = vm.heap_start as u32;
         let src = dest + 64;
         write_string(&mut vm, src, "HelloWorld");
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, src).unwrap();
-        vm.write_u32(stack + 12, 6).unwrap(); // copy max 5 chars + null
+        vm_set_args!(vm, stack; dest, src, 6u32);
         let result = lstrcpyn_a(&mut vm, stack);
         assert_eq!(result, dest);
         assert_eq!(vm.read_c_string(dest).unwrap(), "Hello");
@@ -321,9 +313,7 @@ mod tests {
         let dest = vm.heap_start as u32;
         let src = dest + 64;
         write_string(&mut vm, src, "Hi");
-        vm.write_u32(stack + 4, dest).unwrap();
-        vm.write_u32(stack + 8, src).unwrap();
-        vm.write_u32(stack + 12, 10).unwrap(); // larger than source
+        vm_set_args!(vm, stack; dest, src, 10u32);
         let result = lstrcpyn_a(&mut vm, stack);
         assert_eq!(result, dest);
         assert_eq!(vm.read_c_string(dest).unwrap(), "Hi");

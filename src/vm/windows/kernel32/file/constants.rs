@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub(super) const FILE_ATTRIBUTE_NORMAL: u32 = 0x80;
 pub(super) const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x10;
 pub(super) const FILE_TYPE_DISK: u32 = 1;

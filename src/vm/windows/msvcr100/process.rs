@@ -1,4 +1,5 @@
 //! Process/thread function stubs for MSVCR100.dll.
+#![allow(dead_code, non_snake_case)]
 
 use crate::vm::Vm;
 

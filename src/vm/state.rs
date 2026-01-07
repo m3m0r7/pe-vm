@@ -43,7 +43,9 @@ pub(crate) struct FpuState {
     pub(crate) valid: [bool; 8],
     pub(crate) top: u8,
     pub(crate) control_word: u16,
+    #[allow(dead_code)]
     pub(crate) status_word: u16,
+    #[allow(dead_code)]
     pub(crate) tag_word: u16,
 }
 
@@ -182,10 +184,12 @@ impl Vm {
         self.fpu.control_word = value;
     }
 
+    #[allow(dead_code)]
     pub(crate) fn fpu_status(&self) -> u16 {
         self.fpu.status_word
     }
 
+    #[allow(dead_code)]
     pub(crate) fn fpu_set_status(&mut self, value: u16) {
         self.fpu.status_word = value;
     }

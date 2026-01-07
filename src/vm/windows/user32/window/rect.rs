@@ -96,6 +96,7 @@ mod tests {
     use super::*;
     use crate::settings::BypassSettings;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut bypass = BypassSettings::new();
@@ -144,9 +145,7 @@ mod tests {
         let rect_ptr = vm.heap_start as u32;
         // rect = {10, 20, 100, 200}
         write_rect_to_mem(&mut vm, rect_ptr, 10, 20, 100, 200);
-        vm.write_u32(stack + 4, rect_ptr).unwrap();
-        vm.write_u32(stack + 8, 5u32).unwrap(); // dx = 5
-        vm.write_u32(stack + 12, 10u32).unwrap(); // dy = 10
+        vm_set_args!(vm, stack; rect_ptr, 5u32, 10u32);
         let result = offset_rect(&mut vm, stack);
         assert_eq!(result, 1);
         assert_eq!(vm.read_u32(rect_ptr).unwrap() as i32, 15); // left + dx
@@ -166,9 +165,7 @@ mod tests {
         write_rect_to_mem(&mut vm, src1, 10, 20, 50, 60);
         // src2 = {30, 10, 100, 80}
         write_rect_to_mem(&mut vm, src2, 30, 10, 100, 80);
-        vm.write_u32(stack + 4, dst).unwrap();
-        vm.write_u32(stack + 8, src1).unwrap();
-        vm.write_u32(stack + 12, src2).unwrap();
+        vm_set_args!(vm, stack; dst, src1, src2);
         let result = union_rect(&mut vm, stack);
         assert_eq!(result, 1);
         // union should be {min(10,30), min(20,10), max(50,100), max(60,80)} = {10, 10, 100, 80}
@@ -189,9 +186,7 @@ mod tests {
         write_rect_to_mem(&mut vm, src1, 0, 0, 100, 100);
         // src2 = {50, 50, 150, 150}
         write_rect_to_mem(&mut vm, src2, 50, 50, 150, 150);
-        vm.write_u32(stack + 4, dst).unwrap();
-        vm.write_u32(stack + 8, src1).unwrap();
-        vm.write_u32(stack + 12, src2).unwrap();
+        vm_set_args!(vm, stack; dst, src1, src2);
         let result = intersect_rect(&mut vm, stack);
         assert_eq!(result, 1);
         // intersection should be {50, 50, 100, 100}
@@ -212,9 +207,7 @@ mod tests {
         write_rect_to_mem(&mut vm, src1, 0, 0, 10, 10);
         // src2 = {20, 20, 30, 30}
         write_rect_to_mem(&mut vm, src2, 20, 20, 30, 30);
-        vm.write_u32(stack + 4, dst).unwrap();
-        vm.write_u32(stack + 8, src1).unwrap();
-        vm.write_u32(stack + 12, src2).unwrap();
+        vm_set_args!(vm, stack; dst, src1, src2);
         let result = intersect_rect(&mut vm, stack);
         assert_eq!(result, 0); // no intersection
                                // dst should be {0, 0, 0, 0}
@@ -228,9 +221,7 @@ mod tests {
     fn test_intersect_rect_null_ptrs() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 20;
-        vm.write_u32(stack + 4, 0).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, 0).unwrap();
+        vm_set_args!(vm, stack; 0u32, 0u32, 0u32);
         let result = intersect_rect(&mut vm, stack);
         assert_eq!(result, 0);
     }

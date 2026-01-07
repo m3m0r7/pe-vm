@@ -177,6 +177,7 @@ fn expand_env(vm: &Vm, input: &str) -> String {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
     use std::collections::BTreeMap;
 
     fn create_test_vm() -> Vm {
@@ -213,9 +214,7 @@ mod tests {
         let stack = vm.stack_top - 16;
         let name_ptr = vm.heap_start as u32;
         write_string(&mut vm, name_ptr, "NONEXISTENT");
-        vm.write_u32(stack + 4, name_ptr).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap();
-        vm.write_u32(stack + 12, 0).unwrap();
+        vm_set_args!(vm, stack; name_ptr, 0u32, 0u32);
         let result = get_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 0);
     }
@@ -227,9 +226,7 @@ mod tests {
         let name_ptr = vm.heap_start as u32;
         let buf_ptr = name_ptr + 64;
         write_string(&mut vm, name_ptr, "TEST_VAR");
-        vm.write_u32(stack + 4, name_ptr).unwrap();
-        vm.write_u32(stack + 8, buf_ptr).unwrap();
-        vm.write_u32(stack + 12, 64).unwrap();
+        vm_set_args!(vm, stack; name_ptr, buf_ptr, 64u32);
         let result = get_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 10); // "test_value".len()
         assert_eq!(vm.read_c_string(buf_ptr).unwrap(), "test_value");
@@ -241,9 +238,7 @@ mod tests {
         let stack = vm.stack_top - 16;
         let name_ptr = vm.heap_start as u32;
         write_string(&mut vm, name_ptr, "MYVAR");
-        vm.write_u32(stack + 4, name_ptr).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap(); // null buffer
-        vm.write_u32(stack + 12, 0).unwrap();
+        vm_set_args!(vm, stack; name_ptr, 0u32, 0u32);
         let result = get_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 6); // "hello".len() + 1
     }
@@ -256,8 +251,7 @@ mod tests {
         let value_ptr = name_ptr + 32;
         write_string(&mut vm, name_ptr, "NEW_VAR");
         write_string(&mut vm, value_ptr, "new_value");
-        vm.write_u32(stack + 4, name_ptr).unwrap();
-        vm.write_u32(stack + 8, value_ptr).unwrap();
+        vm_set_args!(vm, stack; name_ptr, value_ptr);
         let result = set_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 1);
 
@@ -271,8 +265,7 @@ mod tests {
         let stack = vm.stack_top - 12;
         let name_ptr = vm.heap_start as u32;
         write_string(&mut vm, name_ptr, "TO_DELETE");
-        vm.write_u32(stack + 4, name_ptr).unwrap();
-        vm.write_u32(stack + 8, 0).unwrap(); // null value = delete
+        vm_set_args!(vm, stack; name_ptr, 0u32);
         let result = set_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 1);
         assert_eq!(vm.env_value("TO_DELETE"), None);
@@ -285,9 +278,7 @@ mod tests {
         let src_ptr = vm.heap_start as u32;
         let dst_ptr = src_ptr + 64;
         write_string(&mut vm, src_ptr, "plain text");
-        vm.write_u32(stack + 4, src_ptr).unwrap();
-        vm.write_u32(stack + 8, dst_ptr).unwrap();
-        vm.write_u32(stack + 12, 64).unwrap();
+        vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
         let result = expand_environment_strings_a(&mut vm, stack);
         assert_eq!(result, 11); // "plain text".len() + 1
         assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "plain text");
@@ -300,9 +291,7 @@ mod tests {
         let src_ptr = vm.heap_start as u32;
         let dst_ptr = src_ptr + 64;
         write_string(&mut vm, src_ptr, "path=%HOME%");
-        vm.write_u32(stack + 4, src_ptr).unwrap();
-        vm.write_u32(stack + 8, dst_ptr).unwrap();
-        vm.write_u32(stack + 12, 64).unwrap();
+        vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
         let result = expand_environment_strings_a(&mut vm, stack);
         assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "path=/home/user");
         assert_eq!(result, 16); // "path=/home/user".len() + 1

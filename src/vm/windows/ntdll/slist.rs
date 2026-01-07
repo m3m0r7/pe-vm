@@ -26,6 +26,7 @@ fn rtl_initialize_slist_head(vm: &mut Vm, stack_ptr: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -43,7 +44,7 @@ mod tests {
     fn test_rtl_initialize_slist_head_null_header() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
-        vm.write_u32(stack + 4, 0).unwrap(); // null header
+        vm_set_args!(vm, stack; 0u32); // null header
         let result = rtl_initialize_slist_head(&mut vm, stack);
         assert_eq!(result, 0);
     }
@@ -56,7 +57,7 @@ mod tests {
         // Initialize header with non-zero values
         vm.write_u32(header, 0xDEADBEEF).unwrap();
         vm.write_u32(header + 4, 0xCAFEBABE).unwrap();
-        vm.write_u32(stack + 4, header).unwrap();
+        vm_set_args!(vm, stack; header);
         let result = rtl_initialize_slist_head(&mut vm, stack);
         assert_eq!(result, 0);
         // Header should be zeroed

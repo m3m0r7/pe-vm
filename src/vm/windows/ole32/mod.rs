@@ -331,6 +331,7 @@ fn read_guid(vm: &Vm, ptr: u32) -> Result<[u8; 16], VmError> {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -392,8 +393,7 @@ mod tests {
     fn test_clsid_from_string_null_ptr_returns_invalid_arg() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 12;
-        vm.write_u32(stack + 4, 0).unwrap(); // null string ptr
-        vm.write_u32(stack + 8, 0).unwrap(); // null output ptr
+        vm_set_args!(vm, stack; 0u32, 0u32);
         let result = clsid_from_string(&mut vm, stack);
         assert_eq!(result, E_INVALIDARG);
     }
@@ -402,9 +402,7 @@ mod tests {
     fn test_string_from_guid2_null_ptr_returns_zero() {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 16;
-        vm.write_u32(stack + 4, 0).unwrap(); // null guid ptr
-        vm.write_u32(stack + 8, 0).unwrap(); // null output ptr
-        vm.write_u32(stack + 12, 0).unwrap(); // max_len = 0
+        vm_set_args!(vm, stack; 0u32, 0u32, 0u32);
         let result = string_from_guid2(&mut vm, stack);
         assert_eq!(result, 0);
     }
