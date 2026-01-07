@@ -4,7 +4,7 @@ mod architecture;
 mod api;
 pub mod ext;
 mod pe;
-mod settings;
+pub mod settings;
 mod vm;
 
 pub use api::{Pe, SymbolExecutor};
@@ -22,4 +22,3 @@ pub use vm::{
     HostCall, MessageBoxMode, Os, PathMapping, SandboxConfig, Value, Vm, VmConfig, VmError,
 };
 pub use vm::windows;
-pub use vm::test_support;

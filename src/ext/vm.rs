@@ -271,3 +271,105 @@ pub extern "C" fn pevm_vm_read_bstr(handle: *const VmHandle, ptr: u32) -> *mut c
         }
     }
 }
+
+/// Write an 8-bit value to VM memory.
+///
+/// # Safety
+/// `handle` must be a valid VM handle.
+#[no_mangle]
+pub unsafe extern "C" fn pevm_vm_write_u8(handle: *mut VmHandle, addr: u32, value: u8) -> bool {
+    clear_last_error();
+    let Some(vm) = vm_from_ptr_mut(handle) else {
+        set_last_error("vm handle is null");
+        return false;
+    };
+    match vm.write_u8(addr, value) {
+        Ok(()) => true,
+        Err(err) => {
+            set_last_error(format!("write_u8 failed: {err}"));
+            false
+        }
+    }
+}
+
+/// Write a 16-bit value to VM memory.
+///
+/// # Safety
+/// `handle` must be a valid VM handle.
+#[no_mangle]
+pub unsafe extern "C" fn pevm_vm_write_u16(handle: *mut VmHandle, addr: u32, value: u16) -> bool {
+    clear_last_error();
+    let Some(vm) = vm_from_ptr_mut(handle) else {
+        set_last_error("vm handle is null");
+        return false;
+    };
+    match vm.write_u16(addr, value) {
+        Ok(()) => true,
+        Err(err) => {
+            set_last_error(format!("write_u16 failed: {err}"));
+            false
+        }
+    }
+}
+
+/// Write a 32-bit value to VM memory.
+///
+/// # Safety
+/// `handle` must be a valid VM handle.
+#[no_mangle]
+pub unsafe extern "C" fn pevm_vm_write_u32(handle: *mut VmHandle, addr: u32, value: u32) -> bool {
+    clear_last_error();
+    let Some(vm) = vm_from_ptr_mut(handle) else {
+        set_last_error("vm handle is null");
+        return false;
+    };
+    match vm.write_u32(addr, value) {
+        Ok(()) => true,
+        Err(err) => {
+            set_last_error(format!("write_u32 failed: {err}"));
+            false
+        }
+    }
+}
+
+/// Write a null-terminated C string to VM memory.
+///
+/// # Safety
+/// `handle` and `str_ptr` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn pevm_vm_write_c_string(
+    handle: *mut VmHandle,
+    addr: u32,
+    str_ptr: *const c_char,
+) -> bool {
+    clear_last_error();
+    let Some(vm) = vm_from_ptr_mut(handle) else {
+        set_last_error("vm handle is null");
+        return false;
+    };
+    if str_ptr.is_null() {
+        set_last_error("string pointer is null");
+        return false;
+    }
+    let cstr = match CStr::from_ptr(str_ptr).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            set_last_error("string is not valid UTF-8");
+            return false;
+        }
+    };
+    let bytes = cstr.as_bytes();
+    // Write string bytes followed by null terminator
+    for (i, &byte) in bytes.iter().enumerate() {
+        if vm.write_u8(addr + i as u32, byte).is_err() {
+            set_last_error("write failed during c_string write");
+            return false;
+        }
+    }
+    // Write null terminator
+    if vm.write_u8(addr + bytes.len() as u32, 0).is_err() {
+        set_last_error("write failed for null terminator");
+        return false;
+    }
+    true
+}

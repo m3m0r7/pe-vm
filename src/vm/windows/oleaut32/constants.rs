@@ -38,3 +38,59 @@ pub(super) const IID_IUNKNOWN: &str = "{00000000-0000-0000-C000-000000000046}";
 pub(super) const IID_ITYPELIB: &str = "{00020402-0000-0000-C000-000000000046}";
 pub(super) const IID_ITYPEINFO: &str = "{00020401-0000-0000-C000-000000000046}";
 pub(super) const IID_ITYPEINFO2: &str = "{00020412-0000-0000-C000-000000000046}";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_codes() {
+        assert_eq!(S_OK, 0);
+        assert_eq!(E_INVALIDARG, 0x8007_0057);
+        assert_eq!(E_NOTIMPL, 0x8000_4001);
+        assert_eq!(E_NOINTERFACE, 0x8000_4002);
+        assert_eq!(DISP_E_MEMBERNOTFOUND, 0x8002_0003);
+        assert_eq!(DISP_E_TYPEMISMATCH, 0x8002_0005);
+        assert_eq!(DISP_E_BADPARAMCOUNT, 0x8002_000E);
+        assert_eq!(TYPE_E_LIBNOTREGISTERED, 0x8002_801D);
+    }
+
+    #[test]
+    fn test_variant_types() {
+        assert_eq!(VT_EMPTY, 0);
+        assert_eq!(VT_NULL, 1);
+        assert_eq!(VT_I4, 3);
+        assert_eq!(VT_BSTR, 8);
+        assert_eq!(VT_VARIANT, 12);
+        assert_eq!(VT_I1, 16);
+        assert_eq!(VT_UI1, 17);
+        assert_eq!(VT_UI4, 19);
+        assert_eq!(VT_INT, 22);
+        assert_eq!(VT_UINT, 23);
+        assert_eq!(VT_VOID, 24);
+        assert_eq!(VT_HRESULT, 25);
+        assert_eq!(VT_ARRAY, 0x2000);
+        assert_eq!(VT_BYREF, 0x4000);
+        assert_eq!(VT_USERDEFINED, 0x1D);
+    }
+
+    #[test]
+    fn test_variant_size() {
+        assert_eq!(VARIANT_SIZE, 16);
+    }
+
+    #[test]
+    fn test_param_flags() {
+        assert_eq!(PARAMFLAG_FIN, 0x1);
+        assert_eq!(PARAMFLAG_FOUT, 0x2);
+        assert_eq!(PARAMFLAG_FRETVAL, 0x8);
+    }
+
+    #[test]
+    fn test_interface_ids() {
+        assert_eq!(IID_IUNKNOWN, "{00000000-0000-0000-C000-000000000046}");
+        assert_eq!(IID_ITYPELIB, "{00020402-0000-0000-C000-000000000046}");
+        assert_eq!(IID_ITYPEINFO, "{00020401-0000-0000-C000-000000000046}");
+        assert_eq!(IID_ITYPEINFO2, "{00020412-0000-0000-C000-000000000046}");
+    }
+}

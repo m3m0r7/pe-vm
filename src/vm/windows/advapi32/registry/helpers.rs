@@ -166,3 +166,49 @@ pub(super) fn is_root_hive(hkey: u32) -> bool {
         HKEY_CLASSES_ROOT | HKEY_CURRENT_USER | HKEY_LOCAL_MACHINE | HKEY_USERS | HKEY_CURRENT_CONFIG
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_join_key_empty_subkey() {
+        assert_eq!(join_key("HKLM", ""), "HKLM");
+    }
+
+    #[test]
+    fn test_join_key_with_subkey() {
+        assert_eq!(join_key("HKLM", "Software"), "HKLM\\Software");
+        assert_eq!(join_key("HKCU", "Test\\Path"), "HKCU\\Test\\Path");
+    }
+
+    #[test]
+    fn test_format_registry_key_without_value() {
+        assert_eq!(format_registry_key("HKLM\\Software", None), "HKLM\\Software");
+    }
+
+    #[test]
+    fn test_format_registry_key_with_value() {
+        assert_eq!(
+            format_registry_key("HKLM\\Software", Some("Version")),
+            "HKLM\\Software@Version"
+        );
+    }
+
+    #[test]
+    fn test_is_root_hive_true() {
+        assert!(is_root_hive(HKEY_CLASSES_ROOT));
+        assert!(is_root_hive(HKEY_CURRENT_USER));
+        assert!(is_root_hive(HKEY_LOCAL_MACHINE));
+        assert!(is_root_hive(HKEY_USERS));
+        assert!(is_root_hive(HKEY_CURRENT_CONFIG));
+    }
+
+    #[test]
+    fn test_is_root_hive_false() {
+        assert!(!is_root_hive(0));
+        assert!(!is_root_hive(1));
+        assert!(!is_root_hive(0x1234));
+        assert!(!is_root_hive(0x7FFF_FFFF));
+    }
+}

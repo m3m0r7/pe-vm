@@ -124,7 +124,7 @@ fn exec_shift_rm8(
 ) -> Result<(), VmError> {
     match modrm.reg {
         0 => {
-            let count = (count % 8) as u32;
+            let count = count % 8;
             if count == 0 {
                 return Ok(());
             }
@@ -140,7 +140,7 @@ fn exec_shift_rm8(
             write_rm8(vm, modrm, prefixes.segment_base, result)?;
         }
         1 => {
-            let count = (count % 8) as u32;
+            let count = count % 8;
             if count == 0 {
                 return Ok(());
             }
@@ -156,7 +156,7 @@ fn exec_shift_rm8(
             vm.set_flags(vm.zf(), vm.sf(), of, cf);
         }
         2 => {
-            let count = (count % 9) as u32;
+            let count = count % 9;
             if count == 0 {
                 return Ok(());
             }
@@ -175,7 +175,7 @@ fn exec_shift_rm8(
             vm.set_flags(vm.zf(), vm.sf(), of, cf);
         }
         3 => {
-            let count = (count % 9) as u32;
+            let count = count % 9;
             if count == 0 {
                 return Ok(());
             }

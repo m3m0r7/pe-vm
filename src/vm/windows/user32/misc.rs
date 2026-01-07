@@ -28,3 +28,66 @@ fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     ptr.wrapping_add(2)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_enable_window_returns_one() {
+        let mut vm = create_test_vm();
+        let result = enable_window(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_char_next_a_null_ptr() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = char_next_a(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_char_next_a_advances_by_one() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        let ptr = 0x1000u32;
+        vm.write_u32(stack + 4, ptr).unwrap();
+        let result = char_next_a(&mut vm, stack);
+        assert_eq!(result, 0x1001);
+    }
+
+    #[test]
+    fn test_char_next_w_null_ptr() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = char_next_w(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_char_next_w_advances_by_two() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        let ptr = 0x1000u32;
+        vm.write_u32(stack + 4, ptr).unwrap();
+        let result = char_next_w(&mut vm, stack);
+        assert_eq!(result, 0x1002);
+    }
+}

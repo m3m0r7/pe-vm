@@ -16,6 +16,7 @@ pub(super) fn compare_strings(left: &str, right: &str) -> i32 {
     }
 }
 
+#[allow(dead_code)]
 pub(super) fn write_c_string(vm: &mut Vm, dest: u32, text: &str) {
     let mut bytes = text.as_bytes().to_vec();
     bytes.push(0);

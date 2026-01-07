@@ -24,6 +24,21 @@ pub mod wtsapi32;
 
 use crate::vm::{OsState, Vm, VmConfig, VmError};
 
+/// Check if not_implemented_module bypass is enabled.
+/// If bypass is disabled, panics with a message indicating the function is not implemented.
+/// If bypass is enabled, logs a warning and returns normally.
+#[inline]
+pub fn check_stub(vm: &Vm, dll: &str, function: &str) {
+    if vm.config().bypass_settings().not_implemented_module {
+        eprintln!("[pe_vm] stub: {dll}!{function} (not implemented, bypassed)");
+    } else {
+        panic!(
+            "Not implemented: {dll}!{function}. \
+            Set bypass.not_implemented_module: true in settings to bypass."
+        );
+    }
+}
+
 // Holds Windows-specific VM state such as registry data.
 #[derive(Debug, Clone)]
 pub struct WindowsState {

@@ -1,5 +1,7 @@
 // Instruction-level execution tests for the x86 VM.
-use pe_vm::test_support::{TestVm, TEST_BASE};
+
+mod common;
+use common::{TestVm, TEST_BASE};
 
 fn step(code: &[u8], setup: impl FnOnce(&mut TestVm)) -> TestVm {
     let mut vm = TestVm::new(code);

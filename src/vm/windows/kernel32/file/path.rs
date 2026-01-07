@@ -97,9 +97,7 @@ fn search_path_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         String::new()
     };
 
-    if file_has_sep {
-        candidates.push(format!("{file}{suffix}"));
-    } else if path.is_empty() {
+    if file_has_sep || path.is_empty() {
         candidates.push(format!("{file}{suffix}"));
     } else {
         for dir in path.split(';') {

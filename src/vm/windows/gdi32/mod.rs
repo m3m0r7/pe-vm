@@ -243,3 +243,161 @@ fn write_point(vm: &mut Vm, ptr: u32) {
     let _ = vm.write_u32(ptr, 0);
     let _ = vm.write_u32(ptr + 4, 0);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_alloc_handle_returns_unique_handles() {
+        let h1 = alloc_handle();
+        let h2 = alloc_handle();
+        let h3 = alloc_handle();
+        assert_ne!(h1, h2);
+        assert_ne!(h2, h3);
+        assert_ne!(h1, h3);
+    }
+
+    #[test]
+    fn test_free_handle_success() {
+        let handle = alloc_handle();
+        assert!(free_handle(handle));
+    }
+
+    #[test]
+    fn test_free_handle_unknown() {
+        assert!(!free_handle(0xDEADBEEF));
+    }
+
+    #[test]
+    fn test_save_dc_returns_one() {
+        let mut vm = create_test_vm();
+        let result = save_dc(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_restore_dc_returns_one() {
+        let mut vm = create_test_vm();
+        let result = restore_dc(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_select_object_null_returns_zero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        vm.write_u32(stack + 8, 0).unwrap(); // null object
+        let result = select_object(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_select_object_returns_object() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        vm.write_u32(stack + 8, 0x1234).unwrap();
+        let result = select_object(&mut vm, stack);
+        assert_eq!(result, 0x1234);
+    }
+
+    #[test]
+    fn test_create_compatible_dc_returns_handle() {
+        let mut vm = create_test_vm();
+        let result = create_compatible_dc(&mut vm, 0);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_create_solid_brush_returns_handle() {
+        let mut vm = create_test_vm();
+        let result = create_solid_brush(&mut vm, 0);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_delete_dc_frees_handle() {
+        let mut vm = create_test_vm();
+        let handle = create_compatible_dc(&mut vm, 0);
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, handle).unwrap();
+        let result = delete_dc(&mut vm, stack);
+        assert_eq!(result, 1); // true
+    }
+
+    #[test]
+    fn test_delete_object_frees_handle() {
+        let mut vm = create_test_vm();
+        let handle = create_solid_brush(&mut vm, 0);
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, handle).unwrap();
+        let result = delete_object(&mut vm, stack);
+        assert_eq!(result, 1); // true
+    }
+
+    #[test]
+    fn test_get_device_caps_returns_zero() {
+        let mut vm = create_test_vm();
+        let result = get_device_caps(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_get_stock_object_returns_handle() {
+        let mut vm = create_test_vm();
+        let result = get_stock_object(&mut vm, 0);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_text_out_a_returns_one() {
+        let mut vm = create_test_vm();
+        let result = text_out_a(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_bit_blt_returns_one() {
+        let mut vm = create_test_vm();
+        let result = bit_blt(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_rectangle_returns_one() {
+        let mut vm = create_test_vm();
+        let result = rectangle(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_write_point_null_ptr() {
+        let mut vm = create_test_vm();
+        // Should not panic with null ptr
+        write_point(&mut vm, 0);
+    }
+
+    #[test]
+    fn test_write_point_writes_zeros() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        vm.write_u32(ptr, 0xDEADBEEF).unwrap();
+        vm.write_u32(ptr + 4, 0xDEADBEEF).unwrap();
+        write_point(&mut vm, ptr);
+        assert_eq!(vm.read_u32(ptr).unwrap(), 0);
+        assert_eq!(vm.read_u32(ptr + 4).unwrap(), 0);
+    }
+}

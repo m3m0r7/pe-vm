@@ -52,7 +52,7 @@ impl SegDir {
             }
         }
         let typeinfo_tab = entries
-            .get(0)
+            .first()
             .cloned()
             .ok_or(VmError::InvalidConfig("typelib typeinfo seg missing"))?;
         let typdesc_tab = entries

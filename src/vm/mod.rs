@@ -8,7 +8,6 @@ mod registers;
 mod state;
 mod types;
 
-pub mod test_support;
 pub mod windows;
 
 pub use config::*;

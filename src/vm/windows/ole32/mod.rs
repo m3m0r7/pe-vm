@@ -251,3 +251,106 @@ fn read_guid(vm: &Vm, ptr: u32) -> Result<[u8; 16], VmError> {
     }
     Ok(out)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_co_create_instance_returns_class_not_available() {
+        let mut vm = create_test_vm();
+        let result = co_create_instance(&mut vm, 0);
+        assert_eq!(result, CLASS_E_CLASSNOTAVAILABLE);
+    }
+
+    #[test]
+    fn test_co_get_class_object_returns_class_not_available() {
+        let mut vm = create_test_vm();
+        let result = co_get_class_object(&mut vm, 0);
+        assert_eq!(result, CLASS_E_CLASSNOTAVAILABLE);
+    }
+
+    #[test]
+    fn test_co_task_mem_alloc_returns_pointer() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 100).unwrap(); // size = 100
+        let result = co_task_mem_alloc(&mut vm, stack);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_co_task_mem_free_returns_zero() {
+        let mut vm = create_test_vm();
+        let result = co_task_mem_free(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_ole_initialize_returns_s_ok() {
+        let mut vm = create_test_vm();
+        let result = ole_initialize(&mut vm, 0);
+        assert_eq!(result, S_OK);
+    }
+
+    #[test]
+    fn test_ole_uninitialize_returns_zero() {
+        let mut vm = create_test_vm();
+        let result = ole_uninitialize(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_clsid_from_string_null_ptr_returns_invalid_arg() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        vm.write_u32(stack + 4, 0).unwrap(); // null string ptr
+        vm.write_u32(stack + 8, 0).unwrap(); // null output ptr
+        let result = clsid_from_string(&mut vm, stack);
+        assert_eq!(result, E_INVALIDARG);
+    }
+
+    #[test]
+    fn test_string_from_guid2_null_ptr_returns_zero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 4, 0).unwrap();  // null guid ptr
+        vm.write_u32(stack + 8, 0).unwrap();  // null output ptr
+        vm.write_u32(stack + 12, 0).unwrap(); // max_len = 0
+        let result = string_from_guid2(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_read_utf16_z_empty() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        // Write null terminator
+        let _ = vm.write_u16(ptr, 0);
+        let result = read_utf16_z(&vm, ptr).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_read_guid() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        let guid_bytes: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        vm.write_bytes(ptr, &guid_bytes).unwrap();
+        let result = read_guid(&vm, ptr).unwrap();
+        assert_eq!(result, guid_bytes);
+    }
+}

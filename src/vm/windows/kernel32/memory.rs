@@ -139,3 +139,159 @@ fn virtual_query(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn flush_instruction_cache(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     1
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_get_process_heap_returns_handle() {
+        let mut vm = create_test_vm();
+        let result = get_process_heap(&mut vm, 0);
+        assert_eq!(result, HEAP_HANDLE);
+    }
+
+    #[test]
+    fn test_heap_alloc_returns_nonzero() {
+        let mut vm = create_test_vm();
+        // Setup stack: heap handle, flags, size
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap(); // flags
+        vm.write_u32(stack + 12, 64).unwrap(); // size
+        let ptr = heap_alloc(&mut vm, stack);
+        assert_ne!(ptr, 0);
+    }
+
+    #[test]
+    fn test_heap_alloc_and_free() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap();
+        vm.write_u32(stack + 12, 64).unwrap();
+        let ptr = heap_alloc(&mut vm, stack);
+        assert_ne!(ptr, 0);
+
+        // Free it
+        vm.write_u32(stack + 12, ptr).unwrap();
+        let result = heap_free(&mut vm, stack);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_heap_free_null_returns_zero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 12, 0).unwrap(); // null pointer
+        let result = heap_free(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_heap_size_returns_size() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 4, HEAP_HANDLE).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap();
+        vm.write_u32(stack + 12, 128).unwrap();
+        let ptr = heap_alloc(&mut vm, stack);
+
+        vm.write_u32(stack + 12, ptr).unwrap();
+        let size = heap_size(&mut vm, stack);
+        assert!(size >= 128);
+    }
+
+    #[test]
+    fn test_heap_size_invalid_returns_error() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm.write_u32(stack + 12, 0xDEAD_BEEF).unwrap(); // invalid ptr
+        let size = heap_size(&mut vm, stack);
+        assert_eq!(size, 0xFFFF_FFFF);
+    }
+
+    #[test]
+    fn test_global_alloc_returns_nonzero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        vm.write_u32(stack + 4, 0).unwrap(); // flags
+        vm.write_u32(stack + 8, 32).unwrap(); // size
+        let ptr = global_alloc(&mut vm, stack);
+        assert_ne!(ptr, 0);
+    }
+
+    #[test]
+    fn test_global_lock_returns_same_ptr() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        let handle = 0x1234;
+        vm.write_u32(stack + 4, handle).unwrap();
+        let result = global_lock(&mut vm, stack);
+        assert_eq!(result, handle);
+    }
+
+    #[test]
+    fn test_global_unlock_returns_one() {
+        let mut vm = create_test_vm();
+        let result = global_unlock(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_virtual_alloc_returns_nonzero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 20;
+        vm.write_u32(stack + 4, 0).unwrap(); // addr (NULL = let system choose)
+        vm.write_u32(stack + 8, 0x1000).unwrap(); // size
+        vm.write_u32(stack + 12, 0x1000).unwrap(); // MEM_COMMIT
+        vm.write_u32(stack + 16, 0x04).unwrap(); // PAGE_READWRITE
+        let ptr = virtual_alloc(&mut vm, stack);
+        assert_ne!(ptr, 0);
+    }
+
+    #[test]
+    fn test_virtual_free_returns_one() {
+        let mut vm = create_test_vm();
+        let result = virtual_free(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_virtual_protect_writes_old_protect() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 20;
+        let old_protect_ptr = vm.heap_start as u32;
+        vm.write_u32(stack + 16, old_protect_ptr).unwrap();
+        let result = virtual_protect(&mut vm, stack);
+        assert_eq!(result, 1);
+        assert_eq!(vm.read_u32(old_protect_ptr).unwrap(), 0x04);
+    }
+
+    #[test]
+    fn test_heap_destroy_returns_one() {
+        let mut vm = create_test_vm();
+        let result = heap_destroy(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+
+    #[test]
+    fn test_flush_instruction_cache_returns_one() {
+        let mut vm = create_test_vm();
+        let result = flush_instruction_cache(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+}

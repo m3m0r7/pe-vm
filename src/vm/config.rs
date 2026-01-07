@@ -3,6 +3,7 @@ use std::path::Path;
 
 use super::windows;
 use super::VmError;
+use crate::settings::BypassSettings;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Os {
@@ -32,6 +33,7 @@ pub struct VmConfig {
     font_path: Option<String>,
     execution_limit: u64,
     sandbox: Option<SandboxConfig>,
+    bypass: BypassSettings,
 }
 
 impl VmConfig {
@@ -44,6 +46,7 @@ impl VmConfig {
             font_path: None,
             execution_limit: 1_000_000,
             sandbox: None,
+            bypass: BypassSettings::default(),
         }
     }
 
@@ -129,6 +132,21 @@ impl VmConfig {
 
     pub fn sandbox_config(&self) -> Option<&SandboxConfig> {
         self.sandbox.as_ref()
+    }
+
+    pub fn bypass(self, bypass: BypassSettings) -> Self {
+        let mut config = self;
+        config.bypass = bypass;
+        config
+    }
+
+    pub fn bypass_settings(&self) -> &BypassSettings {
+        &self.bypass
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn set_bypass(&mut self, bypass: BypassSettings) {
+        self.bypass = bypass;
     }
 }
 

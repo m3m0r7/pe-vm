@@ -12,7 +12,7 @@ mod interlocked;
 mod pointer;
 mod process;
 mod slist;
-mod strings;
+pub mod strings;
 mod sync;
 mod thread;
 mod time;

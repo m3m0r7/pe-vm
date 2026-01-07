@@ -19,6 +19,7 @@ impl Vm {
             }
             let _ = std::fs::OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .write(true)
                 .open(path);
         }
@@ -53,10 +54,11 @@ impl Vm {
     pub(crate) fn file_exists(&self, guest_path: &str) -> bool {
         let host_path = self.map_path(guest_path);
         let is_dir_hint = guest_path.ends_with(['\\', '/']);
-        if is_dir_hint && !Path::new(&host_path).exists() {
-            if std::fs::create_dir_all(&host_path).is_ok() {
-                return true;
-            }
+        if is_dir_hint
+            && !Path::new(&host_path).exists()
+            && std::fs::create_dir_all(&host_path).is_ok()
+        {
+            return true;
         }
         if let Some(data) = self.virtual_files.get(&host_path) {
             !data.is_empty() || Path::new(&host_path).exists()

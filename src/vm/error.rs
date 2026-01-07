@@ -16,6 +16,8 @@ pub enum VmError {
     NoImage,
     InvalidConfig(&'static str),
     Com(u32),
+    /// Called when an unimplemented module function is invoked.
+    NotImplemented { dll: String, function: String },
 }
 
 impl fmt::Display for VmError {
@@ -38,6 +40,9 @@ impl fmt::Display for VmError {
                 } else {
                     write!(f, "com error: 0x{code:08X}")
                 }
+            }
+            VmError::NotImplemented { dll, function } => {
+                write!(f, "not implemented: {dll}!{function}")
             }
         }
     }

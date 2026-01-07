@@ -279,7 +279,7 @@ impl Vm {
         }
         let end = addr.saturating_add(len.saturating_sub(1) as u32);
         let preview = bytes
-            .map(|slice| format_bytes(slice))
+            .map(format_bytes)
             .unwrap_or_else(|| "<none>".to_string());
         let inst = read_inst_bytes(self, self.regs.eip, 8);
         eprintln!(
@@ -310,7 +310,7 @@ fn parse_watch_addr(token: &str) -> Option<u32> {
     if let Some(hex) = token.strip_prefix("0x").or_else(|| token.strip_prefix("0X")) {
         return u32::from_str_radix(hex, 16).ok();
     }
-    u32::from_str_radix(token, 10).ok()
+    token.parse::<u32>().ok()
 }
 
 fn format_bytes(bytes: &[u8]) -> String {

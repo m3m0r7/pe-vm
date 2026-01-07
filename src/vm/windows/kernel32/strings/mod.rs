@@ -2,7 +2,7 @@
 
 mod ansi;
 mod classify;
-mod codepage;
+pub mod codepage;
 mod convert;
 mod helpers;
 

@@ -135,3 +135,174 @@ fn expand_env(vm: &Vm, input: &str) -> String {
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+    use std::collections::BTreeMap;
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    fn create_test_vm_with_env(vars: &[(&str, &str)]) -> Vm {
+        let mut vm = create_test_vm();
+        let mut env = BTreeMap::new();
+        for (k, v) in vars {
+            env.insert(k.to_string(), v.to_string());
+        }
+        vm.set_env(env);
+        vm
+    }
+
+    fn write_string(vm: &mut Vm, addr: u32, s: &str) {
+        let mut bytes = s.as_bytes().to_vec();
+        bytes.push(0);
+        vm.write_bytes(addr, &bytes).unwrap();
+    }
+
+    #[test]
+    fn test_get_environment_variable_not_found() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "NONEXISTENT");
+        vm.write_u32(stack + 4, name_ptr).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap();
+        vm.write_u32(stack + 12, 0).unwrap();
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_get_environment_variable_found() {
+        let mut vm = create_test_vm_with_env(&[("TEST_VAR", "test_value")]);
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        let buf_ptr = name_ptr + 64;
+        write_string(&mut vm, name_ptr, "TEST_VAR");
+        vm.write_u32(stack + 4, name_ptr).unwrap();
+        vm.write_u32(stack + 8, buf_ptr).unwrap();
+        vm.write_u32(stack + 12, 64).unwrap();
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 10); // "test_value".len()
+        assert_eq!(vm.read_c_string(buf_ptr).unwrap(), "test_value");
+    }
+
+    #[test]
+    fn test_get_environment_variable_query_size() {
+        let mut vm = create_test_vm_with_env(&[("MYVAR", "hello")]);
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "MYVAR");
+        vm.write_u32(stack + 4, name_ptr).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap(); // null buffer
+        vm.write_u32(stack + 12, 0).unwrap();
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 6); // "hello".len() + 1
+    }
+
+    #[test]
+    fn test_set_environment_variable() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        let name_ptr = vm.heap_start as u32;
+        let value_ptr = name_ptr + 32;
+        write_string(&mut vm, name_ptr, "NEW_VAR");
+        write_string(&mut vm, value_ptr, "new_value");
+        vm.write_u32(stack + 4, name_ptr).unwrap();
+        vm.write_u32(stack + 8, value_ptr).unwrap();
+        let result = set_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 1);
+
+        // Verify it was set
+        assert_eq!(vm.env_value("NEW_VAR"), Some("new_value"));
+    }
+
+    #[test]
+    fn test_set_environment_variable_delete() {
+        let mut vm = create_test_vm_with_env(&[("TO_DELETE", "value")]);
+        let stack = vm.stack_top - 12;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "TO_DELETE");
+        vm.write_u32(stack + 4, name_ptr).unwrap();
+        vm.write_u32(stack + 8, 0).unwrap(); // null value = delete
+        let result = set_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 1);
+        assert_eq!(vm.env_value("TO_DELETE"), None);
+    }
+
+    #[test]
+    fn test_expand_environment_strings_no_vars() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        let src_ptr = vm.heap_start as u32;
+        let dst_ptr = src_ptr + 64;
+        write_string(&mut vm, src_ptr, "plain text");
+        vm.write_u32(stack + 4, src_ptr).unwrap();
+        vm.write_u32(stack + 8, dst_ptr).unwrap();
+        vm.write_u32(stack + 12, 64).unwrap();
+        let result = expand_environment_strings_a(&mut vm, stack);
+        assert_eq!(result, 11); // "plain text".len() + 1
+        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "plain text");
+    }
+
+    #[test]
+    fn test_expand_environment_strings_with_var() {
+        let mut vm = create_test_vm_with_env(&[("HOME", "/home/user")]);
+        let stack = vm.stack_top - 16;
+        let src_ptr = vm.heap_start as u32;
+        let dst_ptr = src_ptr + 64;
+        write_string(&mut vm, src_ptr, "path=%HOME%");
+        vm.write_u32(stack + 4, src_ptr).unwrap();
+        vm.write_u32(stack + 8, dst_ptr).unwrap();
+        vm.write_u32(stack + 12, 64).unwrap();
+        let result = expand_environment_strings_a(&mut vm, stack);
+        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "path=/home/user");
+        assert_eq!(result, 16); // "path=/home/user".len() + 1
+    }
+
+    #[test]
+    fn test_expand_env_missing_var() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "hello %MISSING% world");
+        assert_eq!(result, "hello %MISSING% world");
+    }
+
+    #[test]
+    fn test_expand_env_double_percent() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "100%% complete");
+        assert_eq!(result, "100% complete");
+    }
+
+    #[test]
+    fn test_expand_env_unclosed() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "unclosed %VAR");
+        assert_eq!(result, "unclosed %VAR");
+    }
+
+    #[test]
+    fn test_get_environment_strings_w() {
+        let mut vm = create_test_vm();
+        let result = get_environment_strings_w(&mut vm, 0);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_free_environment_strings_w() {
+        let mut vm = create_test_vm();
+        let result = free_environment_strings_w(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
+}

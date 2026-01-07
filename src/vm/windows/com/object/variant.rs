@@ -159,15 +159,13 @@ fn build_param_variant(
         } else {
             base_value
         }
+    } else if force_out || (vt & VT_BYREF) != 0 || base_vt == VT_VARIANT || base_vt == VT_USERDEFINED
+    {
+        let ptr = alloc_param_buffer(vm, vt)?;
+        out_ptr = Some(ptr);
+        ptr
     } else {
-        if force_out || (vt & VT_BYREF) != 0 || base_vt == VT_VARIANT || base_vt == VT_USERDEFINED
-        {
-            let ptr = alloc_param_buffer(vm, vt)?;
-            out_ptr = Some(ptr);
-            ptr
-        } else {
-            0
-        }
+        0
     };
     Ok((vt, value, out_ptr))
 }

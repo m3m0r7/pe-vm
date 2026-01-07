@@ -267,7 +267,7 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
     let (value_type, bytes) = match value {
         RegistryValue::String(text) => {
             let bytes = if wide {
-                encode_wide_string(&text)
+                encode_wide_string(text)
             } else {
                 let mut bytes = text.as_bytes().to_vec();
                 bytes.push(0);
@@ -278,7 +278,7 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
         RegistryValue::Dword(value) => (REG_DWORD, value.to_le_bytes().to_vec()),
         RegistryValue::MultiString(values) => {
             let bytes = if wide {
-                encode_wide_multi_string(&values)
+                encode_wide_multi_string(values)
             } else {
                 let mut bytes = Vec::new();
                 for item in values {

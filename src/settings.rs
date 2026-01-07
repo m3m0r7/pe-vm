@@ -69,6 +69,20 @@ pub(crate) struct Settings {
     vm: VmSettings,
     pe: PeSettings,
     sandbox: Option<SandboxConfig>,
+    bypass: BypassSettings,
+}
+
+/// Bypass configuration for unimplemented or stub features.
+#[derive(Clone, Default, Debug)]
+pub struct BypassSettings {
+    /// If true, do not panic when calling an unimplemented module function.
+    pub not_implemented_module: bool,
+}
+
+impl BypassSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[derive(Clone, Default)]
@@ -89,6 +103,12 @@ struct SettingsRaw {
     vm: Option<VmSectionRaw>,
     pe: Option<PeSectionRaw>,
     sandbox: Option<YamlValue>,
+    bypass: Option<BypassSectionRaw>,
+}
+
+#[derive(Default, Deserialize)]
+struct BypassSectionRaw {
+    not_implemented_module: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -170,6 +190,7 @@ pub(crate) fn apply_vm_settings(mut config: VmConfig, settings: &Settings) -> Re
     if let Some(sandbox) = settings.sandbox.as_ref() {
         config = config.sandbox(sandbox.clone());
     }
+    config = config.bypass(settings.bypass.clone());
     Ok(config)
 }
 
@@ -224,7 +245,17 @@ impl Settings {
         if let Some(sandbox) = raw.sandbox {
             settings.sandbox = parse_sandbox(&sandbox);
         }
+        if let Some(bypass) = raw.bypass {
+            if let Some(v) = bypass.not_implemented_module {
+                settings.bypass.not_implemented_module = v;
+            }
+        }
         Ok(settings)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn bypass(&self) -> &BypassSettings {
+        &self.bypass
     }
 
     fn merge_from(&mut self, other: Settings) {
@@ -241,6 +272,9 @@ impl Settings {
         merge_paths(&mut self.pe.paths, &other.pe.paths);
         if other.sandbox.is_some() {
             self.sandbox = other.sandbox;
+        }
+        if other.bypass.not_implemented_module {
+            self.bypass.not_implemented_module = true;
         }
     }
 
@@ -335,7 +369,7 @@ fn parse_network(value: &YamlValue) -> SandboxConfig {
     match value {
         YamlValue::Mapping(map) => {
             let fallback = map
-                .get(&YamlValue::String("fallback_host".to_string()))
+                .get(YamlValue::String("fallback_host".to_string()))
                 .and_then(|value| value.as_str())
                 .unwrap_or("");
             SandboxConfig::new().enable_network(fallback)

@@ -127,3 +127,140 @@ pub(super) fn sys_string_byte_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     vm.read_u32(ptr - 4).unwrap_or(0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_alloc_bstr() {
+        let mut vm = create_test_vm();
+        let ptr = alloc_bstr(&mut vm, "Hello").unwrap();
+        assert_ne!(ptr, 0);
+        // Read back the BSTR
+        let text = read_bstr(&vm, ptr).unwrap();
+        assert_eq!(text, "Hello");
+    }
+
+    #[test]
+    fn test_alloc_bstr_empty() {
+        let mut vm = create_test_vm();
+        let ptr = alloc_bstr(&mut vm, "").unwrap();
+        assert_ne!(ptr, 0);
+        let text = read_bstr(&vm, ptr).unwrap();
+        assert_eq!(text, "");
+    }
+
+    #[test]
+    fn test_read_bstr_null() {
+        let vm = create_test_vm();
+        let text = read_bstr(&vm, 0).unwrap();
+        assert_eq!(text, "");
+    }
+
+    #[test]
+    fn test_read_bstr_invalid_ptr() {
+        let vm = create_test_vm();
+        // ptr < 4 should return error
+        let result = read_bstr(&vm, 2);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_alloc_bstr_from_utf16() {
+        let mut vm = create_test_vm();
+        let utf16: Vec<u16> = "Test".encode_utf16().collect();
+        let ptr = alloc_bstr_from_utf16(&mut vm, &utf16).unwrap();
+        assert_ne!(ptr, 0);
+        let text = read_bstr(&vm, ptr).unwrap();
+        assert_eq!(text, "Test");
+    }
+
+    #[test]
+    fn test_read_utf16_z() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        // Write "AB" in UTF-16 with null terminator
+        vm.write_u16(ptr, 0x0041).unwrap();     // 'A'
+        vm.write_u16(ptr + 2, 0x0042).unwrap(); // 'B'
+        vm.write_u16(ptr + 4, 0).unwrap();      // null
+        let result = read_utf16_z(&vm, ptr).unwrap();
+        assert_eq!(result, vec![0x0041, 0x0042]);
+    }
+
+    #[test]
+    fn test_read_utf16_z_empty() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        vm.write_u16(ptr, 0).unwrap(); // just null
+        let result = read_utf16_z(&vm, ptr).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_sys_alloc_string_null() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap(); // null source
+        let result = sys_alloc_string(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_sys_free_string() {
+        let mut vm = create_test_vm();
+        let result = sys_free_string(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_sys_string_len_null() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = sys_string_len(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_sys_string_len() {
+        let mut vm = create_test_vm();
+        let bstr = alloc_bstr(&mut vm, "Hello").unwrap();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, bstr).unwrap();
+        let result = sys_string_len(&mut vm, stack);
+        assert_eq!(result, 5); // 5 characters
+    }
+
+    #[test]
+    fn test_sys_string_byte_len_null() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = sys_string_byte_len(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_sys_string_byte_len() {
+        let mut vm = create_test_vm();
+        let bstr = alloc_bstr(&mut vm, "Hello").unwrap();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, bstr).unwrap();
+        let result = sys_string_byte_len(&mut vm, stack);
+        assert_eq!(result, 10); // 5 chars * 2 bytes
+    }
+}

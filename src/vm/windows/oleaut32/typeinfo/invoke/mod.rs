@@ -251,12 +251,12 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     S_OK
 }
 
-fn select_invoke_func<'a>(
-    info: &'a typelib::TypeInfoData,
+fn select_invoke_func(
+    info: &typelib::TypeInfoData,
     memid: u32,
     flags: u16,
     arg_count: usize,
-) -> Option<&'a typelib::FuncDesc> {
+) -> Option<&typelib::FuncDesc> {
     let candidates: Vec<&typelib::FuncDesc> = info
         .funcs
         .iter()
