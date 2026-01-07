@@ -20,7 +20,7 @@ pub(super) fn parse_ipv4(text: &str) -> Option<u32> {
     if parts.next().is_some() {
         return None;
     }
-    Some(u32::from_be_bytes(octets))
+    Some(u32::from_le_bytes(octets))
 }
 
 pub(super) fn read_sockaddr_in(vm: &Vm, ptr: u32) -> Option<(String, u16)> {
@@ -33,7 +33,7 @@ pub(super) fn read_sockaddr_in(vm: &Vm, ptr: u32) -> Option<(String, u16)> {
     }
     let port = vm.read_u16(ptr + 2).ok()?;
     let addr = vm.read_u32(ptr + 4).ok()?;
-    let octets = addr.to_be_bytes();
+    let octets = addr.to_le_bytes();
     let host = format!("{}.{}.{}.{}", octets[0], octets[1], octets[2], octets[3]);
     Some((host, port))
 }

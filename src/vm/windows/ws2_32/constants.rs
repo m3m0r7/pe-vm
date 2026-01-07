@@ -5,7 +5,9 @@ pub(super) const SOCKET_ERROR: u32 = 0xFFFF_FFFF;
 pub(super) const AF_INET: u16 = 2;
 
 pub(super) const WSAEINVAL: u32 = 10022;
+pub(super) const WSAEWOULDBLOCK: u32 = 10035;
 pub(super) const WSAENOTSOCK: u32 = 10038;
+pub(super) const WSAETIMEDOUT: u32 = 10060;
 
 pub(super) const WSADATA_SIZE: usize = 400;
 pub(super) const WSADATA_VERSION: u16 = 0x0202;
@@ -31,7 +33,9 @@ mod tests {
     #[test]
     fn test_wsa_error_codes() {
         assert_eq!(WSAEINVAL, 10022);
+        assert_eq!(WSAEWOULDBLOCK, 10035);
         assert_eq!(WSAENOTSOCK, 10038);
+        assert_eq!(WSAETIMEDOUT, 10060);
     }
 
     #[test]

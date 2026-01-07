@@ -7,7 +7,8 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
 
 use super::constants::{
-    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL, WSAENOTSOCK,
+    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL,
+    WSAENOTSOCK, WSAEWOULDBLOCK,
 };
 use super::store::{alloc_socket, close_socket, register_socket, set_last_error, socket_by_handle};
 use super::trace::{log_connect, log_send, trace_net};
@@ -101,8 +102,8 @@ pub(super) fn recv(vm: &mut Vm, stack_ptr: u32) -> u32 {
                 return received as u32;
             }
             Err(err) => {
-                if err.kind() == ErrorKind::WouldBlock {
-                    set_last_error(0);
+                if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) {
+                    set_last_error(WSAEWOULDBLOCK);
                     return 0;
                 }
             }
@@ -183,12 +184,57 @@ pub(super) fn socket(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn ioctlsocket(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_, _cmd, argp) = vm_args!(vm, stack_ptr; u32, u32, u32);
-    if argp != 0 {
-        let _ = vm.write_u32(argp, 0);
+    const FIONBIO: u32 = 0x8004_667E;
+    const FIONREAD: u32 = 0x4004_667F;
+
+    let (handle, cmd, argp) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    if argp == 0 {
+        set_last_error(WSAEINVAL);
+        return SOCKET_ERROR;
     }
-    set_last_error(0);
-    0
+    let Some(socket) = socket_by_handle(handle) else {
+        set_last_error(WSAENOTSOCK);
+        return SOCKET_ERROR;
+    };
+
+    match cmd {
+        FIONBIO => {
+            let nonblocking = vm.read_u32(argp).unwrap_or(0) != 0;
+            match socket.set_nonblocking(nonblocking) {
+                Ok(()) => {
+                    set_last_error(0);
+                    0
+                }
+                Err(_) => {
+                    set_last_error(WSAEINVAL);
+                    SOCKET_ERROR
+                }
+            }
+        }
+        FIONREAD => {
+            let mut buffer = [0u8; 512];
+            match socket.peek(&mut buffer) {
+                Ok(count) => {
+                    let _ = vm.write_u32(argp, count as u32);
+                    set_last_error(0);
+                    0
+                }
+                Err(err) if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {
+                    let _ = vm.write_u32(argp, 0);
+                    set_last_error(0);
+                    0
+                }
+                Err(_) => {
+                    set_last_error(WSAEINVAL);
+                    SOCKET_ERROR
+                }
+            }
+        }
+        _ => {
+            set_last_error(WSAEINVAL);
+            SOCKET_ERROR
+        }
+    }
 }
 
 pub(super) fn gethostbyname(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -226,7 +272,7 @@ pub(super) fn gethostbyaddr(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn alloc_hostent(vm: &mut Vm, name: &str, addr: u32) -> u32 {
     let name_ptr = alloc_c_string(vm, name);
     let aliases_ptr = alloc_u32_list(vm, &[0]);
-    let addr_bytes = addr.to_be_bytes();
+    let addr_bytes = addr.to_le_bytes();
     let addr_ptr = vm.alloc_bytes(&addr_bytes, 4).unwrap_or(0);
     let addr_list_ptr = alloc_u32_list(vm, &[addr_ptr, 0]);
 
@@ -259,9 +305,9 @@ fn alloc_u32_list(vm: &mut Vm, values: &[u32]) -> u32 {
 
 fn default_addr_for_host(name: &str) -> u32 {
     if name.eq_ignore_ascii_case("localhost") {
-        u32::from_be_bytes([127, 0, 0, 1])
+        u32::from_le_bytes([127, 0, 0, 1])
     } else {
-        u32::from_be_bytes([192, 0, 2, 1])
+        u32::from_le_bytes([192, 0, 2, 1])
     }
 }
 
@@ -269,14 +315,14 @@ fn resolve_host(name: &str) -> Option<u32> {
     let addrs = (name, 0).to_socket_addrs().ok()?;
     for addr in addrs {
         if let SocketAddr::V4(v4) = addr {
-            return Some(u32::from_be_bytes(v4.ip().octets()));
+            return Some(u32::from_le_bytes(v4.ip().octets()));
         }
     }
     None
 }
 
 fn format_host_by_addr(addr: u32) -> String {
-    let bytes = addr.to_be_bytes();
+    let bytes = addr.to_le_bytes();
     format!("{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3])
 }
 

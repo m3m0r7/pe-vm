@@ -151,7 +151,7 @@ impl Vm {
         Ok(value)
     }
 
-    pub(crate) fn fpu_st(&self, index: usize) -> Result<f64, VmError> {
+    pub fn fpu_st(&self, index: usize) -> Result<f64, VmError> {
         if index >= 8 {
             return Err(VmError::UnsupportedInstruction(0));
         }

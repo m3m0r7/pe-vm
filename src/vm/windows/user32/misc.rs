@@ -2,7 +2,7 @@
 
 use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
-use crate::vm::Vm;
+use crate::vm::{Value, Vm};
 use crate::vm_args;
 
 define_stub_fn!(DLL_NAME, enable_window, 1);
@@ -53,12 +53,21 @@ fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn set_timer(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_, timer_id, _, _) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
-    if timer_id == 0 {
-        1
-    } else {
-        timer_id
+    let (hwnd, timer_id, elapse, callback) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let resolved_id = if timer_id == 0 { 1 } else { timer_id };
+
+    if callback != 0 {
+        let args = [
+            Value::U32(hwnd),
+            Value::U32(0x0113), // WM_TIMER
+            Value::U32(resolved_id),
+            Value::U32(elapse),
+        ];
+        let _ = vm.execute_at_with_stack(callback, &args);
+        let _ = vm.execute_at_with_stack(callback, &args);
     }
+
+    resolved_id
 }
 
 fn kill_timer(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
