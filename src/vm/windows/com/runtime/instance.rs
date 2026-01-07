@@ -3,16 +3,18 @@
 use crate::pe::PeFile;
 use crate::vm::{Value, Vm, VmError};
 
+use super::super::object::{vtable_fn, InProcObject};
 use super::helpers::{alloc_guid, read_hex_window};
 use super::scan::recover_dispatch_from_heap;
 use super::{IID_ICLASSFACTORY, IID_IDISPATCH, IID_IUNKNOWN};
-use super::super::object::{vtable_fn, InProcObject};
+use crate::vm::windows::oleaut32::typelib::TypeLib;
 
 // Instantiate a COM object by calling DllGetClassObject and IClassFactory::CreateInstance.
 pub(super) fn create_inproc_object(
     vm: &mut Vm,
     file: &PeFile,
     clsid: &str,
+    typelib: Option<TypeLib>,
 ) -> Result<InProcObject, VmError> {
     let entry = file
         .export_rva("DllGetClassObject")
@@ -33,9 +35,7 @@ pub(super) fn create_inproc_object(
     )?;
     if std::env::var("PE_VM_TRACE").is_ok() {
         let out = vm.read_u32(factory_out).unwrap_or(0);
-        eprintln!(
-            "[pe_vm] DllGetClassObject hr=0x{hr:08X} out=0x{out:08X}"
-        );
+        eprintln!("[pe_vm] DllGetClassObject hr=0x{hr:08X} out=0x{out:08X}");
     }
     if hr != 0 {
         return Err(VmError::Com(hr));
@@ -93,9 +93,7 @@ pub(super) fn create_inproc_object(
     if i_dispatch == 0 && last_hr == 0 {
         if let Some(recovered) = recover_dispatch_from_heap(vm, file, internal_create) {
             if std::env::var("PE_VM_TRACE").is_ok() {
-                eprintln!(
-                    "[pe_vm] recovered IDispatch pointer 0x{recovered:08X} from heap scan"
-                );
+                eprintln!("[pe_vm] recovered IDispatch pointer 0x{recovered:08X} from heap scan");
             }
             i_dispatch = recovered;
         }
@@ -106,7 +104,7 @@ pub(super) fn create_inproc_object(
         }
         return Err(VmError::InvalidConfig("IDispatch is null"));
     }
-    Ok(InProcObject::new(i_dispatch))
+    Ok(InProcObject::new(i_dispatch, typelib))
 }
 
 fn create_instance_with_iid(
@@ -125,14 +123,10 @@ fn create_instance_with_iid(
         }
         if iid == IID_IDISPATCH {
             let snapshot = read_hex_window(vm, class_factory, 64);
-            eprintln!(
-                "[pe_vm] CreateInstance class_factory bytes before: {snapshot}"
-            );
+            eprintln!("[pe_vm] CreateInstance class_factory bytes before: {snapshot}");
         }
         let before = vm.read_u32(out_ptr).unwrap_or(0);
-        let internal_create = vm
-            .read_u32(class_factory.wrapping_add(0x24))
-            .unwrap_or(0);
+        let internal_create = vm.read_u32(class_factory.wrapping_add(0x24)).unwrap_or(0);
         eprintln!(
             "[pe_vm] CreateInstance prep iid={iid} iid_ptr=0x{iid_ptr:08X} bytes={:02X?} out_ptr=0x{out_ptr:08X} before=0x{before:08X} internal_create=0x{internal_create:08X} thiscall={thiscall}",
             bytes,
@@ -142,11 +136,7 @@ fn create_instance_with_iid(
         vm.execute_at_with_stack_with_ecx(
             create_instance,
             class_factory,
-            &[
-                Value::U32(0),
-                Value::U32(iid_ptr),
-                Value::U32(out_ptr),
-            ],
+            &[Value::U32(0), Value::U32(iid_ptr), Value::U32(out_ptr)],
         )?
     } else {
         vm.execute_at_with_stack(
@@ -161,15 +151,11 @@ fn create_instance_with_iid(
     };
     let out = vm.read_u32(out_ptr).unwrap_or(0);
     if std::env::var("PE_VM_TRACE").is_ok() {
-        let after_internal = vm
-            .read_u32(class_factory.wrapping_add(0x24))
-            .unwrap_or(0);
+        let after_internal = vm.read_u32(class_factory.wrapping_add(0x24)).unwrap_or(0);
         let delta = out_ptr.wrapping_sub(class_factory);
         if iid == IID_IDISPATCH {
             let snapshot = read_hex_window(vm, class_factory, 64);
-            eprintln!(
-                "[pe_vm] CreateInstance class_factory bytes after: {snapshot}"
-            );
+            eprintln!("[pe_vm] CreateInstance class_factory bytes after: {snapshot}");
         }
         eprintln!(
             "[pe_vm] CreateInstance iid={iid} hr=0x{hr:08X} out=0x{out:08X} internal_create_after=0x{after_internal:08X} out_ptr_delta=0x{delta:08X}"

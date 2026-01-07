@@ -1,18 +1,20 @@
 //! Kernel32 stub registration.
 
-mod exceptions;
-mod error;
-mod env;
+pub const DLL_NAME: &str = "KERNEL32.dll";
+
 mod console;
 mod dynamic;
-mod memory;
-mod module;
+mod env;
+mod error;
+mod exceptions;
 mod file;
 mod interlocked;
+mod memory;
+mod module;
 mod pointer;
 mod process;
 mod slist;
-mod strings;
+pub mod strings;
 mod sync;
 mod thread;
 mod time;

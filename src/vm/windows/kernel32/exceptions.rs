@@ -1,26 +1,70 @@
 //! Kernel32 exception-related stubs.
 
+use crate::define_stub_fn;
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
+
+define_stub_fn!(DLL_NAME, raise_exception, 0);
+define_stub_fn!(DLL_NAME, rtl_unwind, 0);
+define_stub_fn!(DLL_NAME, add_vectored_exception_handler, 1);
+define_stub_fn!(DLL_NAME, remove_vectored_exception_handler, 1);
+define_stub_fn!(DLL_NAME, add_vectored_continue_handler, 1);
+define_stub_fn!(DLL_NAME, remove_vectored_continue_handler, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "SetUnhandledExceptionFilter",
         crate::vm::stdcall_args(1),
         set_unhandled_exception_filter,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "UnhandledExceptionFilter",
         crate::vm::stdcall_args(1),
         unhandled_exception_filter,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "RaiseException", crate::vm::stdcall_args(4), raise_exception);
-    vm.register_import_stdcall("KERNEL32.dll", "RtlUnwind", crate::vm::stdcall_args(4), rtl_unwind);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RaiseException",
+        crate::vm::stdcall_args(4),
+        raise_exception,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RtlUnwind",
+        crate::vm::stdcall_args(4),
+        rtl_unwind,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "AddVectoredExceptionHandler",
+        crate::vm::stdcall_args(2),
+        add_vectored_exception_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RemoveVectoredExceptionHandler",
+        crate::vm::stdcall_args(1),
+        remove_vectored_exception_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "AddVectoredContinueHandler",
+        crate::vm::stdcall_args(2),
+        add_vectored_continue_handler,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "RemoveVectoredContinueHandler",
+        crate::vm::stdcall_args(1),
+        remove_vectored_continue_handler,
+    );
 }
 
 fn set_unhandled_exception_filter(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let filter = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (filter,) = vm_args!(vm, stack_ptr; u32);
     let previous = vm.unhandled_exception_filter();
     vm.set_unhandled_exception_filter(filter);
     previous
@@ -33,13 +77,5 @@ fn unhandled_exception_filter(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
             _vm.eip()
         );
     }
-    0
-}
-
-fn raise_exception(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-fn rtl_unwind(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     0
 }

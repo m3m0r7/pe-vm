@@ -1,8 +1,11 @@
 //! User32 stub registration.
 
-mod message_box;
-mod cursor;
+pub const DLL_NAME: &str = "USER32.dll";
+
 mod class;
+mod cursor;
+mod message_box;
+mod misc;
 mod window;
 
 use crate::vm::Vm;
@@ -14,4 +17,5 @@ pub fn register(vm: &mut Vm) {
     cursor::register(vm);
     message_box::register(vm);
     window::register(vm);
+    misc::register(vm);
 }

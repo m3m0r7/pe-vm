@@ -3,7 +3,11 @@
 use crate::pe::PeFile;
 use crate::vm::Vm;
 
-pub(super) fn recover_dispatch_from_heap(vm: &Vm, file: &PeFile, internal_create: u32) -> Option<u32> {
+pub(super) fn recover_dispatch_from_heap(
+    vm: &Vm,
+    file: &PeFile,
+    internal_create: u32,
+) -> Option<u32> {
     let vtable = find_vtable_from_internal_create(vm, file, internal_create)?;
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!(
@@ -62,12 +66,8 @@ fn find_vtable_from_internal_create(vm: &Vm, file: &PeFile, internal_create: u32
     }
     for idx in 0..stub.len().saturating_sub(5) {
         if stub[idx] == 0xE9 {
-            let rel = i32::from_le_bytes([
-                stub[idx + 1],
-                stub[idx + 2],
-                stub[idx + 3],
-                stub[idx + 4],
-            ]);
+            let rel =
+                i32::from_le_bytes([stub[idx + 1], stub[idx + 2], stub[idx + 3], stub[idx + 4]]);
             let target = internal_create
                 .wrapping_add(idx as u32 + 5)
                 .wrapping_add(rel as u32);

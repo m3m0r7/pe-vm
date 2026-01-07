@@ -5,3 +5,4 @@ test.rs
 test*.rs
 debug/
 registry.yml
+settings.local.yml

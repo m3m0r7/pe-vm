@@ -1,34 +1,62 @@
 //! Kernel32 environment stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "GetEnvironmentVariableA",
         crate::vm::stdcall_args(3),
         get_environment_variable_a,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "SetEnvironmentVariableA",
         crate::vm::stdcall_args(2),
         set_environment_variable_a,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "ExpandEnvironmentStringsA",
         crate::vm::stdcall_args(3),
         expand_environment_strings_a,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "GetEnvironmentStringsW", crate::vm::stdcall_args(0), get_environment_strings_w);
-    vm.register_import_stdcall("KERNEL32.dll", "FreeEnvironmentStringsW", crate::vm::stdcall_args(1), free_environment_strings_w);
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStrings",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStringsA",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetEnvironmentStringsW",
+        crate::vm::stdcall_args(0),
+        get_environment_strings_w,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FreeEnvironmentStringsA",
+        crate::vm::stdcall_args(1),
+        free_environment_strings_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "FreeEnvironmentStringsW",
+        crate::vm::stdcall_args(1),
+        free_environment_strings_w,
+    );
 }
 
 fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let buffer_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let buffer_size = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (name_ptr, buffer_ptr, buffer_size) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if name_ptr == 0 {
         return 0;
     }
@@ -52,8 +80,7 @@ fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn set_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let value_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (name_ptr, value_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if name_ptr == 0 {
         return 0;
     }
@@ -68,9 +95,7 @@ fn set_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn expand_environment_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let dst_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (src_ptr, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -91,8 +116,20 @@ fn expand_environment_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn get_environment_strings_w(vm: &mut Vm, _stack_ptr: u32) -> u32 {
     let strings = [0u16, 0u16];
-    let bytes: Vec<u8> = strings.iter().flat_map(|value| value.to_le_bytes()).collect();
+    let bytes: Vec<u8> = strings
+        .iter()
+        .flat_map(|value| value.to_le_bytes())
+        .collect();
     vm.alloc_bytes(&bytes, 2).unwrap_or(0)
+}
+
+fn get_environment_strings_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    let strings = [0u8, 0u8];
+    vm.alloc_bytes(&strings, 1).unwrap_or(0)
+}
+
+fn free_environment_strings_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
 }
 
 fn free_environment_strings_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -134,4 +171,164 @@ fn expand_env(vm: &Vm, input: &str) -> String {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
+    use std::collections::BTreeMap;
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    fn create_test_vm_with_env(vars: &[(&str, &str)]) -> Vm {
+        let mut vm = create_test_vm();
+        let mut env = BTreeMap::new();
+        for (k, v) in vars {
+            env.insert(k.to_string(), v.to_string());
+        }
+        vm.set_env(env);
+        vm
+    }
+
+    fn write_string(vm: &mut Vm, addr: u32, s: &str) {
+        let mut bytes = s.as_bytes().to_vec();
+        bytes.push(0);
+        vm.write_bytes(addr, &bytes).unwrap();
+    }
+
+    #[test]
+    fn test_get_environment_variable_not_found() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "NONEXISTENT");
+        vm_set_args!(vm, stack; name_ptr, 0u32, 0u32);
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_get_environment_variable_found() {
+        let mut vm = create_test_vm_with_env(&[("TEST_VAR", "test_value")]);
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        let buf_ptr = name_ptr + 64;
+        write_string(&mut vm, name_ptr, "TEST_VAR");
+        vm_set_args!(vm, stack; name_ptr, buf_ptr, 64u32);
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 10); // "test_value".len()
+        assert_eq!(vm.read_c_string(buf_ptr).unwrap(), "test_value");
+    }
+
+    #[test]
+    fn test_get_environment_variable_query_size() {
+        let mut vm = create_test_vm_with_env(&[("MYVAR", "hello")]);
+        let stack = vm.stack_top - 16;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "MYVAR");
+        vm_set_args!(vm, stack; name_ptr, 0u32, 0u32);
+        let result = get_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 6); // "hello".len() + 1
+    }
+
+    #[test]
+    fn test_set_environment_variable() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        let name_ptr = vm.heap_start as u32;
+        let value_ptr = name_ptr + 32;
+        write_string(&mut vm, name_ptr, "NEW_VAR");
+        write_string(&mut vm, value_ptr, "new_value");
+        vm_set_args!(vm, stack; name_ptr, value_ptr);
+        let result = set_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 1);
+
+        // Verify it was set
+        assert_eq!(vm.env_value("NEW_VAR"), Some("new_value"));
+    }
+
+    #[test]
+    fn test_set_environment_variable_delete() {
+        let mut vm = create_test_vm_with_env(&[("TO_DELETE", "value")]);
+        let stack = vm.stack_top - 12;
+        let name_ptr = vm.heap_start as u32;
+        write_string(&mut vm, name_ptr, "TO_DELETE");
+        vm_set_args!(vm, stack; name_ptr, 0u32);
+        let result = set_environment_variable_a(&mut vm, stack);
+        assert_eq!(result, 1);
+        assert_eq!(vm.env_value("TO_DELETE"), None);
+    }
+
+    #[test]
+    fn test_expand_environment_strings_no_vars() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        let src_ptr = vm.heap_start as u32;
+        let dst_ptr = src_ptr + 64;
+        write_string(&mut vm, src_ptr, "plain text");
+        vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
+        let result = expand_environment_strings_a(&mut vm, stack);
+        assert_eq!(result, 11); // "plain text".len() + 1
+        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "plain text");
+    }
+
+    #[test]
+    fn test_expand_environment_strings_with_var() {
+        let mut vm = create_test_vm_with_env(&[("HOME", "/home/user")]);
+        let stack = vm.stack_top - 16;
+        let src_ptr = vm.heap_start as u32;
+        let dst_ptr = src_ptr + 64;
+        write_string(&mut vm, src_ptr, "path=%HOME%");
+        vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
+        let result = expand_environment_strings_a(&mut vm, stack);
+        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "path=/home/user");
+        assert_eq!(result, 16); // "path=/home/user".len() + 1
+    }
+
+    #[test]
+    fn test_expand_env_missing_var() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "hello %MISSING% world");
+        assert_eq!(result, "hello %MISSING% world");
+    }
+
+    #[test]
+    fn test_expand_env_double_percent() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "100%% complete");
+        assert_eq!(result, "100% complete");
+    }
+
+    #[test]
+    fn test_expand_env_unclosed() {
+        let vm = create_test_vm();
+        let result = expand_env(&vm, "unclosed %VAR");
+        assert_eq!(result, "unclosed %VAR");
+    }
+
+    #[test]
+    fn test_get_environment_strings_w() {
+        let mut vm = create_test_vm();
+        let result = get_environment_strings_w(&mut vm, 0);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_free_environment_strings_w() {
+        let mut vm = create_test_vm();
+        let result = free_environment_strings_w(&mut vm, 0);
+        assert_eq!(result, 1);
+    }
 }

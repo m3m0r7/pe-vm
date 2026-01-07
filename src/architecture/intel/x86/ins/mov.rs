@@ -3,8 +3,8 @@
 use crate::vm::{Vm, VmError, REG_AL, REG_EAX, REG_ECX, REG_EDI, REG_ESI};
 
 use super::core::{
-    calc_ea, decode_modrm, read_rm16, read_rm32, read_rm8, segment_value, write_rm16,
-    write_rm32, write_rm8, Prefixes,
+    calc_ea, decode_modrm, read_rm16, read_rm32, read_rm8, segment_value, update_flags_sub16,
+    update_flags_sub32, update_flags_sub8, write_rm16, write_rm32, write_rm8, Prefixes,
 };
 
 pub(crate) fn mov_rm8_r8(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
@@ -68,11 +68,7 @@ pub(crate) fn lea(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), Vm
     Ok(())
 }
 
-pub(crate) fn mov_r8_imm8(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn mov_r8_imm8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0xB0;
     let imm = vm.read_u8(cursor + 1)?;
@@ -81,11 +77,7 @@ pub(crate) fn mov_r8_imm8(
     Ok(())
 }
 
-pub(crate) fn mov_r32_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn mov_r32_imm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0xB8;
     if prefixes.operand_size_16 {
@@ -128,7 +120,11 @@ pub(crate) fn mov_rm32_imm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Re
     Ok(())
 }
 
-pub(crate) fn mov_moffs_to_eax(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+pub(crate) fn mov_moffs_to_eax(
+    vm: &mut Vm,
+    cursor: u32,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
     let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
     if prefixes.operand_size_16 {
         let value = vm.read_u16(addr)?;
@@ -141,7 +137,11 @@ pub(crate) fn mov_moffs_to_eax(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> 
     Ok(())
 }
 
-pub(crate) fn mov_eax_to_moffs(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+pub(crate) fn mov_eax_to_moffs(
+    vm: &mut Vm,
+    cursor: u32,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
     let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
     if prefixes.operand_size_16 {
         let value = vm.reg16(0);
@@ -154,11 +154,7 @@ pub(crate) fn mov_eax_to_moffs(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> 
     Ok(())
 }
 
-pub(crate) fn movsd(
-    vm: &mut Vm,
-    cursor: u32,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn movsd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
     let size = if prefixes.operand_size_16 { 2 } else { 4 };
     let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
     let mut src = vm.reg32(REG_ESI);
@@ -175,6 +171,25 @@ pub(crate) fn movsd(
             src = src.wrapping_add(4);
             dst = dst.wrapping_add(4);
         }
+    }
+    vm.set_reg32(REG_ESI, src);
+    vm.set_reg32(REG_EDI, dst);
+    if prefixes.rep {
+        vm.set_reg32(REG_ECX, 0);
+    }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+pub(crate) fn movsb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
+    let mut src = vm.reg32(REG_ESI);
+    let mut dst = vm.reg32(REG_EDI);
+    for _ in 0..count {
+        let value = vm.read_u8(src)?;
+        vm.write_u8(dst, value)?;
+        src = src.wrapping_add(1);
+        dst = dst.wrapping_add(1);
     }
     vm.set_reg32(REG_ESI, src);
     vm.set_reg32(REG_EDI, dst);
@@ -219,6 +234,59 @@ pub(crate) fn stosd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     if prefixes.rep {
         vm.set_reg32(REG_ECX, 0);
     }
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+pub(crate) fn scasb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    scas_common(vm, cursor, prefixes, 1)
+}
+
+pub(crate) fn scasd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let size = if prefixes.operand_size_16 { 2 } else { 4 };
+    scas_common(vm, cursor, prefixes, size)
+}
+
+fn scas_common(vm: &mut Vm, cursor: u32, prefixes: Prefixes, size: u32) -> Result<(), VmError> {
+    let repeats = prefixes.rep || prefixes.repne;
+    let mut remaining = if repeats { vm.reg32(REG_ECX) } else { 1 };
+    let mut edi = vm.reg32(REG_EDI);
+    while remaining > 0 {
+        match size {
+            1 => {
+                let dst = vm.read_u8(edi)?;
+                let src = vm.reg8(REG_AL);
+                let result = dst.wrapping_sub(src);
+                update_flags_sub8(vm, dst, src, result);
+            }
+            2 => {
+                let dst = vm.read_u16(edi)?;
+                let src = vm.reg16(REG_EAX);
+                let result = dst.wrapping_sub(src);
+                update_flags_sub16(vm, dst, src, result);
+            }
+            4 => {
+                let dst = vm.read_u32(edi)?;
+                let src = vm.reg32(REG_EAX);
+                let result = dst.wrapping_sub(src);
+                update_flags_sub32(vm, dst, src, result);
+            }
+            _ => unreachable!(),
+        }
+        edi = edi.wrapping_add(size);
+        remaining = remaining.wrapping_sub(1);
+        if !repeats {
+            break;
+        }
+        let condition = if prefixes.rep { vm.zf() } else { !vm.zf() };
+        if !condition || remaining == 0 {
+            break;
+        }
+    }
+    if repeats {
+        vm.set_reg32(REG_ECX, remaining);
+    }
+    vm.set_reg32(REG_EDI, edi);
     vm.set_eip(cursor + 1);
     Ok(())
 }

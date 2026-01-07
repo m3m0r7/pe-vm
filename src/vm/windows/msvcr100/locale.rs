@@ -1,0 +1,391 @@
+//! Locale function stubs for MSVCR100.dll.
+
+use crate::vm::Vm;
+
+const DLL: &str = "MSVCR100.dll";
+
+// Locale functions
+define_stub_fn!(DLL, setlocale_impl, 0);
+define_stub_fn!(DLL, wsetlocale_impl, 0);
+define_stub_fn!(DLL, localeconv_impl, 0);
+define_stub_fn!(DLL, create_locale_impl, 0);
+define_stub_fn!(DLL, free_locale_impl, 0);
+define_stub_fn!(DLL, get_current_locale_impl, 0);
+define_stub_fn!(DLL, configthreadlocale_impl, 0);
+define_stub_fn!(DLL, lconv_init_impl, 0);
+define_stub_fn!(DLL, lconv, 0);
+
+// Character classification
+define_stub_fn!(DLL, isalpha_impl, 0);
+define_stub_fn!(DLL, isalpha_l_impl, 0);
+define_stub_fn!(DLL, isalnum_impl, 0);
+define_stub_fn!(DLL, isalnum_l_impl, 0);
+define_stub_fn!(DLL, isblank_impl, 0);
+define_stub_fn!(DLL, isblank_l_impl, 0);
+define_stub_fn!(DLL, iscntrl_impl, 0);
+define_stub_fn!(DLL, iscntrl_l_impl, 0);
+define_stub_fn!(DLL, isdigit_impl, 0);
+define_stub_fn!(DLL, isdigit_l_impl, 0);
+define_stub_fn!(DLL, isgraph_impl, 0);
+define_stub_fn!(DLL, isgraph_l_impl, 0);
+define_stub_fn!(DLL, islower_impl, 0);
+define_stub_fn!(DLL, islower_l_impl, 0);
+define_stub_fn!(DLL, isprint_impl, 0);
+define_stub_fn!(DLL, isprint_l_impl, 0);
+define_stub_fn!(DLL, ispunct_impl, 0);
+define_stub_fn!(DLL, ispunct_l_impl, 0);
+define_stub_fn!(DLL, isspace_impl, 0);
+define_stub_fn!(DLL, isspace_l_impl, 0);
+define_stub_fn!(DLL, isupper_impl, 0);
+define_stub_fn!(DLL, isupper_l_impl, 0);
+define_stub_fn!(DLL, isxdigit_impl, 0);
+define_stub_fn!(DLL, isxdigit_l_impl, 0);
+define_stub_fn!(DLL, isascii_impl, 0);
+define_stub_fn!(DLL, iscsym_impl, 0);
+define_stub_fn!(DLL, iscsymf_impl, 0);
+define_stub_fn!(DLL, isleadbyte_impl, 0);
+define_stub_fn!(DLL, isleadbyte_l_impl, 0);
+
+// Wide character classification
+define_stub_fn!(DLL, iswalpha_impl, 0);
+define_stub_fn!(DLL, iswalpha_l_impl, 0);
+define_stub_fn!(DLL, iswalnum_impl, 0);
+define_stub_fn!(DLL, iswalnum_l_impl, 0);
+define_stub_fn!(DLL, iswblank_impl, 0);
+define_stub_fn!(DLL, iswblank_l_impl, 0);
+define_stub_fn!(DLL, iswcntrl_impl, 0);
+define_stub_fn!(DLL, iswcntrl_l_impl, 0);
+define_stub_fn!(DLL, iswdigit_impl, 0);
+define_stub_fn!(DLL, iswdigit_l_impl, 0);
+define_stub_fn!(DLL, iswgraph_impl, 0);
+define_stub_fn!(DLL, iswgraph_l_impl, 0);
+define_stub_fn!(DLL, iswlower_impl, 0);
+define_stub_fn!(DLL, iswlower_l_impl, 0);
+define_stub_fn!(DLL, iswprint_impl, 0);
+define_stub_fn!(DLL, iswprint_l_impl, 0);
+define_stub_fn!(DLL, iswpunct_impl, 0);
+define_stub_fn!(DLL, iswpunct_l_impl, 0);
+define_stub_fn!(DLL, iswspace_impl, 0);
+define_stub_fn!(DLL, iswspace_l_impl, 0);
+define_stub_fn!(DLL, iswupper_impl, 0);
+define_stub_fn!(DLL, iswupper_l_impl, 0);
+define_stub_fn!(DLL, iswxdigit_impl, 0);
+define_stub_fn!(DLL, iswxdigit_l_impl, 0);
+define_stub_fn!(DLL, iswascii_impl, 0);
+define_stub_fn!(DLL, iswctype_impl, 0);
+define_stub_fn!(DLL, iswcsym_impl, 0);
+define_stub_fn!(DLL, iswcsymf_impl, 0);
+define_stub_fn!(DLL, is_wctype_impl, 0);
+define_stub_fn!(DLL, wctype_impl, 0);
+
+// Character conversion
+define_stub_fn!(DLL, tolower_impl, 0);
+define_stub_fn!(DLL, tolower_l_impl, 0);
+define_stub_fn!(DLL, toupper_impl, 0);
+define_stub_fn!(DLL, toupper_l_impl, 0);
+define_stub_fn!(DLL, towlower_impl, 0);
+define_stub_fn!(DLL, towlower_l_impl, 0);
+define_stub_fn!(DLL, towupper_impl, 0);
+define_stub_fn!(DLL, towupper_l_impl, 0);
+define_stub_fn!(DLL, toascii_impl, 0);
+
+// Multibyte/wide conversion
+define_stub_fn!(DLL, mblen_impl, 0);
+define_stub_fn!(DLL, mbrlen_impl, 0);
+define_stub_fn!(DLL, mbrtowc_impl, 0);
+define_stub_fn!(DLL, mbsrtowcs_impl, 0);
+define_stub_fn!(DLL, mbsrtowcs_s_impl, 0);
+define_stub_fn!(DLL, mbstowcs_impl, 0);
+define_stub_fn!(DLL, mbstowcs_s_impl, 0);
+define_stub_fn!(DLL, mbstowcs_l_impl, 0);
+define_stub_fn!(DLL, mbstowcs_s_l_impl, 0);
+define_stub_fn!(DLL, mbtowc_impl, 0);
+define_stub_fn!(DLL, mbtowc_l_impl, 0);
+define_stub_fn!(DLL, wcrtomb_impl, 0);
+define_stub_fn!(DLL, wcrtomb_s_impl, 0);
+define_stub_fn!(DLL, wcsrtombs_impl, 0);
+define_stub_fn!(DLL, wcsrtombs_s_impl, 0);
+define_stub_fn!(DLL, wcstombs_impl, 0);
+define_stub_fn!(DLL, wcstombs_s_impl, 0);
+define_stub_fn!(DLL, wcstombs_l_impl, 0);
+define_stub_fn!(DLL, wcstombs_s_l_impl, 0);
+define_stub_fn!(DLL, wctomb_impl, 0);
+define_stub_fn!(DLL, wctomb_s_impl, 0);
+define_stub_fn!(DLL, wctomb_l_impl, 0);
+define_stub_fn!(DLL, wctomb_s_l_impl, 0);
+define_stub_fn!(DLL, wctob_impl, 0);
+define_stub_fn!(DLL, btowc_impl, 0);
+
+// MBCS functions
+define_stub_fn!(DLL, mbbtombc_impl, 0);
+define_stub_fn!(DLL, mbbtombc_l_impl, 0);
+define_stub_fn!(DLL, mbbtype_impl, 0);
+define_stub_fn!(DLL, mbbtype_l_impl, 0);
+define_stub_fn!(DLL, mbcjistojms_impl, 0);
+define_stub_fn!(DLL, mbcjistojms_l_impl, 0);
+define_stub_fn!(DLL, mbcjmstojis_impl, 0);
+define_stub_fn!(DLL, mbcjmstojis_l_impl, 0);
+define_stub_fn!(DLL, mbclen_impl, 0);
+define_stub_fn!(DLL, mbclen_l_impl, 0);
+define_stub_fn!(DLL, mbctombb_impl, 0);
+define_stub_fn!(DLL, mbctombb_l_impl, 0);
+define_stub_fn!(DLL, mbsbtype_impl, 0);
+define_stub_fn!(DLL, mbsbtype_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcat_impl, 0);
+define_stub_fn!(DLL, mbsnbcat_s_impl, 0);
+define_stub_fn!(DLL, mbsnbcat_s_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcat_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcmp_impl, 0);
+define_stub_fn!(DLL, mbsnbcmp_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcoll_impl, 0);
+define_stub_fn!(DLL, mbsnbcoll_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcnt_impl, 0);
+define_stub_fn!(DLL, mbsnbcnt_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcpy_impl, 0);
+define_stub_fn!(DLL, mbsnbcpy_s_impl, 0);
+define_stub_fn!(DLL, mbsnbcpy_s_l_impl, 0);
+define_stub_fn!(DLL, mbsnbcpy_l_impl, 0);
+define_stub_fn!(DLL, mbsnbicmp_impl, 0);
+define_stub_fn!(DLL, mbsnbicmp_l_impl, 0);
+define_stub_fn!(DLL, mbsnbicoll_impl, 0);
+define_stub_fn!(DLL, mbsnbicoll_l_impl, 0);
+define_stub_fn!(DLL, mbsnbset_impl, 0);
+define_stub_fn!(DLL, mbsnbset_s_impl, 0);
+define_stub_fn!(DLL, mbsnbset_s_l_impl, 0);
+define_stub_fn!(DLL, mbsnbset_l_impl, 0);
+define_stub_fn!(DLL, mbsnccnt_impl, 0);
+define_stub_fn!(DLL, mbsnccnt_l_impl, 0);
+define_stub_fn!(DLL, mbsnextc_impl, 0);
+define_stub_fn!(DLL, mbsnextc_l_impl, 0);
+
+// Locale internal functions
+define_stub_fn!(DLL, pctype_func, 0);
+define_stub_fn!(DLL, pwctype_func, 0);
+define_stub_fn!(DLL, mb_cur_max, 0);
+define_stub_fn!(DLL, mb_cur_max_func, 0);
+define_stub_fn!(DLL, mb_cur_max_l_func, 0);
+define_stub_fn!(DLL, lc_codepage_func, 0);
+define_stub_fn!(DLL, lc_collate_cp_func, 0);
+define_stub_fn!(DLL, lc_handle_func, 0);
+define_stub_fn!(DLL, setlc_active_func, 0);
+define_stub_fn!(DLL, unguarded_readlc_active_add_func, 0);
+define_stub_fn!(DLL, setlc_active, 0);
+define_stub_fn!(DLL, unguarded_readlc_active, 0);
+define_stub_fn!(DLL, pctype, 0);
+define_stub_fn!(DLL, pwctype, 0);
+define_stub_fn!(DLL, mbctype, 0);
+define_stub_fn!(DLL, mbcasemap, 0);
+
+// CRT string comparison helpers
+define_stub_fn!(DLL, crt_compare_string_a, 0);
+define_stub_fn!(DLL, crt_compare_string_w, 0);
+define_stub_fn!(DLL, crt_lc_map_string_a, 0);
+define_stub_fn!(DLL, crt_lc_map_string_w, 0);
+
+// Locale time/date names
+define_stub_fn!(DLL, getdays, 0);
+define_stub_fn!(DLL, getmonths, 0);
+define_stub_fn!(DLL, gettnames, 0);
+define_stub_fn!(DLL, strftime_impl, 0);
+define_stub_fn!(DLL, strftime_l_impl, 0);
+define_stub_fn!(DLL, wcsftime_impl, 0);
+define_stub_fn!(DLL, wcsftime_l_impl, 0);
+
+pub fn register(vm: &mut Vm) {
+    // Locale functions
+    vm.register_import(DLL, "setlocale", setlocale_impl);
+    vm.register_import(DLL, "_wsetlocale", wsetlocale_impl);
+    vm.register_import(DLL, "localeconv", localeconv_impl);
+    vm.register_import(DLL, "__create_locale", create_locale_impl);
+    vm.register_import(DLL, "_create_locale", create_locale_impl);
+    vm.register_import(DLL, "__free_locale", free_locale_impl);
+    vm.register_import(DLL, "_free_locale", free_locale_impl);
+    vm.register_import(DLL, "__get_current_locale", get_current_locale_impl);
+    vm.register_import(DLL, "_get_current_locale", get_current_locale_impl);
+    vm.register_import(DLL, "_configthreadlocale", configthreadlocale_impl);
+    vm.register_import(DLL, "__lconv_init", lconv_init_impl);
+    vm.register_import(DLL, "__lconv", lconv);
+
+    // Character classification
+    vm.register_import(DLL, "isalpha", isalpha_impl);
+    vm.register_import(DLL, "_isalpha_l", isalpha_l_impl);
+    vm.register_import(DLL, "isalnum", isalnum_impl);
+    vm.register_import(DLL, "_isalnum_l", isalnum_l_impl);
+    vm.register_import(DLL, "isblank", isblank_impl);
+    vm.register_import(DLL, "_isblank_l", isblank_l_impl);
+    vm.register_import(DLL, "iscntrl", iscntrl_impl);
+    vm.register_import(DLL, "_iscntrl_l", iscntrl_l_impl);
+    vm.register_import(DLL, "isdigit", isdigit_impl);
+    vm.register_import(DLL, "_isdigit_l", isdigit_l_impl);
+    vm.register_import(DLL, "isgraph", isgraph_impl);
+    vm.register_import(DLL, "_isgraph_l", isgraph_l_impl);
+    vm.register_import(DLL, "islower", islower_impl);
+    vm.register_import(DLL, "_islower_l", islower_l_impl);
+    vm.register_import(DLL, "isprint", isprint_impl);
+    vm.register_import(DLL, "_isprint_l", isprint_l_impl);
+    vm.register_import(DLL, "ispunct", ispunct_impl);
+    vm.register_import(DLL, "_ispunct_l", ispunct_l_impl);
+    vm.register_import(DLL, "isspace", isspace_impl);
+    vm.register_import(DLL, "_isspace_l", isspace_l_impl);
+    vm.register_import(DLL, "isupper", isupper_impl);
+    vm.register_import(DLL, "_isupper_l", isupper_l_impl);
+    vm.register_import(DLL, "isxdigit", isxdigit_impl);
+    vm.register_import(DLL, "_isxdigit_l", isxdigit_l_impl);
+    vm.register_import(DLL, "__isascii", isascii_impl);
+    vm.register_import(DLL, "__iscsym", iscsym_impl);
+    vm.register_import(DLL, "__iscsymf", iscsymf_impl);
+    vm.register_import(DLL, "isleadbyte", isleadbyte_impl);
+    vm.register_import(DLL, "_isleadbyte_l", isleadbyte_l_impl);
+
+    // Wide character classification
+    vm.register_import(DLL, "iswalpha", iswalpha_impl);
+    vm.register_import(DLL, "_iswalpha_l", iswalpha_l_impl);
+    vm.register_import(DLL, "iswalnum", iswalnum_impl);
+    vm.register_import(DLL, "_iswalnum_l", iswalnum_l_impl);
+    vm.register_import(DLL, "iswblank", iswblank_impl);
+    vm.register_import(DLL, "_iswblank_l", iswblank_l_impl);
+    vm.register_import(DLL, "iswcntrl", iswcntrl_impl);
+    vm.register_import(DLL, "_iswcntrl_l", iswcntrl_l_impl);
+    vm.register_import(DLL, "iswdigit", iswdigit_impl);
+    vm.register_import(DLL, "_iswdigit_l", iswdigit_l_impl);
+    vm.register_import(DLL, "iswgraph", iswgraph_impl);
+    vm.register_import(DLL, "_iswgraph_l", iswgraph_l_impl);
+    vm.register_import(DLL, "iswlower", iswlower_impl);
+    vm.register_import(DLL, "_iswlower_l", iswlower_l_impl);
+    vm.register_import(DLL, "iswprint", iswprint_impl);
+    vm.register_import(DLL, "_iswprint_l", iswprint_l_impl);
+    vm.register_import(DLL, "iswpunct", iswpunct_impl);
+    vm.register_import(DLL, "_iswpunct_l", iswpunct_l_impl);
+    vm.register_import(DLL, "iswspace", iswspace_impl);
+    vm.register_import(DLL, "_iswspace_l", iswspace_l_impl);
+    vm.register_import(DLL, "iswupper", iswupper_impl);
+    vm.register_import(DLL, "_iswupper_l", iswupper_l_impl);
+    vm.register_import(DLL, "iswxdigit", iswxdigit_impl);
+    vm.register_import(DLL, "_iswxdigit_l", iswxdigit_l_impl);
+    vm.register_import(DLL, "iswascii", iswascii_impl);
+    vm.register_import(DLL, "iswctype", iswctype_impl);
+    vm.register_import(DLL, "__iswcsym", iswcsym_impl);
+    vm.register_import(DLL, "__iswcsymf", iswcsymf_impl);
+    vm.register_import(DLL, "is_wctype", is_wctype_impl);
+    vm.register_import(DLL, "_wctype", wctype_impl);
+
+    // Character conversion
+    vm.register_import(DLL, "tolower", tolower_impl);
+    vm.register_import(DLL, "_tolower", tolower_impl);
+    vm.register_import(DLL, "_tolower_l", tolower_l_impl);
+    vm.register_import(DLL, "toupper", toupper_impl);
+    vm.register_import(DLL, "_toupper", toupper_impl);
+    vm.register_import(DLL, "_toupper_l", toupper_l_impl);
+    vm.register_import(DLL, "towlower", towlower_impl);
+    vm.register_import(DLL, "_towlower_l", towlower_l_impl);
+    vm.register_import(DLL, "towupper", towupper_impl);
+    vm.register_import(DLL, "_towupper_l", towupper_l_impl);
+    vm.register_import(DLL, "__toascii", toascii_impl);
+
+    // Multibyte/wide conversion
+    vm.register_import(DLL, "mblen", mblen_impl);
+    vm.register_import(DLL, "mbrlen", mbrlen_impl);
+    vm.register_import(DLL, "mbrtowc", mbrtowc_impl);
+    vm.register_import(DLL, "mbsrtowcs", mbsrtowcs_impl);
+    vm.register_import(DLL, "mbsrtowcs_s", mbsrtowcs_s_impl);
+    vm.register_import(DLL, "mbstowcs", mbstowcs_impl);
+    vm.register_import(DLL, "mbstowcs_s", mbstowcs_s_impl);
+    vm.register_import(DLL, "_mbstowcs_l", mbstowcs_l_impl);
+    vm.register_import(DLL, "_mbstowcs_s_l", mbstowcs_s_l_impl);
+    vm.register_import(DLL, "mbtowc", mbtowc_impl);
+    vm.register_import(DLL, "_mbtowc_l", mbtowc_l_impl);
+    vm.register_import(DLL, "wcrtomb", wcrtomb_impl);
+    vm.register_import(DLL, "wcrtomb_s", wcrtomb_s_impl);
+    vm.register_import(DLL, "wcsrtombs", wcsrtombs_impl);
+    vm.register_import(DLL, "wcsrtombs_s", wcsrtombs_s_impl);
+    vm.register_import(DLL, "wcstombs", wcstombs_impl);
+    vm.register_import(DLL, "wcstombs_s", wcstombs_s_impl);
+    vm.register_import(DLL, "_wcstombs_l", wcstombs_l_impl);
+    vm.register_import(DLL, "_wcstombs_s_l", wcstombs_s_l_impl);
+    vm.register_import(DLL, "wctomb", wctomb_impl);
+    vm.register_import(DLL, "wctomb_s", wctomb_s_impl);
+    vm.register_import(DLL, "_wctomb_l", wctomb_l_impl);
+    vm.register_import(DLL, "_wctomb_s_l", wctomb_s_l_impl);
+    vm.register_import(DLL, "wctob", wctob_impl);
+    vm.register_import(DLL, "btowc", btowc_impl);
+
+    // MBCS functions
+    vm.register_import(DLL, "_mbbtombc", mbbtombc_impl);
+    vm.register_import(DLL, "_mbbtombc_l", mbbtombc_l_impl);
+    vm.register_import(DLL, "_mbbtype", mbbtype_impl);
+    vm.register_import(DLL, "_mbbtype_l", mbbtype_l_impl);
+    vm.register_import(DLL, "_mbcjistojms", mbcjistojms_impl);
+    vm.register_import(DLL, "_mbcjistojms_l", mbcjistojms_l_impl);
+    vm.register_import(DLL, "_mbcjmstojis", mbcjmstojis_impl);
+    vm.register_import(DLL, "_mbcjmstojis_l", mbcjmstojis_l_impl);
+    vm.register_import(DLL, "_mbclen", mbclen_impl);
+    vm.register_import(DLL, "_mbclen_l", mbclen_l_impl);
+    vm.register_import(DLL, "_mbctombb", mbctombb_impl);
+    vm.register_import(DLL, "_mbctombb_l", mbctombb_l_impl);
+    vm.register_import(DLL, "_mbsbtype", mbsbtype_impl);
+    vm.register_import(DLL, "_mbsbtype_l", mbsbtype_l_impl);
+    vm.register_import(DLL, "_mbsnbcat", mbsnbcat_impl);
+    vm.register_import(DLL, "_mbsnbcat_s", mbsnbcat_s_impl);
+    vm.register_import(DLL, "_mbsnbcat_s_l", mbsnbcat_s_l_impl);
+    vm.register_import(DLL, "_mbsnbcat_l", mbsnbcat_l_impl);
+    vm.register_import(DLL, "_mbsnbcmp", mbsnbcmp_impl);
+    vm.register_import(DLL, "_mbsnbcmp_l", mbsnbcmp_l_impl);
+    vm.register_import(DLL, "_mbsnbcoll", mbsnbcoll_impl);
+    vm.register_import(DLL, "_mbsnbcoll_l", mbsnbcoll_l_impl);
+    vm.register_import(DLL, "_mbsnbcnt", mbsnbcnt_impl);
+    vm.register_import(DLL, "_mbsnbcnt_l", mbsnbcnt_l_impl);
+    vm.register_import(DLL, "_mbsnbcpy", mbsnbcpy_impl);
+    vm.register_import(DLL, "_mbsnbcpy_s", mbsnbcpy_s_impl);
+    vm.register_import(DLL, "_mbsnbcpy_s_l", mbsnbcpy_s_l_impl);
+    vm.register_import(DLL, "_mbsnbcpy_l", mbsnbcpy_l_impl);
+    vm.register_import(DLL, "_mbsnbicmp", mbsnbicmp_impl);
+    vm.register_import(DLL, "_mbsnbicmp_l", mbsnbicmp_l_impl);
+    vm.register_import(DLL, "_mbsnbicoll", mbsnbicoll_impl);
+    vm.register_import(DLL, "_mbsnbicoll_l", mbsnbicoll_l_impl);
+    vm.register_import(DLL, "_mbsnbset", mbsnbset_impl);
+    vm.register_import(DLL, "_mbsnbset_s", mbsnbset_s_impl);
+    vm.register_import(DLL, "_mbsnbset_s_l", mbsnbset_s_l_impl);
+    vm.register_import(DLL, "_mbsnbset_l", mbsnbset_l_impl);
+    vm.register_import(DLL, "_mbsnccnt", mbsnccnt_impl);
+    vm.register_import(DLL, "_mbsnccnt_l", mbsnccnt_l_impl);
+    vm.register_import(DLL, "_mbsnextc", mbsnextc_impl);
+    vm.register_import(DLL, "_mbsnextc_l", mbsnextc_l_impl);
+
+    // Locale internal functions
+    vm.register_import(DLL, "__pctype_func", pctype_func);
+    vm.register_import(DLL, "__pwctype_func", pwctype_func);
+    vm.register_import(DLL, "__mb_cur_max", mb_cur_max);
+    vm.register_import(DLL, "___mb_cur_max_func", mb_cur_max_func);
+    vm.register_import(DLL, "___mb_cur_max_l_func", mb_cur_max_l_func);
+    vm.register_import(DLL, "___lc_codepage_func", lc_codepage_func);
+    vm.register_import(DLL, "___lc_collate_cp_func", lc_collate_cp_func);
+    vm.register_import(DLL, "___lc_handle_func", lc_handle_func);
+    vm.register_import(DLL, "___setlc_active_func", setlc_active_func);
+    vm.register_import(
+        DLL,
+        "___unguarded_readlc_active_add_func",
+        unguarded_readlc_active_add_func,
+    );
+    vm.register_import(DLL, "__setlc_active", setlc_active);
+    vm.register_import(DLL, "__unguarded_readlc_active", unguarded_readlc_active);
+    vm.register_import(DLL, "__p__pctype", pctype);
+    vm.register_import(DLL, "__p__pwctype", pwctype);
+    vm.register_import(DLL, "__p__mbctype", mbctype);
+    vm.register_import(DLL, "__p__mbcasemap", mbcasemap);
+
+    // CRT string comparison helpers
+    vm.register_import(DLL, "__crtCompareStringA", crt_compare_string_a);
+    vm.register_import(DLL, "__crtCompareStringW", crt_compare_string_w);
+    vm.register_import(DLL, "__crtLCMapStringA", crt_lc_map_string_a);
+    vm.register_import(DLL, "__crtLCMapStringW", crt_lc_map_string_w);
+
+    // Locale time/date names
+    vm.register_import(DLL, "_Getdays", getdays);
+    vm.register_import(DLL, "_Getmonths", getmonths);
+    vm.register_import(DLL, "_Gettnames", gettnames);
+    vm.register_import(DLL, "strftime", strftime_impl);
+    vm.register_import(DLL, "_strftime_l", strftime_l_impl);
+    vm.register_import(DLL, "_Strftime", strftime_impl);
+    vm.register_import(DLL, "wcsftime", wcsftime_impl);
+    vm.register_import(DLL, "_wcsftime_l", wcsftime_l_impl);
+}

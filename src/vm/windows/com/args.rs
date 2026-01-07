@@ -38,3 +38,58 @@ pub enum ComValue {
     BStr(String),
     Void,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_com_arg_as_i4() {
+        let arg = ComArg::I4(42);
+        assert_eq!(arg.as_i4(), Some(42));
+        assert_eq!(arg.as_u32(), None);
+        assert_eq!(arg.as_bstr(), None);
+    }
+
+    #[test]
+    fn test_com_arg_as_u32() {
+        let arg = ComArg::U32(100);
+        assert_eq!(arg.as_u32(), Some(100));
+        assert_eq!(arg.as_i4(), None);
+        assert_eq!(arg.as_bstr(), None);
+    }
+
+    #[test]
+    fn test_com_arg_as_bstr() {
+        let arg = ComArg::BStr("hello".to_string());
+        assert_eq!(arg.as_bstr(), Some("hello"));
+        assert_eq!(arg.as_i4(), None);
+        assert_eq!(arg.as_u32(), None);
+    }
+
+    #[test]
+    fn test_com_value_i4() {
+        let value = ComValue::I4(123);
+        if let ComValue::I4(v) = value {
+            assert_eq!(v, 123);
+        } else {
+            panic!("Expected I4");
+        }
+    }
+
+    #[test]
+    fn test_com_value_bstr() {
+        let value = ComValue::BStr("test".to_string());
+        if let ComValue::BStr(s) = value {
+            assert_eq!(s, "test");
+        } else {
+            panic!("Expected BStr");
+        }
+    }
+
+    #[test]
+    fn test_com_value_void() {
+        let value = ComValue::Void;
+        assert!(matches!(value, ComValue::Void));
+    }
+}

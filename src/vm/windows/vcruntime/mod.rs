@@ -1,5 +1,7 @@
 //! VCRUNTIME stub registration.
 
+pub const DLL_NAME: &str = "VCRUNTIME140.dll";
+
 mod memory;
 mod runtime;
 

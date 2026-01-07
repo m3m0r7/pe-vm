@@ -1,5 +1,7 @@
 // Instruction-level execution tests for the x86 VM.
-use pe_vm::test_support::{TestVm, TEST_BASE};
+
+mod common;
+use common::{TestVm, TEST_BASE};
 
 fn step(code: &[u8], setup: impl FnOnce(&mut TestVm)) -> TestVm {
     let mut vm = TestVm::new(code);
@@ -761,6 +763,39 @@ fn shift_and_rotate_variants() {
         vm.set_reg8(1, 1);
     });
     assert_eq!(vm.read_u32(mem).unwrap(), 0xC000_0000);
+
+    // Cover 8-bit shift/rotate opcode variants.
+    let mem8 = addr(0x364);
+    let mut code = vec![0xC0, modrm_disp32(0)];
+    code.extend_from_slice(&mem8.to_le_bytes());
+    code.push(1);
+    let vm = step(&code, |vm| {
+        vm.write_u8(mem8, 0x81).unwrap();
+    });
+    assert_eq!(vm.read_u8(mem8).unwrap(), 0x03);
+
+    let mut code = vec![0xC0, modrm_disp32(4)];
+    code.extend_from_slice(&mem8.to_le_bytes());
+    code.push(1);
+    let vm = step(&code, |vm| {
+        vm.write_u8(mem8, 0x01).unwrap();
+    });
+    assert_eq!(vm.read_u8(mem8).unwrap(), 0x02);
+
+    let mut code = vec![0xD0, modrm_disp32(5)];
+    code.extend_from_slice(&mem8.to_le_bytes());
+    let vm = step(&code, |vm| {
+        vm.write_u8(mem8, 0x80).unwrap();
+    });
+    assert_eq!(vm.read_u8(mem8).unwrap(), 0x40);
+
+    let mut code = vec![0xD2, modrm_disp32(7)];
+    code.extend_from_slice(&mem8.to_le_bytes());
+    let vm = step(&code, |vm| {
+        vm.write_u8(mem8, 0x80).unwrap();
+        vm.set_reg8(1, 1);
+    });
+    assert_eq!(vm.read_u8(mem8).unwrap(), 0xC0);
 }
 
 // Cover atomic/system opcodes and side effects.
@@ -874,6 +909,13 @@ fn imul_and_group1_variants() {
         vm.set_reg32(0, 2);
     });
     assert_eq!(vm.reg32(0), 8);
+
+    let mut code = vec![0x69, modrm_reg_rm(1, 0)];
+    code.extend_from_slice(&4u32.to_le_bytes());
+    let vm = step(&code, |vm| {
+        vm.set_reg32(0, 3);
+    });
+    assert_eq!(vm.reg32(1), 12);
 
     let mut code = vec![0x80, modrm_disp32(0)];
     code.extend_from_slice(&mem.to_le_bytes());

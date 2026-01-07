@@ -1,0 +1,180 @@
+//! VARIANT helpers.
+
+use crate::vm::{Vm, VmError};
+use crate::vm_args;
+
+use super::bstr::read_bstr;
+use super::constants::{
+    DISP_E_TYPEMISMATCH, E_INVALIDARG, S_OK, VARIANT_SIZE, VT_BSTR, VT_EMPTY, VT_I4, VT_UI4,
+};
+
+// VariantInit(ptr)
+pub(super) fn variant_init(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
+    if ptr == 0 {
+        return E_INVALIDARG;
+    }
+    let _ = vm.write_bytes(ptr, &[0u8; VARIANT_SIZE]);
+    S_OK
+}
+
+// VariantClear(ptr)
+pub(super) fn variant_clear(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
+    if ptr == 0 {
+        return E_INVALIDARG;
+    }
+    let _ = vm.write_bytes(ptr, &[0u8; VARIANT_SIZE]);
+    S_OK
+}
+
+// VariantChangeType(dest, src, flags, vt)
+pub(super) fn variant_change_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (dest, src, _, vt) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let vt = vt as u16;
+    if dest == 0 || src == 0 {
+        return E_INVALIDARG;
+    }
+    let src_vt = vm.read_u16(src).unwrap_or(VT_EMPTY);
+    let result = match (src_vt, vt) {
+        (VT_I4, VT_I4) | (VT_UI4, VT_UI4) => {
+            let value = vm.read_u32(src + 8).unwrap_or(0);
+            write_variant_u32(vm, dest, vt, value)
+        }
+        (VT_BSTR, VT_I4) | (VT_BSTR, VT_UI4) => {
+            let ptr = vm.read_u32(src + 8).unwrap_or(0);
+            let text = read_bstr(vm, ptr).unwrap_or_default();
+            let parsed = text.trim().parse::<u32>().unwrap_or(0);
+            write_variant_u32(vm, dest, vt, parsed)
+        }
+        _ => Err(VmError::InvalidConfig("variant change type unsupported")),
+    };
+    match result {
+        Ok(()) => S_OK,
+        Err(_) => DISP_E_TYPEMISMATCH,
+    }
+}
+
+// Write a VARIANT with a 32-bit value.
+pub(super) fn write_variant_u32(
+    vm: &mut Vm,
+    dest: u32,
+    vt: u16,
+    value: u32,
+) -> Result<(), VmError> {
+    vm.write_u16(dest, vt)?;
+    vm.write_u16(dest + 2, 0)?;
+    vm.write_u16(dest + 4, 0)?;
+    vm.write_u16(dest + 6, 0)?;
+    vm.write_u32(dest + 8, value)?;
+    vm.write_u32(dest + 12, 0)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_variant_init_null_ptr() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = variant_init(&mut vm, stack);
+        assert_eq!(result, E_INVALIDARG);
+    }
+
+    #[test]
+    fn test_variant_init_success() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        let variant_ptr = vm.heap_start as u32;
+        // Fill with non-zero to verify it gets cleared
+        for i in 0..VARIANT_SIZE {
+            vm.write_u8(variant_ptr + i as u32, 0xFF).unwrap();
+        }
+        vm.write_u32(stack + 4, variant_ptr).unwrap();
+        let result = variant_init(&mut vm, stack);
+        assert_eq!(result, S_OK);
+        // Verify variant is zeroed
+        for i in 0..VARIANT_SIZE {
+            assert_eq!(vm.read_u8(variant_ptr + i as u32).unwrap(), 0);
+        }
+    }
+
+    #[test]
+    fn test_variant_clear_null_ptr() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 0).unwrap();
+        let result = variant_clear(&mut vm, stack);
+        assert_eq!(result, E_INVALIDARG);
+    }
+
+    #[test]
+    fn test_variant_clear_success() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        let variant_ptr = vm.heap_start as u32;
+        // Fill with non-zero
+        for i in 0..VARIANT_SIZE {
+            vm.write_u8(variant_ptr + i as u32, 0xAB).unwrap();
+        }
+        vm.write_u32(stack + 4, variant_ptr).unwrap();
+        let result = variant_clear(&mut vm, stack);
+        assert_eq!(result, S_OK);
+        // Verify variant is zeroed
+        for i in 0..VARIANT_SIZE {
+            assert_eq!(vm.read_u8(variant_ptr + i as u32).unwrap(), 0);
+        }
+    }
+
+    #[test]
+    fn test_write_variant_u32() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        write_variant_u32(&mut vm, ptr, VT_I4, 12345).unwrap();
+        assert_eq!(vm.read_u16(ptr).unwrap(), VT_I4);
+        assert_eq!(vm.read_u32(ptr + 8).unwrap(), 12345);
+    }
+
+    #[test]
+    fn test_variant_change_type_null_ptrs() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 20;
+        vm_set_args!(vm, stack; 0u32, 0u32);
+        let result = variant_change_type(&mut vm, stack);
+        assert_eq!(result, E_INVALIDARG);
+    }
+
+    #[test]
+    fn test_variant_change_type_i4_to_i4() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 20;
+        let src = vm.heap_start as u32;
+        let dest = src + 32;
+        // Write source variant (VT_I4 with value 42)
+        vm.write_u16(src, VT_I4).unwrap();
+        vm.write_u32(src + 8, 42).unwrap();
+        // Setup stack
+        vm_set_args!(vm, stack; dest, src, 0u32, VT_I4 as u32);
+        let result = variant_change_type(&mut vm, stack);
+        assert_eq!(result, S_OK);
+        assert_eq!(vm.read_u16(dest).unwrap(), VT_I4);
+        assert_eq!(vm.read_u32(dest + 8).unwrap(), 42);
+    }
+}

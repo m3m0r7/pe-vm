@@ -61,11 +61,7 @@ pub(crate) fn add_al_imm8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Resu
     Ok(())
 }
 
-pub(crate) fn add_eax_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn add_eax_imm32(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let imm = vm.read_u32(cursor + 1)?;
     let lhs = vm.reg32(REG_EAX);
     let result = lhs.wrapping_add(imm);
@@ -124,11 +120,7 @@ pub(crate) fn adc_al_imm8(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Resu
     Ok(())
 }
 
-pub(crate) fn adc_eax_imm32(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn adc_eax_imm32(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let imm = vm.read_u32(cursor + 1)?;
     let lhs = vm.reg32(REG_EAX);
     let result = adc32(vm, lhs, imm);
@@ -137,11 +129,7 @@ pub(crate) fn adc_eax_imm32(
     Ok(())
 }
 
-pub(crate) fn inc_reg(
-    vm: &mut Vm,
-    cursor: u32,
-    _prefixes: Prefixes,
-) -> Result<(), VmError> {
+pub(crate) fn inc_reg(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let opcode = vm.read_u8(cursor)?;
     let reg = opcode - 0x40;
     let value = vm.reg32(reg);

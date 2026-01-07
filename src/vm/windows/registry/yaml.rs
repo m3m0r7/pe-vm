@@ -7,7 +7,11 @@ use serde_yaml::Value as YamlValue;
 use super::{Registry, RegistryError, RegistryHive, RegistryMergeMode, RegistryValue};
 
 impl Registry {
-    pub fn merge_yaml_str(&mut self, yaml: &str, mode: RegistryMergeMode) -> Result<(), RegistryError> {
+    pub fn merge_yaml_str(
+        &mut self,
+        yaml: &str,
+        mode: RegistryMergeMode,
+    ) -> Result<(), RegistryError> {
         let doc: YamlValue =
             serde_yaml::from_str(yaml).map_err(|err| RegistryError::Yaml(err.to_string()))?;
         self.merge_yaml_value(&doc, mode)

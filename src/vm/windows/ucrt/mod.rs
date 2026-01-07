@@ -1,5 +1,7 @@
 //! UCRT stub registration.
 
+pub const DLL_NAME: &str = "ucrtbase.dll";
+
 mod env;
 mod init;
 mod onexit;

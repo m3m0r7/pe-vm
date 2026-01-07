@@ -67,4 +67,126 @@ impl RegistryKey {
             value_name,
         })
     }
+
+    /// Returns the root hive name (e.g., "HKEY_LOCAL_MACHINE").
+    pub fn root(&self) -> &'static str {
+        match self.hive {
+            RegistryHive::ClassesRoot => "HKEY_CLASSES_ROOT",
+            RegistryHive::LocalMachine => "HKEY_LOCAL_MACHINE",
+            RegistryHive::CurrentUser => "HKEY_CURRENT_USER",
+            RegistryHive::Users => "HKEY_USERS",
+            RegistryHive::CurrentConfig => "HKEY_CURRENT_CONFIG",
+        }
+    }
+
+    /// Returns the value name if present.
+    pub fn value_name(&self) -> Option<&str> {
+        self.value_name.as_deref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_registry_hive_parse_hklm() {
+        assert_eq!(
+            RegistryHive::parse("HKLM"),
+            Some(RegistryHive::LocalMachine)
+        );
+        assert_eq!(
+            RegistryHive::parse("HKEY_LOCAL_MACHINE"),
+            Some(RegistryHive::LocalMachine)
+        );
+        assert_eq!(
+            RegistryHive::parse("hklm"),
+            Some(RegistryHive::LocalMachine)
+        );
+    }
+
+    #[test]
+    fn test_registry_hive_parse_hkcu() {
+        assert_eq!(RegistryHive::parse("HKCU"), Some(RegistryHive::CurrentUser));
+        assert_eq!(
+            RegistryHive::parse("HKEY_CURRENT_USER"),
+            Some(RegistryHive::CurrentUser)
+        );
+    }
+
+    #[test]
+    fn test_registry_hive_parse_hkcr() {
+        assert_eq!(RegistryHive::parse("HKCR"), Some(RegistryHive::ClassesRoot));
+        assert_eq!(
+            RegistryHive::parse("HKEY_CLASSES_ROOT"),
+            Some(RegistryHive::ClassesRoot)
+        );
+    }
+
+    #[test]
+    fn test_registry_hive_parse_invalid() {
+        assert_eq!(RegistryHive::parse("INVALID"), None);
+        assert_eq!(RegistryHive::parse(""), None);
+    }
+
+    #[test]
+    fn test_registry_key_parse_simple() {
+        let key = RegistryKey::parse("HKLM\\Software\\Test").unwrap();
+        assert_eq!(key.hive, RegistryHive::LocalMachine);
+        assert_eq!(key.path, vec!["Software", "Test"]);
+        assert_eq!(key.value_name, None);
+    }
+
+    #[test]
+    fn test_registry_key_parse_with_value() {
+        let key = RegistryKey::parse("HKLM\\Software\\Test@Version").unwrap();
+        assert_eq!(key.hive, RegistryHive::LocalMachine);
+        assert_eq!(key.path, vec!["Software", "Test"]);
+        assert_eq!(key.value_name, Some("Version".to_string()));
+    }
+
+    #[test]
+    fn test_registry_key_parse_default_value() {
+        let key = RegistryKey::parse("HKLM\\Software\\Test@").unwrap();
+        assert_eq!(key.hive, RegistryHive::LocalMachine);
+        assert_eq!(key.path, vec!["Software", "Test"]);
+        assert_eq!(key.value_name, None);
+    }
+
+    #[test]
+    fn test_registry_key_parse_forward_slash() {
+        let key = RegistryKey::parse("HKLM/Software/Test").unwrap();
+        assert_eq!(key.hive, RegistryHive::LocalMachine);
+        assert_eq!(key.path, vec!["Software", "Test"]);
+    }
+
+    #[test]
+    fn test_registry_key_parse_empty() {
+        let result = RegistryKey::parse("");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_registry_key_parse_invalid_hive() {
+        let result = RegistryKey::parse("INVALID\\Software\\Test");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_registry_key_root() {
+        let key = RegistryKey::parse("HKLM\\Software").unwrap();
+        assert_eq!(key.root(), "HKEY_LOCAL_MACHINE");
+
+        let key = RegistryKey::parse("HKCU\\Software").unwrap();
+        assert_eq!(key.root(), "HKEY_CURRENT_USER");
+    }
+
+    #[test]
+    fn test_registry_key_value_name() {
+        let key = RegistryKey::parse("HKLM\\Software\\Test@Value").unwrap();
+        assert_eq!(key.value_name(), Some("Value"));
+
+        let key = RegistryKey::parse("HKLM\\Software\\Test").unwrap();
+        assert_eq!(key.value_name(), None);
+    }
 }

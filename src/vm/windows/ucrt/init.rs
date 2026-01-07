@@ -1,6 +1,7 @@
 //! UCRT init and termination stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import(
@@ -8,16 +9,11 @@ pub fn register(vm: &mut Vm) {
         "_initterm_e",
         initterm_e,
     );
-    vm.register_import(
-        "api-ms-win-crt-runtime-l1-1-0.dll",
-        "_initterm",
-        initterm,
-    );
+    vm.register_import("api-ms-win-crt-runtime-l1-1-0.dll", "_initterm", initterm);
 }
 
 fn initterm(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let begin = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let end = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (begin, end) = vm_args!(vm, stack_ptr; u32, u32);
     for addr in (begin..end).step_by(4) {
         let func = vm.read_u32(addr).unwrap_or(0);
         if func == 0 {
@@ -29,8 +25,7 @@ fn initterm(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn initterm_e(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let begin = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let end = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (begin, end) = vm_args!(vm, stack_ptr; u32, u32);
     for addr in (begin..end).step_by(4) {
         let func = vm.read_u32(addr).unwrap_or(0);
         if func == 0 {

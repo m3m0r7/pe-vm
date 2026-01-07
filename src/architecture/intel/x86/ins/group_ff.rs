@@ -3,8 +3,8 @@
 use crate::vm::{Vm, VmError};
 
 use super::add;
-use super::core::{decode_modrm, Prefixes};
 use super::control;
+use super::core::{decode_modrm, Prefixes};
 use super::stack;
 use super::sub;
 

@@ -1,7 +1,10 @@
 //! Minimal OLE32 stubs for COM hosting.
 
+pub const DLL_NAME: &str = "ole32.dll";
+
 use crate::vm::windows::{get_registry, registry::RegistryValue};
 use crate::vm::{Vm, VmError};
+use crate::vm_args;
 
 use super::guid::{format_guid, parse_guid};
 
@@ -12,47 +15,122 @@ const CLASS_E_CLASSNOTAVAILABLE: u32 = 0x8004_0111;
 const CO_E_CLASSSTRING: u32 = 0x8004_010F;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("ole32.dll", "CLSIDFromString", crate::vm::stdcall_args(2), clsid_from_string);
-    vm.register_import_stdcall("ole32.dll", "CLSIDFromProgID", crate::vm::stdcall_args(2), clsid_from_progid);
-    vm.register_import_stdcall("ole32.dll", "StringFromGUID2", crate::vm::stdcall_args(3), string_from_guid2);
-    vm.register_import_stdcall("ole32.dll", "CoCreateInstance", crate::vm::stdcall_args(5), co_create_instance);
-    vm.register_import_stdcall("ole32.dll", "CoGetClassObject", crate::vm::stdcall_args(5), co_get_class_object);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemAlloc", crate::vm::stdcall_args(1), co_task_mem_alloc);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemRealloc", crate::vm::stdcall_args(2), co_task_mem_realloc);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemFree", crate::vm::stdcall_args(1), co_task_mem_free);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
+        "CLSIDFromString",
+        crate::vm::stdcall_args(2),
+        clsid_from_string,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CLSIDFromProgID",
+        crate::vm::stdcall_args(2),
+        clsid_from_progid,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "StringFromGUID2",
+        crate::vm::stdcall_args(3),
+        string_from_guid2,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoCreateInstance",
+        crate::vm::stdcall_args(5),
+        co_create_instance,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoGetClassObject",
+        crate::vm::stdcall_args(5),
+        co_get_class_object,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemAlloc",
+        crate::vm::stdcall_args(1),
+        co_task_mem_alloc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemRealloc",
+        crate::vm::stdcall_args(2),
+        co_task_mem_realloc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "CoTaskMemFree",
+        crate::vm::stdcall_args(1),
+        co_task_mem_free,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
         "CreateDataAdviseHolder",
         crate::vm::stdcall_args(1),
         create_data_advise_holder,
     );
-    vm.register_import_stdcall("ole32.dll", "ReadClassStm", crate::vm::stdcall_args(2), read_class_stm);
-    vm.register_import_stdcall("ole32.dll", "WriteClassStm", crate::vm::stdcall_args(2), write_class_stm);
-    vm.register_import_stdcall("ole32.dll", "OleInitialize", crate::vm::stdcall_args(1), ole_initialize);
-    vm.register_import_stdcall("ole32.dll", "OleUninitialize", crate::vm::stdcall_args(0), ole_uninitialize);
-    vm.register_import_stdcall("ole32.dll", "OleSaveToStream", crate::vm::stdcall_args(2), ole_save_to_stream);
-    vm.register_import_stdcall("ole32.dll", "OleLockRunning", crate::vm::stdcall_args(3), ole_lock_running);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
+        "ReadClassStm",
+        crate::vm::stdcall_args(2),
+        read_class_stm,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "WriteClassStm",
+        crate::vm::stdcall_args(2),
+        write_class_stm,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleInitialize",
+        crate::vm::stdcall_args(1),
+        ole_initialize,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleUninitialize",
+        crate::vm::stdcall_args(0),
+        ole_uninitialize,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleSaveToStream",
+        crate::vm::stdcall_args(2),
+        ole_save_to_stream,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "OleLockRunning",
+        crate::vm::stdcall_args(3),
+        ole_lock_running,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
         "CreateOleAdviseHolder",
         crate::vm::stdcall_args(1),
         create_ole_advise_holder,
     );
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "OleRegGetUserType",
         crate::vm::stdcall_args(3),
         ole_reg_get_user_type,
     );
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "OleRegGetMiscStatus",
         crate::vm::stdcall_args(3),
         ole_reg_get_misc_status,
     );
-    vm.register_import_stdcall("ole32.dll", "OleRegEnumVerbs", crate::vm::stdcall_args(2), ole_reg_enum_verbs);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
+        "OleRegEnumVerbs",
+        crate::vm::stdcall_args(2),
+        ole_reg_enum_verbs,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
         "CreateStreamOnHGlobal",
         crate::vm::stdcall_args(3),
         create_stream_on_hglobal,
@@ -61,8 +139,7 @@ pub fn register(vm: &mut Vm) {
 
 // CLSIDFromString(lpsz, pclsid)
 fn clsid_from_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let str_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (str_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if str_ptr == 0 || out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -79,8 +156,7 @@ fn clsid_from_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // CLSIDFromProgID(lpszProgID, pclsid)
 fn clsid_from_progid(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let progid_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (progid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if progid_ptr == 0 || out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -105,9 +181,8 @@ fn clsid_from_progid(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // StringFromGUID2(rguid, lpsz, cchMax)
 fn string_from_guid2(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let guid_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (guid_ptr, out_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let max_len = max_len as usize;
     if guid_ptr == 0 || out_ptr == 0 || max_len == 0 {
         return 0;
     }
@@ -139,15 +214,15 @@ fn co_get_class_object(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // CoTaskMemAlloc(size)
 fn co_task_mem_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let size = vm.read_u32(stack_ptr + 4).unwrap_or(0) as usize;
-    let buf = vec![0u8; size];
+    let (size,) = vm_args!(vm, stack_ptr; u32);
+    let buf = vec![0u8; size as usize];
     vm.alloc_bytes(&buf, 8).unwrap_or(0)
 }
 
 // CoTaskMemRealloc(ptr, size)
 fn co_task_mem_realloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let buf = vec![0u8; size];
+    let (_, size) = vm_args!(vm, stack_ptr; u32, u32);
+    let buf = vec![0u8; size as usize];
     vm.alloc_bytes(&buf, 8).unwrap_or(0)
 }
 
@@ -198,7 +273,7 @@ fn create_ole_advise_holder(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // OleRegGetUserType(...)
 fn ole_reg_get_user_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -207,7 +282,7 @@ fn ole_reg_get_user_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // OleRegGetMiscStatus(...)
 fn ole_reg_get_misc_status(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -216,7 +291,7 @@ fn ole_reg_get_misc_status(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // OleRegEnumVerbs(...)
 fn ole_reg_enum_verbs(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -250,4 +325,105 @@ fn read_guid(vm: &Vm, ptr: u32) -> Result<[u8; 16], VmError> {
         *slot = vm.read_u8(ptr + i as u32)?;
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vm::{Architecture, VmConfig};
+    use crate::vm_set_args;
+
+    fn create_test_vm() -> Vm {
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        vm.memory = vec![0u8; 0x10000];
+        vm.base = 0x1000;
+        vm.stack_top = 0x1000 + 0x10000 - 4;
+        vm.regs.esp = vm.stack_top;
+        vm.heap_start = 0x2000;
+        vm.heap_end = 0x8000;
+        vm.heap_cursor = vm.heap_start;
+        vm
+    }
+
+    #[test]
+    fn test_co_create_instance_returns_class_not_available() {
+        let mut vm = create_test_vm();
+        let result = co_create_instance(&mut vm, 0);
+        assert_eq!(result, CLASS_E_CLASSNOTAVAILABLE);
+    }
+
+    #[test]
+    fn test_co_get_class_object_returns_class_not_available() {
+        let mut vm = create_test_vm();
+        let result = co_get_class_object(&mut vm, 0);
+        assert_eq!(result, CLASS_E_CLASSNOTAVAILABLE);
+    }
+
+    #[test]
+    fn test_co_task_mem_alloc_returns_pointer() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 8;
+        vm.write_u32(stack + 4, 100).unwrap(); // size = 100
+        let result = co_task_mem_alloc(&mut vm, stack);
+        assert_ne!(result, 0);
+    }
+
+    #[test]
+    fn test_co_task_mem_free_returns_zero() {
+        let mut vm = create_test_vm();
+        let result = co_task_mem_free(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_ole_initialize_returns_s_ok() {
+        let mut vm = create_test_vm();
+        let result = ole_initialize(&mut vm, 0);
+        assert_eq!(result, S_OK);
+    }
+
+    #[test]
+    fn test_ole_uninitialize_returns_zero() {
+        let mut vm = create_test_vm();
+        let result = ole_uninitialize(&mut vm, 0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_clsid_from_string_null_ptr_returns_invalid_arg() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 12;
+        vm_set_args!(vm, stack; 0u32, 0u32);
+        let result = clsid_from_string(&mut vm, stack);
+        assert_eq!(result, E_INVALIDARG);
+    }
+
+    #[test]
+    fn test_string_from_guid2_null_ptr_returns_zero() {
+        let mut vm = create_test_vm();
+        let stack = vm.stack_top - 16;
+        vm_set_args!(vm, stack; 0u32, 0u32, 0u32);
+        let result = string_from_guid2(&mut vm, stack);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_read_utf16_z_empty() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        // Write null terminator
+        let _ = vm.write_u16(ptr, 0);
+        let result = read_utf16_z(&vm, ptr).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_read_guid() {
+        let mut vm = create_test_vm();
+        let ptr = vm.heap_start as u32;
+        let guid_bytes: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        vm.write_bytes(ptr, &guid_bytes).unwrap();
+        let result = read_guid(&vm, ptr).unwrap();
+        assert_eq!(result, guid_bytes);
+    }
 }

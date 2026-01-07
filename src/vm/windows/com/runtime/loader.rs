@@ -1,13 +1,16 @@
 //! COM loader helpers for resolving registry paths and initializing DLLs.
 
 use crate::pe::PeFile;
-use crate::vm::{Value, Vm, VmError};
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::windows::{get_registry, registry::Registry};
+use crate::vm::{Value, Vm, VmError};
 
 use super::helpers::normalize_clsid;
 
-pub(super) fn resolve_inproc_path(vm: &mut Vm, clsid: &str) -> Result<(String, String, String), VmError> {
+pub(super) fn resolve_inproc_path(
+    vm: &mut Vm,
+    clsid: &str,
+) -> Result<(String, String, String), VmError> {
     let normalized = normalize_clsid(clsid);
     let registry =
         get_registry(vm).ok_or(VmError::InvalidConfig("windows registry unavailable"))?;

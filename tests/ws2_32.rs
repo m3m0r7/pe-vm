@@ -148,7 +148,7 @@ fn execute_wsa_startup_ordinal() {
 
     let mut vm = Vm::load(&pe, &image).expect("load");
     windows::register_default(&mut vm);
-    vm.resolve_imports(&pe);
+    vm.resolve_imports(&pe).expect("imports");
     let result = vm
         .execute_export_with_values(&pe, "init", &[], ExecuteOptions::new())
         .expect("execute");

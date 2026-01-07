@@ -41,13 +41,6 @@ pub(crate) fn format_guid(bytes: &[u8; 16]) -> String {
     let data4 = &bytes[8..16];
     format!(
         "{{{data1:08X}-{data2:04X}-{data3:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
-        data4[0],
-        data4[1],
-        data4[2],
-        data4[3],
-        data4[4],
-        data4[5],
-        data4[6],
-        data4[7]
+        data4[0], data4[1], data4[2], data4[3], data4[4], data4[5], data4[6], data4[7]
     )
 }

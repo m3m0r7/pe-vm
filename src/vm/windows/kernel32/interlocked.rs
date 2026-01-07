@@ -1,28 +1,30 @@
 //! Kernel32 interlocked operation stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "InterlockedIncrement",
         crate::vm::stdcall_args(1),
         interlocked_increment,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "InterlockedDecrement",
         crate::vm::stdcall_args(1),
         interlocked_decrement,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "InterlockedPushEntrySList",
         crate::vm::stdcall_args(2),
         interlocked_push_entry_slist,
     );
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "InterlockedPopEntrySList",
         crate::vm::stdcall_args(1),
         interlocked_pop_entry_slist,
@@ -30,7 +32,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let addr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let (addr,) = vm_args!(vm, stack_ptr; u32);
     if addr == 0 {
         return 0;
     }
@@ -40,7 +42,7 @@ fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn interlocked_decrement(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let addr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let (addr,) = vm_args!(vm, stack_ptr; u32);
     if addr == 0 {
         return 0;
     }
@@ -50,8 +52,7 @@ fn interlocked_decrement(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn interlocked_push_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let header = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let entry = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (header, entry) = vm_args!(vm, stack_ptr; u32, u32);
     if header == 0 || entry == 0 {
         return 0;
     }
@@ -62,7 +63,7 @@ fn interlocked_push_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn interlocked_pop_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let header = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let (header,) = vm_args!(vm, stack_ptr; u32);
     if header == 0 {
         return 0;
     }

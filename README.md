@@ -22,21 +22,12 @@ cargo install pe_vm # Install the crate from crates.io.
 ```
 
 ```rust
-use pe_vm::{windows, Architecture, ExecuteOptions, Os, Pe, SymbolExecutor, Value, Vm, VmConfig}; // Import VM APIs.
+use pe_vm::{ExecuteOptions, Pe, SymbolExecutor, Value, Vm, VmConfig}; // Import VM APIs.
 use std::collections::BTreeMap; // Map for environment variables.
 
 fn main() -> Result<(), Box<dyn std::error::Error>> { // Entry point with error propagation.
-    let registry = windows::registry::load_from_yml("/path/to/registry.yml")?; // Load registry mappings.
-    // For .reg exports: windows::registry::load_from_registry("path/to/registry.reg")?
-    let mut config = VmConfig::new() // Start with default config.
-        .os(Os::Windows) // Stored in config (not enforced yet).
-        .architecture(Architecture::X86) // X86 only for now (X86_64 planned).
-        .properties(registry) // Registry-backed properties for COM lookups.
+    let mut config = VmConfig::from_default_settings()? // Auto-load settings.yml/settings.local.yml.
         .font_path("/path/to/font.ttf"); // Optional; defaults to host fonts.
-
-    let mut paths = Pe::default_path_mapping(); // Default path mappings for guest paths.
-    paths.insert("C:\\".to_string(), "/".to_string()); // Override mapping if needed.
-    config = config.paths(paths); // Apply mappings to config.
 
     let mut vm = Vm::new(config)?; // Create a VM.
     let pe = Pe::load(&mut vm, "/path/to/file.dll")?; // Load a PE into the VM.
@@ -65,7 +56,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> { // Entry point with error 
 Note: `VmConfig` stores OS/property/path configuration for future host
 integration. Registry and path mappings are used for COM lookups and guest path
 resolution; other OS settings are placeholders. `font_path` is used by the SDL
-dialog renderer when `MessageBoxA` is called.
+dialog renderer when `MessageBoxA` is called. `VmConfig::from_default_settings`
+auto-resolves `settings.yml` and `settings.local.yml` (higher file priority wins:
+`settings.local.yml` > `settings.yml`) across current directory, `~/.pe-vm`,
+and `/` (lowest). Override the search via `PE_VM_SETTINGS_DIR` and the directory
+priority via `PE_VM_SETTINGS_PRIORITY` (for example, `cwd=2,home=1,root=0` or
+`root,home,cwd` for order-based priorities).
+When `PE_VM_SETTINGS_DIR` lists multiple paths, later entries override earlier ones.
+`Pe::default_path_mapping` maps `C:\` to `$HOME/.pe-vm` (created if missing) and
+merges any path mappings from resolved settings. `Pe::load` resolves imports and
+returns an error if any are missing, so register custom imports before loading.
 
 ## Run hello world
 
@@ -485,7 +485,7 @@ int main(void) { // Program entry.
       1);
   printf("JVInit rc=%d\n", init_rc); // Print result.
 
-  PevmComArg open_args[3]; // JVOpen args (dataspec, fromdate, option).
+  PevmComArg open_args[3]; // JVOpen args (dataspec, fromtime, option).
   open_args[0].tag = PEVM_COM_ARG_BSTR; // BSTR arg.
   open_args[0].value.bstr = "RACE"; // Dataspec.
   open_args[1].tag = PEVM_COM_ARG_BSTR; // BSTR arg.

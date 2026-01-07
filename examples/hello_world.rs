@@ -1,6 +1,5 @@
 use pe_vm::{
-    windows, Architecture, ExecuteOptions, MessageBoxMode, Os, Pe, SymbolExecutor, Value, Vm,
-    VmConfig,
+    Architecture, ExecuteOptions, MessageBoxMode, Os, Pe, SymbolExecutor, Value, Vm, VmConfig,
 };
 use std::collections::BTreeMap;
 
@@ -19,9 +18,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let symbol_arg = args.get(2).map(|value| value.as_str());
 
     let pe = Pe::load(&mut vm, dll_path)?;
-
-    windows::register_default(&mut vm);
-    vm.resolve_imports(pe.file());
 
     let selected_symbol = select_symbol(&pe, symbol_arg)?;
     print_dll_info(&pe, &selected_symbol);
@@ -47,7 +43,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn print_dll_info(pe: &Pe, selected_symbol: &str) {
     let file = pe.file();
     println!("== PE Info ==");
-    println!("entry_point: 0x{:08X}", file.optional_header.address_of_entry_point);
+    println!(
+        "entry_point: 0x{:08X}",
+        file.optional_header.address_of_entry_point
+    );
     println!("image_base:  0x{:08X}", file.optional_header.image_base);
     println!("sections:");
     for section in &file.sections {
@@ -87,12 +86,13 @@ fn print_dll_info(pe: &Pe, selected_symbol: &str) {
     println!("selected_symbol (export): {selected_symbol}");
 }
 
-fn select_symbol(
-    pe: &Pe,
-    symbol_arg: Option<&str>,
-) -> Result<String, Box<dyn std::error::Error>> {
+fn select_symbol(pe: &Pe, symbol_arg: Option<&str>) -> Result<String, Box<dyn std::error::Error>> {
     if let Some(name) = symbol_arg {
-        if !pe.symbols().iter().any(|symbol| symbol.name.as_deref() == Some(name)) {
+        if !pe
+            .symbols()
+            .iter()
+            .any(|symbol| symbol.name.as_deref() == Some(name))
+        {
             return Err(format!("symbol not found: {name}").into());
         }
         return Ok(name.to_string());
@@ -152,12 +152,7 @@ fn collect_resource_stats(node: &pe_vm::ResourceNode, stats: &mut ResourceStats)
     }
 }
 
-fn print_resource_node(
-    node: &pe_vm::ResourceNode,
-    depth: usize,
-    shown: &mut usize,
-    limit: usize,
-) {
+fn print_resource_node(node: &pe_vm::ResourceNode, depth: usize, shown: &mut usize, limit: usize) {
     if *shown >= limit {
         return;
     }
