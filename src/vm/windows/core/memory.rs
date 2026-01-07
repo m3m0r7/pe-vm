@@ -49,6 +49,7 @@ impl Vm {
         self.string_overlays.clear();
         self.resource_dir = pe.directories.resource.clone();
         self.resource_sizes.clear();
+        self.fpu_reset();
         Ok(())
     }
 
@@ -120,6 +121,26 @@ impl Vm {
         ]))
     }
 
+    pub fn read_u64(&self, addr: u32) -> Result<u64, VmError> {
+        if addr < self.base && addr < NULL_PAGE_LIMIT {
+            return Ok(0);
+        }
+        let offset = self.addr_to_offset(addr)?;
+        if offset + 8 > self.memory.len() {
+            return Err(VmError::MemoryOutOfRange);
+        }
+        Ok(u64::from_le_bytes([
+            self.memory[offset],
+            self.memory[offset + 1],
+            self.memory[offset + 2],
+            self.memory[offset + 3],
+            self.memory[offset + 4],
+            self.memory[offset + 5],
+            self.memory[offset + 6],
+            self.memory[offset + 7],
+        ]))
+    }
+
     pub(crate) fn write_u8(&mut self, addr: u32, value: u8) -> Result<(), VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(());
@@ -159,6 +180,20 @@ impl Vm {
         let bytes = value.to_le_bytes();
         self.trace_write("write_u32", addr, bytes.len(), Some(&bytes));
         self.memory[offset..offset + 4].copy_from_slice(&bytes);
+        Ok(())
+    }
+
+    pub(crate) fn write_u64(&mut self, addr: u32, value: u64) -> Result<(), VmError> {
+        if addr < self.base && addr < NULL_PAGE_LIMIT {
+            return Ok(());
+        }
+        let offset = self.addr_to_offset(addr)?;
+        if offset + 8 > self.memory.len() {
+            return Err(VmError::MemoryOutOfRange);
+        }
+        let bytes = value.to_le_bytes();
+        self.trace_write("write_u64", addr, bytes.len(), Some(&bytes));
+        self.memory[offset..offset + 8].copy_from_slice(&bytes);
         Ok(())
     }
 

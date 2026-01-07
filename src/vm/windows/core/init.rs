@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use crate::architecture::intel::x86::X86Executor;
 use crate::pe::ResourceDirectory;
 
+use crate::vm::state::FpuState;
 use crate::vm::*;
 
 impl Vm {
@@ -62,6 +63,7 @@ impl Vm {
             next_thread_handle: 0x6000_0000,
             stdout: Arc::new(Mutex::new(Vec::new())),
             executor: X86Executor::new(),
+            fpu: FpuState::default(),
         };
         // Register default Windows stubs up front for import resolution.
         if matches!(vm.config.os_value(), Os::Windows) {

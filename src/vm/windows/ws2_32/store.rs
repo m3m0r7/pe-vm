@@ -1,7 +1,8 @@
 //! Winsock handle store and error state.
 
-use std::collections::HashSet;
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashMap;
+use std::net::UdpSocket;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::vm::Vm;
 use crate::vm_args;
@@ -11,9 +12,13 @@ use super::constants::{EVENT_HANDLE_BASE, SOCKET_HANDLE_BASE};
 #[derive(Default)]
 struct SocketStore {
     next_socket: u32,
-    open_sockets: HashSet<u32>,
+    sockets: HashMap<u32, SocketInfo>,
     next_event: u32,
     last_error: u32,
+}
+
+struct SocketInfo {
+    socket: Arc<UdpSocket>,
 }
 
 fn store() -> &'static Mutex<SocketStore> {
@@ -34,13 +39,30 @@ pub(super) fn alloc_socket() -> u32 {
     }
     let handle = guard.next_socket;
     guard.next_socket = guard.next_socket.wrapping_add(1);
-    guard.open_sockets.insert(handle);
     handle
 }
 
 pub(super) fn close_socket(handle: u32) -> bool {
     let mut guard = store().lock().expect("ws2_32 store");
-    guard.open_sockets.remove(&handle)
+    guard.sockets.remove(&handle).is_some()
+}
+
+pub(super) fn register_socket(handle: u32, socket: UdpSocket) {
+    let mut guard = store().lock().expect("ws2_32 store");
+    guard.sockets.insert(
+        handle,
+        SocketInfo {
+            socket: Arc::new(socket),
+        },
+    );
+}
+
+pub(super) fn socket_by_handle(handle: u32) -> Option<Arc<UdpSocket>> {
+    let guard = store().lock().expect("ws2_32 store");
+    guard
+        .sockets
+        .get(&handle)
+        .map(|info| Arc::clone(&info.socket))
 }
 
 pub(super) fn alloc_event() -> u32 {
@@ -77,6 +99,7 @@ pub(super) fn wsa_set_last_error(vm: &mut Vm, stack_ptr: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::vm::{Architecture, VmConfig};
+    use std::net::UdpSocket;
 
     fn create_test_vm() -> Vm {
         let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
@@ -88,6 +111,11 @@ mod tests {
         vm.heap_end = 0x8000;
         vm.heap_cursor = vm.heap_start;
         vm
+    }
+
+    fn register_dummy_socket(handle: u32) {
+        let socket = UdpSocket::bind("127.0.0.1:0").expect("bind socket");
+        register_socket(handle, socket);
     }
 
     #[test]
@@ -106,6 +134,7 @@ mod tests {
     #[test]
     fn test_close_socket_success() {
         let handle = alloc_socket();
+        register_dummy_socket(handle);
         let closed = close_socket(handle);
         assert!(closed);
     }

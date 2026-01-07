@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use crate::architecture::intel::x86::X86Executor;
 use crate::pe::ResourceDirectory;
 
-use super::{windows, ComOutParam, MessageBoxMode, VmConfig};
+use super::{windows, ComOutParam, MessageBoxMode, VmConfig, VmError};
 
 // OS-specific state stored in the VM without exposing platform details.
 pub(crate) enum OsState {
@@ -35,6 +35,26 @@ pub(crate) struct Flags {
     pub(crate) zf: bool,
     pub(crate) sf: bool,
     pub(crate) of: bool,
+}
+
+#[derive(Debug, Default, Clone)]
+pub(crate) struct FpuState {
+    pub(crate) stack: [f64; 8],
+    pub(crate) valid: [bool; 8],
+    pub(crate) top: u8,
+    pub(crate) control_word: u16,
+    pub(crate) status_word: u16,
+    pub(crate) tag_word: u16,
+}
+
+impl FpuState {
+    fn st_index(&self, index: usize) -> usize {
+        (self.top as usize + index) & 7
+    }
+
+    fn top_index(&self) -> usize {
+        self.top as usize
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -96,6 +116,7 @@ pub struct Vm {
     pub(super) next_thread_handle: u32,
     pub(super) stdout: Arc<Mutex<Vec<u8>>>,
     pub(super) executor: X86Executor,
+    pub(super) fpu: FpuState,
 }
 
 #[derive(Debug, Clone)]
@@ -104,4 +125,72 @@ pub(crate) struct FileHandle {
     pub(crate) cursor: usize,
     pub(crate) readable: bool,
     pub(crate) writable: bool,
+}
+
+impl Vm {
+    pub(crate) fn fpu_push(&mut self, value: f64) -> Result<(), VmError> {
+        let new_top = (self.fpu.top.wrapping_sub(1)) & 7;
+        let idx = new_top as usize;
+        if self.fpu.valid[idx] {
+            return Err(VmError::FpuStackOverflow);
+        }
+        self.fpu.top = new_top;
+        self.fpu.stack[idx] = value;
+        self.fpu.valid[idx] = true;
+        Ok(())
+    }
+
+    pub(crate) fn fpu_pop(&mut self) -> Result<f64, VmError> {
+        let idx = self.fpu.top_index();
+        if !self.fpu.valid[idx] {
+            return Err(VmError::FpuStackUnderflow);
+        }
+        let value = self.fpu.stack[idx];
+        self.fpu.valid[idx] = false;
+        self.fpu.top = (self.fpu.top + 1) & 7;
+        Ok(value)
+    }
+
+    pub(crate) fn fpu_st(&self, index: usize) -> Result<f64, VmError> {
+        if index >= 8 {
+            return Err(VmError::UnsupportedInstruction(0));
+        }
+        let idx = self.fpu.st_index(index);
+        if !self.fpu.valid[idx] {
+            return Err(VmError::FpuStackUnderflow);
+        }
+        Ok(self.fpu.stack[idx])
+    }
+
+    pub(crate) fn fpu_set_st(&mut self, index: usize, value: f64) -> Result<(), VmError> {
+        if index >= 8 {
+            return Err(VmError::UnsupportedInstruction(0));
+        }
+        let idx = self.fpu.st_index(index);
+        if !self.fpu.valid[idx] {
+            return Err(VmError::FpuStackUnderflow);
+        }
+        self.fpu.stack[idx] = value;
+        Ok(())
+    }
+
+    pub(crate) fn fpu_control(&self) -> u16 {
+        self.fpu.control_word
+    }
+
+    pub(crate) fn fpu_set_control(&mut self, value: u16) {
+        self.fpu.control_word = value;
+    }
+
+    pub(crate) fn fpu_status(&self) -> u16 {
+        self.fpu.status_word
+    }
+
+    pub(crate) fn fpu_set_status(&mut self, value: u16) {
+        self.fpu.status_word = value;
+    }
+
+    pub(crate) fn fpu_reset(&mut self) {
+        self.fpu = FpuState::default();
+    }
 }
