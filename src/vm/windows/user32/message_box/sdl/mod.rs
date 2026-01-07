@@ -18,11 +18,12 @@ mod font_layout;
 mod font_load;
 
 #[cfg(feature = "sdl2")]
-pub(super) fn try_dialog(vm: &Vm, _caption: &str, text: &str) -> bool {
+pub(super) fn try_dialog(vm: &Vm, caption: &str, text: &str) -> bool {
+    let title = if caption.is_empty() { "pe_vm" } else { caption };
     if let Some(font) = font_load::load_dialog_font(vm) {
-        return font_dialog::try_dialog_with_font(vm, &font, text);
+        return font_dialog::try_dialog_with_font(vm, &font, title, text);
     }
-    bitmap_dialog::try_dialog_bitmap(text)
+    bitmap_dialog::try_dialog_bitmap(title, text)
 }
 
 #[cfg(not(feature = "sdl2"))]

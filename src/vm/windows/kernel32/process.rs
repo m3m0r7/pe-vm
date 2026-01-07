@@ -6,7 +6,6 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 define_stub_fn!(DLL_NAME, is_debugger_present, 0);
-define_stub_fn!(DLL_NAME, is_processor_feature_present, 0);
 define_stub_fn!(DLL_NAME, exit_process, 0);
 define_stub_fn!(DLL_NAME, create_process_a, 0);
 define_stub_fn!(DLL_NAME, output_debug_string_w, 0);
@@ -41,6 +40,12 @@ pub fn register(vm: &mut Vm) {
         "IsProcessorFeaturePresent",
         crate::vm::stdcall_args(1),
         is_processor_feature_present,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetCurrentThreadId",
+        crate::vm::stdcall_args(0),
+        get_current_thread_id,
     );
     vm.register_import_stdcall(
         DLL_NAME,
@@ -87,7 +92,63 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_current_process_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    // Returns a fixed process ID for the emulated process.
     1
+}
+
+fn get_current_thread_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    // Returns a fixed thread ID for the main thread.
+    1
+}
+
+// Processor feature constants from winnt.h
+const PF_FLOATING_POINT_PRECISION_ERRATA: u32 = 0;
+const PF_FLOATING_POINT_EMULATED: u32 = 1;
+const PF_COMPARE_EXCHANGE_DOUBLE: u32 = 2;
+const PF_MMX_INSTRUCTIONS_AVAILABLE: u32 = 3;
+const PF_XMMI_INSTRUCTIONS_AVAILABLE: u32 = 6; // SSE
+const PF_3DNOW_INSTRUCTIONS_AVAILABLE: u32 = 7;
+const PF_RDTSC_INSTRUCTION_AVAILABLE: u32 = 8;
+const PF_PAE_ENABLED: u32 = 9;
+const PF_XMMI64_INSTRUCTIONS_AVAILABLE: u32 = 10; // SSE2
+const PF_NX_ENABLED: u32 = 12;
+const PF_SSE3_INSTRUCTIONS_AVAILABLE: u32 = 13;
+const PF_COMPARE_EXCHANGE128: u32 = 14;
+const PF_FASTFAIL_AVAILABLE: u32 = 23;
+
+/// `IsProcessorFeaturePresent` checks if a processor feature is available.
+///
+/// Signature: BOOL WINAPI IsProcessorFeaturePresent(DWORD ProcessorFeature)
+///
+/// We emulate an x86 processor with common features enabled.
+fn is_processor_feature_present(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (feature,) = vm_args!(vm, stack_ptr; u32);
+
+    let result = match feature {
+        PF_FLOATING_POINT_PRECISION_ERRATA => 0, // No Pentium FP bug
+        PF_FLOATING_POINT_EMULATED => 0,         // Hardware FP available
+        PF_COMPARE_EXCHANGE_DOUBLE => 1,         // CMPXCHG8B available
+        PF_MMX_INSTRUCTIONS_AVAILABLE => 1,      // MMX available
+        PF_XMMI_INSTRUCTIONS_AVAILABLE => 1,     // SSE available
+        PF_3DNOW_INSTRUCTIONS_AVAILABLE => 0,    // No 3DNow! (AMD only)
+        PF_RDTSC_INSTRUCTION_AVAILABLE => 1,     // RDTSC available
+        PF_PAE_ENABLED => 0,                     // PAE not enabled in our VM
+        PF_XMMI64_INSTRUCTIONS_AVAILABLE => 1,   // SSE2 available
+        PF_NX_ENABLED => 0,                      // NX/DEP not enforced in our VM
+        PF_SSE3_INSTRUCTIONS_AVAILABLE => 1,     // SSE3 available
+        PF_COMPARE_EXCHANGE128 => 0,             // Not on 32-bit
+        PF_FASTFAIL_AVAILABLE => 1,              // __fastfail available
+        _ => 0,                                  // Unknown feature
+    };
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!(
+            "[pe_vm] IsProcessorFeaturePresent(feature={}) -> {}",
+            feature, result
+        );
+    }
+
+    result
 }
 
 fn get_startup_info_w(vm: &mut Vm, stack_ptr: u32) -> u32 {

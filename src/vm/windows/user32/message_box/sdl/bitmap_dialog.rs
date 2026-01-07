@@ -9,7 +9,7 @@ use super::bitmap_draw::{draw_lines_bitmap, draw_lines_centered_bitmap};
 use super::bitmap_layout::{wrap_text_columns, BitmapDialogLayout, BitmapLineParams};
 use super::common::apply_blank_icon;
 
-pub(super) fn try_dialog_bitmap(text: &str) -> bool {
+pub(super) fn try_dialog_bitmap(title: &str, text: &str) -> bool {
     let Ok(_sdl) = sdl2::init() else {
         return false;
     };
@@ -18,10 +18,9 @@ pub(super) fn try_dialog_bitmap(text: &str) -> bool {
     };
     let body_lines = wrap_text_columns(text, 60);
     let layout = BitmapDialogLayout::new(&body_lines);
-    let window_title = "pe_vm";
 
     let Ok(mut window) = video
-        .window(window_title, layout.width as u32, layout.height as u32)
+        .window(title, layout.width as u32, layout.height as u32)
         .position_centered()
         .build()
     else {

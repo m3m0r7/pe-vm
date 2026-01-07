@@ -1,15 +1,15 @@
 use pe_vm::{
-    Architecture, ExecuteOptions, MessageBoxMode, Os, Pe, SymbolExecutor, Value, Vm, VmConfig,
+    Architecture, ExecuteOptions, Os, Pe, Renderer, SymbolExecutor, Value, Vm, VmConfig,
 };
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut vm = Vm::new(
-        VmConfig::new()
-            .os(Os::Windows)
-            .architecture(Architecture::X86),
-    )?;
-    vm.set_message_box_mode(MessageBoxMode::Dialog);
+    // Use Renderer::Stdout for CLI testing (no SDL window)
+    let config = VmConfig::new()
+        .os(Os::Windows)
+        .architecture(Architecture::X86)
+        .renderer(Renderer::Stdout);
+    let mut vm = Vm::new(config)?;
     let args: Vec<String> = std::env::args().collect();
     let dll_path = args
         .get(1)

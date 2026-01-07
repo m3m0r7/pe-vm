@@ -17,6 +17,7 @@ impl Vm {
             Os::Unix => OsState::Unix,
             Os::Mac => OsState::Mac,
         };
+        let message_box_mode = MessageBoxMode::from(config.renderer_value());
         let mut vm = Self {
             config,
             os_state,
@@ -49,7 +50,7 @@ impl Vm {
             tls_values: HashMap::new(),
             tls_next_index: 1,
             unhandled_exception_filter: 0,
-            message_box_mode: MessageBoxMode::default(),
+            message_box_mode,
             onexit_tables: BTreeMap::new(),
             default_onexit_table: 0,
             imports_by_name: HashMap::new(),

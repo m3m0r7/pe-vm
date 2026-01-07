@@ -15,7 +15,7 @@ use super::font_layout::{
     DIALOG_PAD_X,
 };
 
-pub(super) fn try_dialog_with_font(_vm: &Vm, font: &Font, text: &str) -> bool {
+pub(super) fn try_dialog_with_font(_vm: &Vm, font: &Font, title: &str, text: &str) -> bool {
     let Ok(_sdl) = sdl2::init() else {
         return false;
     };
@@ -31,10 +31,9 @@ pub(super) fn try_dialog_with_font(_vm: &Vm, font: &Font, text: &str) -> bool {
     let max_text_width = (DIALOG_MAX_WIDTH - DIALOG_PAD_X * 2) as f32;
     let body_lines = wrap_text_font(text, font, body_font_size, max_text_width);
     let layout = FontDialogLayout::new(&body_lines, body_line_metrics);
-    let window_title = "pe_vm";
 
     let Ok(mut window) = video
-        .window(window_title, layout.width as u32, layout.height as u32)
+        .window(title, layout.width as u32, layout.height as u32)
         .position_centered()
         .build()
     else {

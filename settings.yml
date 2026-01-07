@@ -8,6 +8,8 @@
 #    os: windows
 #    # Registry file path (.reg or .yml) loaded into the Windows registry model.
 #    path: /path/to/registry.reg
+#  # Renderer mode for MessageBox output (sdl, stdout, silent). Default: sdl.
+#  renderer: sdl
 #  # Guest-to-host path mappings used for file resolution.
 #  paths:
 #    # "Guest path": "Host path" (use escaped backslashes for Windows paths).

@@ -34,6 +34,7 @@ pub struct VmConfig {
     execution_limit: u64,
     sandbox: Option<SandboxConfig>,
     bypass: BypassSettings,
+    renderer: Renderer,
 }
 
 impl VmConfig {
@@ -47,6 +48,7 @@ impl VmConfig {
             execution_limit: 1_000_000,
             sandbox: None,
             bypass: BypassSettings::default(),
+            renderer: Renderer::default(),
         }
     }
 
@@ -148,6 +150,16 @@ impl VmConfig {
     pub(crate) fn set_bypass(&mut self, bypass: BypassSettings) {
         self.bypass = bypass;
     }
+
+    pub fn renderer(self, renderer: Renderer) -> Self {
+        let mut config = self;
+        config.renderer = renderer;
+        config
+    }
+
+    pub fn renderer_value(&self) -> Renderer {
+        self.renderer
+    }
 }
 
 impl Default for VmConfig {
@@ -207,4 +219,26 @@ pub enum MessageBoxMode {
     #[default]
     Dialog,
     Silent,
+}
+
+/// Renderer mode for SDL-based output (MessageBox, etc.).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Renderer {
+    /// Use SDL for graphical output (default).
+    #[default]
+    Sdl,
+    /// Use stdout for text output.
+    Stdout,
+    /// Suppress all output.
+    Silent,
+}
+
+impl From<Renderer> for MessageBoxMode {
+    fn from(renderer: Renderer) -> Self {
+        match renderer {
+            Renderer::Sdl => MessageBoxMode::Dialog,
+            Renderer::Stdout => MessageBoxMode::Stdout,
+            Renderer::Silent => MessageBoxMode::Silent,
+        }
+    }
 }

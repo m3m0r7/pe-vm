@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_yaml::Value as YamlValue;
 
 use crate::vm::windows;
-use crate::vm::{Architecture, Os, PathMapping, SandboxConfig, VmConfig, VmError};
+use crate::vm::{Architecture, Os, PathMapping, Renderer, SandboxConfig, VmConfig, VmError};
 
 const SETTINGS_FILES: [SettingsFileSpec; 2] = [
     SettingsFileSpec {
@@ -90,6 +90,7 @@ struct VmSettings {
     os: Option<Os>,
     architecture: Option<Architecture>,
     registry_path: Option<String>,
+    renderer: Option<Renderer>,
     paths: PathMapping,
 }
 
@@ -114,6 +115,7 @@ struct BypassSectionRaw {
 #[derive(Default, Deserialize)]
 struct VmSectionRaw {
     properties: Option<VmPropertiesRaw>,
+    renderer: Option<String>,
     paths: Option<YamlValue>,
 }
 
@@ -181,6 +183,9 @@ pub(crate) fn apply_vm_settings(
         let registry = load_registry(path)?;
         config = config.properties(registry);
     }
+    if let Some(renderer) = settings.vm.renderer {
+        config = config.renderer(renderer);
+    }
     let mut paths = if config.paths_ref().is_empty() {
         default_path_mapping()
     } else {
@@ -236,6 +241,9 @@ impl Settings {
                 }
                 settings.vm.registry_path = properties.path;
             }
+            if let Some(renderer) = vm.renderer {
+                settings.vm.renderer = Some(parse_renderer(&renderer)?);
+            }
             if let Some(paths) = vm.paths {
                 settings.vm.paths = parse_paths(&paths);
             }
@@ -271,6 +279,9 @@ impl Settings {
         if other.vm.registry_path.is_some() {
             self.vm.registry_path = other.vm.registry_path;
         }
+        if other.vm.renderer.is_some() {
+            self.vm.renderer = other.vm.renderer;
+        }
         merge_paths(&mut self.vm.paths, &other.vm.paths);
         merge_paths(&mut self.pe.paths, &other.pe.paths);
         if other.sandbox.is_some() {
@@ -305,6 +316,15 @@ fn parse_architecture(value: &str) -> Result<Architecture, VmError> {
         "x86" | "i386" | "ia32" => Ok(Architecture::X86),
         "x86_64" | "amd64" | "x64" => Ok(Architecture::X86_64),
         _ => Err(VmError::InvalidConfig("unknown vm.architecture value")),
+    }
+}
+
+fn parse_renderer(value: &str) -> Result<Renderer, VmError> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "sdl" | "sdl2" | "dialog" | "gui" => Ok(Renderer::Sdl),
+        "stdout" | "console" | "text" => Ok(Renderer::Stdout),
+        "silent" | "none" | "off" => Ok(Renderer::Silent),
+        _ => Err(VmError::InvalidConfig("unknown vm.renderer value")),
     }
 }
 
