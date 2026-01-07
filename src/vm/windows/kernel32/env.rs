@@ -1,29 +1,15 @@
 //! Kernel32 environment stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "GetEnvironmentVariableA",
-        crate::vm::stdcall_args(3),
-        get_environment_variable_a,
-    );
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "SetEnvironmentVariableA",
-        crate::vm::stdcall_args(2),
-        set_environment_variable_a,
-    );
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "ExpandEnvironmentStringsA",
-        crate::vm::stdcall_args(3),
-        expand_environment_strings_a,
-    );
-    vm.register_import_stdcall("KERNEL32.dll", "GetEnvironmentStringsW", crate::vm::stdcall_args(0), get_environment_strings_w);
-    vm.register_import_stdcall("KERNEL32.dll", "FreeEnvironmentStringsW", crate::vm::stdcall_args(1), free_environment_strings_w);
+    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentVariableA", crate::vm::stdcall_args(3), get_environment_variable_a);
+    vm.register_import_stdcall(DLL_NAME, "SetEnvironmentVariableA", crate::vm::stdcall_args(2), set_environment_variable_a);
+    vm.register_import_stdcall(DLL_NAME, "ExpandEnvironmentStringsA", crate::vm::stdcall_args(3), expand_environment_strings_a);
+    vm.register_import_stdcall(DLL_NAME, "GetEnvironmentStringsW", crate::vm::stdcall_args(0), get_environment_strings_w);
+    vm.register_import_stdcall(DLL_NAME, "FreeEnvironmentStringsW", crate::vm::stdcall_args(1), free_environment_strings_w);
 }
 
 fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

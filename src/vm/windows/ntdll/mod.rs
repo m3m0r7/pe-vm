@@ -1,5 +1,7 @@
 //! NTDLL stub registration.
 
+pub const DLL_NAME: &str = "ntdll.dll";
+
 mod peb;
 mod slist;
 

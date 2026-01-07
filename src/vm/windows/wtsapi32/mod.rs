@@ -1,45 +1,46 @@
 //! WTSAPI32 stubs.
 
-use crate::vm::Vm;
+pub const DLL_NAME: &str = "WTSAPI32.dll";
+
+use crate::register_func_stub;
 use crate::vm::windows::check_stub;
+use crate::vm::Vm;
 use crate::vm_args;
+
+register_func_stub!(DLL_NAME, wts_open_server_a, 1);
+register_func_stub!(DLL_NAME, wts_close_server, 0);
+register_func_stub!(DLL_NAME, wts_free_memory, 0);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "WTSAPI32.dll",
+        DLL_NAME,
         "WTSOpenServerA",
         crate::vm::stdcall_args(1),
         wts_open_server_a,
     );
     vm.register_import_stdcall(
-        "WTSAPI32.dll",
+        DLL_NAME,
         "WTSEnumerateSessionsA",
         crate::vm::stdcall_args(5),
         wts_enumerate_sessions_a,
     );
     vm.register_import_stdcall(
-        "WTSAPI32.dll",
+        DLL_NAME,
         "WTSCloseServer",
         crate::vm::stdcall_args(1),
         wts_close_server,
     );
     vm.register_import_stdcall(
-        "WTSAPI32.dll",
+        DLL_NAME,
         "WTSFreeMemory",
         crate::vm::stdcall_args(1),
         wts_free_memory,
     );
 }
 
-// HANDLE WTSOpenServerA(LPSTR pServerName)
-fn wts_open_server_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "WTSAPI32.dll", "WTSOpenServerA");
-    1
-}
-
 // BOOL WTSEnumerateSessionsA(HANDLE, DWORD, DWORD, PWTS_SESSION_INFO*, DWORD*)
 fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    check_stub(vm, "WTSAPI32.dll", "WTSEnumerateSessionsA");
+    check_stub(vm, DLL_NAME, "WTSEnumerateSessionsA");
     let (_, _, _, sessions_ptr, count_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if sessions_ptr != 0 {
         let _ = vm.write_u32(sessions_ptr, 0);
@@ -48,18 +49,6 @@ fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         let _ = vm.write_u32(count_ptr, 0);
     }
     1 // WTS_SUCCESS
-}
-
-// VOID WTSCloseServer(HANDLE)
-fn wts_close_server(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "WTSAPI32.dll", "WTSCloseServer");
-    0
-}
-
-// VOID WTSFreeMemory(PVOID)
-fn wts_free_memory(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "WTSAPI32.dll", "WTSFreeMemory");
-    0
 }
 
 #[cfg(test)]

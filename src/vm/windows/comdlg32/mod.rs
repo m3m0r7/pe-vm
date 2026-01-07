@@ -1,21 +1,20 @@
 //! COMDLG32 stubs for common dialog usage.
 
+pub const DLL_NAME: &str = "COMDLG32.dll";
+
+use crate::register_func_stub;
 use crate::vm::Vm;
-use crate::vm::windows::check_stub;
+
+register_func_stub!(DLL_NAME, get_open_file_name_a, 0);
 
 // Register minimal common dialog APIs used by dialog clients.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "COMDLG32.dll",
+        DLL_NAME,
         "GetOpenFileNameA",
         crate::vm::stdcall_args(1),
         get_open_file_name_a,
     );
-}
-
-fn get_open_file_name_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "COMDLG32.dll", "GetOpenFileNameA");
-    0
 }
 
 #[cfg(test)]

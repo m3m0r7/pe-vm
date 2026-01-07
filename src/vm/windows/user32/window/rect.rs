@@ -1,53 +1,21 @@
+use crate::register_func_stub;
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::write_rect;
 
+register_func_stub!(DLL_NAME, pt_in_rect, 0);
+register_func_stub!(DLL_NAME, equal_rect, 0);
+register_func_stub!(DLL_NAME, fill_rect, 1);
+
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "PtInRect",
-        crate::vm::stdcall_args(3),
-        pt_in_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "EqualRect",
-        crate::vm::stdcall_args(2),
-        equal_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "OffsetRect",
-        crate::vm::stdcall_args(3),
-        offset_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "UnionRect",
-        crate::vm::stdcall_args(3),
-        union_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "IntersectRect",
-        crate::vm::stdcall_args(3),
-        intersect_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "FillRect",
-        crate::vm::stdcall_args(3),
-        fill_rect,
-    );
-}
-
-pub(super) fn pt_in_rect(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn equal_rect(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+    vm.register_import_stdcall(DLL_NAME, "PtInRect", crate::vm::stdcall_args(3), pt_in_rect);
+    vm.register_import_stdcall(DLL_NAME, "EqualRect", crate::vm::stdcall_args(2), equal_rect);
+    vm.register_import_stdcall(DLL_NAME, "OffsetRect", crate::vm::stdcall_args(3), offset_rect);
+    vm.register_import_stdcall(DLL_NAME, "UnionRect", crate::vm::stdcall_args(3), union_rect);
+    vm.register_import_stdcall(DLL_NAME, "IntersectRect", crate::vm::stdcall_args(3), intersect_rect);
+    vm.register_import_stdcall(DLL_NAME, "FillRect", crate::vm::stdcall_args(3), fill_rect);
 }
 
 pub(super) fn offset_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -103,17 +71,21 @@ pub(super) fn intersect_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
     1
 }
 
-pub(super) fn fill_rect(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::BypassSettings;
     use crate::vm::{Architecture, VmConfig};
 
     fn create_test_vm() -> Vm {
-        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        let mut bypass = BypassSettings::new();
+        bypass.not_implemented_module = true;
+        let mut vm = Vm::new(
+            VmConfig::new()
+                .architecture(Architecture::X86)
+                .bypass(bypass),
+        )
+        .expect("vm");
         vm.memory = vec![0u8; 0x10000];
         vm.base = 0x1000;
         vm.stack_top = 0x1000 + 0x10000 - 4;

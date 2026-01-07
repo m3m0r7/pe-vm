@@ -1,144 +1,35 @@
+use crate::register_func_stub;
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 
+register_func_stub!(DLL_NAME, screen_to_client, 1);
+register_func_stub!(DLL_NAME, client_to_screen, 1);
+register_func_stub!(DLL_NAME, set_window_rgn, 1);
+register_func_stub!(DLL_NAME, set_window_context_help_id, 1);
+register_func_stub!(DLL_NAME, set_foreground_window, 1);
+register_func_stub!(DLL_NAME, invalidate_rect, 1);
+register_func_stub!(DLL_NAME, invalidate_rgn, 1);
+register_func_stub!(DLL_NAME, redraw_window, 1);
+register_func_stub!(DLL_NAME, post_message_a, 1);
+register_func_stub!(DLL_NAME, send_message_a, 0);
+register_func_stub!(DLL_NAME, register_window_message_a, 1);
+register_func_stub!(DLL_NAME, call_window_proc_a, 0);
+register_func_stub!(DLL_NAME, def_window_proc_a, 0);
+register_func_stub!(DLL_NAME, unregister_class_a, 1);
+
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "ScreenToClient",
-        crate::vm::stdcall_args(2),
-        screen_to_client,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "ClientToScreen",
-        crate::vm::stdcall_args(2),
-        client_to_screen,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetWindowRgn",
-        crate::vm::stdcall_args(3),
-        set_window_rgn,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetWindowContextHelpId",
-        crate::vm::stdcall_args(2),
-        set_window_context_help_id,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetForegroundWindow",
-        crate::vm::stdcall_args(1),
-        set_foreground_window,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "InvalidateRect",
-        crate::vm::stdcall_args(3),
-        invalidate_rect,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "InvalidateRgn",
-        crate::vm::stdcall_args(3),
-        invalidate_rgn,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "RedrawWindow",
-        crate::vm::stdcall_args(4),
-        redraw_window,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "PostMessageA",
-        crate::vm::stdcall_args(4),
-        post_message_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SendMessageA",
-        crate::vm::stdcall_args(4),
-        send_message_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "RegisterWindowMessageA",
-        crate::vm::stdcall_args(1),
-        register_window_message_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "CallWindowProcA",
-        crate::vm::stdcall_args(5),
-        call_window_proc_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "DefWindowProcA",
-        crate::vm::stdcall_args(4),
-        def_window_proc_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "UnregisterClassA",
-        crate::vm::stdcall_args(2),
-        unregister_class_a,
-    );
-}
-
-pub(super) fn screen_to_client(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn client_to_screen(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn set_window_rgn(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn set_window_context_help_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn set_foreground_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn invalidate_rect(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn invalidate_rgn(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn redraw_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn post_message_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn send_message_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn register_window_message_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn call_window_proc_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn def_window_proc_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn unregister_class_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
+    vm.register_import_stdcall(DLL_NAME, "ScreenToClient", crate::vm::stdcall_args(2), screen_to_client);
+    vm.register_import_stdcall(DLL_NAME, "ClientToScreen", crate::vm::stdcall_args(2), client_to_screen);
+    vm.register_import_stdcall(DLL_NAME, "SetWindowRgn", crate::vm::stdcall_args(3), set_window_rgn);
+    vm.register_import_stdcall(DLL_NAME, "SetWindowContextHelpId", crate::vm::stdcall_args(2), set_window_context_help_id);
+    vm.register_import_stdcall(DLL_NAME, "SetForegroundWindow", crate::vm::stdcall_args(1), set_foreground_window);
+    vm.register_import_stdcall(DLL_NAME, "InvalidateRect", crate::vm::stdcall_args(3), invalidate_rect);
+    vm.register_import_stdcall(DLL_NAME, "InvalidateRgn", crate::vm::stdcall_args(3), invalidate_rgn);
+    vm.register_import_stdcall(DLL_NAME, "RedrawWindow", crate::vm::stdcall_args(4), redraw_window);
+    vm.register_import_stdcall(DLL_NAME, "PostMessageA", crate::vm::stdcall_args(4), post_message_a);
+    vm.register_import_stdcall(DLL_NAME, "SendMessageA", crate::vm::stdcall_args(4), send_message_a);
+    vm.register_import_stdcall(DLL_NAME, "RegisterWindowMessageA", crate::vm::stdcall_args(1), register_window_message_a);
+    vm.register_import_stdcall(DLL_NAME, "CallWindowProcA", crate::vm::stdcall_args(5), call_window_proc_a);
+    vm.register_import_stdcall(DLL_NAME, "DefWindowProcA", crate::vm::stdcall_args(4), def_window_proc_a);
+    vm.register_import_stdcall(DLL_NAME, "UnregisterClassA", crate::vm::stdcall_args(2), unregister_class_a);
 }

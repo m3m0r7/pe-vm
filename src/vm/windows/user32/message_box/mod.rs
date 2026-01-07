@@ -1,14 +1,15 @@
 //! SDL-backed MessageBoxA implementation.
 
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::{MessageBoxMode, Vm};
 
 mod sdl;
 
 pub fn register(vm: &mut Vm) {
     // Expose MessageBoxA to guest imports as a stdcall host function.
-    vm.register_import_stdcall("USER32.dll", "MessageBoxA", crate::vm::stdcall_args(4), message_box_a);
+    vm.register_import_stdcall(DLL_NAME, "MessageBoxA", crate::vm::stdcall_args(4), message_box_a);
     // Wide-char variant used by some DLLs.
-    vm.register_import_stdcall("USER32.dll", "MessageBoxW", crate::vm::stdcall_args(4), message_box_w);
+    vm.register_import_stdcall(DLL_NAME, "MessageBoxW", crate::vm::stdcall_args(4), message_box_w);
 }
 
 pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

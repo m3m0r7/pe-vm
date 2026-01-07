@@ -1,14 +1,10 @@
 //! Kernel32 SLIST stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "InitializeSListHead",
-        crate::vm::stdcall_args(1),
-        initialize_slist_head,
-    );
+    vm.register_import_stdcall(DLL_NAME, "InitializeSListHead", crate::vm::stdcall_args(1), initialize_slist_head);
 }
 
 fn initialize_slist_head(vm: &mut Vm, stack_ptr: u32) -> u32 {

@@ -1,27 +1,32 @@
 //! User32 cursor-related stubs.
 
+use crate::register_func_stub;
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 
+register_func_stub!(DLL_NAME, load_cursor_a, 1);
+register_func_stub!(DLL_NAME, load_cursor_w, 1);
+
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("USER32.dll", "LoadCursorA", crate::vm::stdcall_args(2), load_cursor_a);
-    vm.register_import_stdcall("USER32.dll", "LoadCursorW", crate::vm::stdcall_args(2), load_cursor_w);
-}
-
-fn load_cursor_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-fn load_cursor_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
+    vm.register_import_stdcall(DLL_NAME, "LoadCursorA", crate::vm::stdcall_args(2), load_cursor_a);
+    vm.register_import_stdcall(DLL_NAME, "LoadCursorW", crate::vm::stdcall_args(2), load_cursor_w);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::BypassSettings;
     use crate::vm::{Architecture, VmConfig};
 
     fn create_test_vm() -> Vm {
-        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
+        let mut bypass = BypassSettings::new();
+        bypass.not_implemented_module = true;
+        let mut vm = Vm::new(
+            VmConfig::new()
+                .architecture(Architecture::X86)
+                .bypass(bypass),
+        )
+        .expect("vm");
         vm.memory = vec![0u8; 0x10000];
         vm.base = 0x1000;
         vm.stack_top = 0x1000 + 0x10000 - 4;

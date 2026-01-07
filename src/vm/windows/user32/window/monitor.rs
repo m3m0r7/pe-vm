@@ -1,3 +1,4 @@
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -5,30 +6,10 @@ use super::constants::DUMMY_HMONITOR;
 use super::helpers::write_rect;
 
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "MonitorFromWindow",
-        crate::vm::stdcall_args(2),
-        monitor_from_window,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetMonitorInfoA",
-        crate::vm::stdcall_args(2),
-        get_monitor_info_a,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetSystemMetrics",
-        crate::vm::stdcall_args(1),
-        get_system_metrics,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetSysColor",
-        crate::vm::stdcall_args(1),
-        get_sys_color,
-    );
+    vm.register_import_stdcall(DLL_NAME, "MonitorFromWindow", crate::vm::stdcall_args(2), monitor_from_window);
+    vm.register_import_stdcall(DLL_NAME, "GetMonitorInfoA", crate::vm::stdcall_args(2), get_monitor_info_a);
+    vm.register_import_stdcall(DLL_NAME, "GetSystemMetrics", crate::vm::stdcall_args(1), get_system_metrics);
+    vm.register_import_stdcall(DLL_NAME, "GetSysColor", crate::vm::stdcall_args(1), get_sys_color);
 }
 
 pub(super) fn monitor_from_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

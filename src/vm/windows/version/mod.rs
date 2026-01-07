@@ -1,41 +1,37 @@
 //! VERSION.dll stubs.
 
-use crate::vm::Vm;
+pub const DLL_NAME: &str = "VERSION.dll";
+
+use crate::register_func_stub;
 use crate::vm::windows::check_stub;
+use crate::vm::Vm;
 use crate::vm_args;
+
+register_func_stub!(DLL_NAME, get_file_version_info_a, 0);
+register_func_stub!(DLL_NAME, ver_query_value_a, 0);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "VERSION.dll",
+        DLL_NAME,
         "GetFileVersionInfoSizeA",
         crate::vm::stdcall_args(2),
         get_file_version_info_size_a,
     );
     vm.register_import_stdcall(
-        "VERSION.dll",
+        DLL_NAME,
         "GetFileVersionInfoA",
         crate::vm::stdcall_args(4),
         get_file_version_info_a,
     );
-    vm.register_import_stdcall("VERSION.dll", "VerQueryValueA", crate::vm::stdcall_args(4), ver_query_value_a);
+    vm.register_import_stdcall(DLL_NAME, "VerQueryValueA", crate::vm::stdcall_args(4), ver_query_value_a);
 }
 
 fn get_file_version_info_size_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    check_stub(vm, "VERSION.dll", "GetFileVersionInfoSizeA");
+    check_stub(vm, DLL_NAME, "GetFileVersionInfoSizeA");
     let (_, handle_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if handle_ptr != 0 {
         let _ = vm.write_u32(handle_ptr, 0);
     }
-    0
-}
-
-fn get_file_version_info_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "VERSION.dll", "GetFileVersionInfoA");
-    0
-}
-
-fn ver_query_value_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "VERSION.dll", "VerQueryValueA");
     0
 }
 

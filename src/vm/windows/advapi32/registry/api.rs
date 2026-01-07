@@ -1,5 +1,7 @@
 //! Registry API entry points.
 
+use crate::register_func_stub;
+use crate::vm::windows::advapi32::DLL_NAME;
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::windows::{get_registry, get_registry_mut};
 use crate::vm::Vm;
@@ -15,109 +17,29 @@ use super::helpers::{
     resolve_registry_value,
 };
 
+register_func_stub!(DLL_NAME, reg_delete_value_a, ERROR_SUCCESS);
+register_func_stub!(DLL_NAME, reg_delete_value_w, ERROR_SUCCESS);
+register_func_stub!(DLL_NAME, reg_delete_key_a, ERROR_SUCCESS);
+register_func_stub!(DLL_NAME, reg_delete_key_w, ERROR_SUCCESS);
+
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegOpenKeyExA",
-        crate::vm::stdcall_args(5),
-        reg_open_key_ex_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegOpenKeyExW",
-        crate::vm::stdcall_args(5),
-        reg_open_key_ex_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegCreateKeyExA",
-        crate::vm::stdcall_args(9),
-        reg_create_key_ex_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegCreateKeyExW",
-        crate::vm::stdcall_args(9),
-        reg_create_key_ex_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegQueryValueExA",
-        crate::vm::stdcall_args(6),
-        reg_query_value_ex_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegQueryValueExW",
-        crate::vm::stdcall_args(6),
-        reg_query_value_ex_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegSetValueExA",
-        crate::vm::stdcall_args(6),
-        reg_set_value_ex_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegSetValueExW",
-        crate::vm::stdcall_args(6),
-        reg_set_value_ex_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegCloseKey",
-        crate::vm::stdcall_args(1),
-        reg_close_key,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegDeleteValueA",
-        crate::vm::stdcall_args(2),
-        reg_delete_value_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegDeleteValueW",
-        crate::vm::stdcall_args(2),
-        reg_delete_value_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegDeleteKeyA",
-        crate::vm::stdcall_args(2),
-        reg_delete_key_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegDeleteKeyW",
-        crate::vm::stdcall_args(2),
-        reg_delete_key_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegEnumKeyExA",
-        crate::vm::stdcall_args(8),
-        reg_enum_key_ex_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegEnumKeyExW",
-        crate::vm::stdcall_args(8),
-        reg_enum_key_ex_w,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegQueryInfoKeyA",
-        crate::vm::stdcall_args(12),
-        reg_query_info_key_a,
-    );
-    vm.register_import_stdcall(
-        "ADVAPI32.dll",
-        "RegQueryInfoKeyW",
-        crate::vm::stdcall_args(12),
-        reg_query_info_key_w,
-    );
+    vm.register_import_stdcall(DLL_NAME, "RegOpenKeyExA", crate::vm::stdcall_args(5), reg_open_key_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "RegOpenKeyExW", crate::vm::stdcall_args(5), reg_open_key_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "RegCreateKeyExA", crate::vm::stdcall_args(9), reg_create_key_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "RegCreateKeyExW", crate::vm::stdcall_args(9), reg_create_key_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "RegQueryValueExA", crate::vm::stdcall_args(6), reg_query_value_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "RegQueryValueExW", crate::vm::stdcall_args(6), reg_query_value_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "RegSetValueExA", crate::vm::stdcall_args(6), reg_set_value_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "RegSetValueExW", crate::vm::stdcall_args(6), reg_set_value_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "RegCloseKey", crate::vm::stdcall_args(1), reg_close_key);
+    vm.register_import_stdcall(DLL_NAME, "RegDeleteValueA", crate::vm::stdcall_args(2), reg_delete_value_a);
+    vm.register_import_stdcall(DLL_NAME, "RegDeleteValueW", crate::vm::stdcall_args(2), reg_delete_value_w);
+    vm.register_import_stdcall(DLL_NAME, "RegDeleteKeyA", crate::vm::stdcall_args(2), reg_delete_key_a);
+    vm.register_import_stdcall(DLL_NAME, "RegDeleteKeyW", crate::vm::stdcall_args(2), reg_delete_key_w);
+    vm.register_import_stdcall(DLL_NAME, "RegEnumKeyExA", crate::vm::stdcall_args(8), reg_enum_key_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "RegEnumKeyExW", crate::vm::stdcall_args(8), reg_enum_key_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "RegQueryInfoKeyA", crate::vm::stdcall_args(12), reg_query_info_key_a);
+    vm.register_import_stdcall(DLL_NAME, "RegQueryInfoKeyW", crate::vm::stdcall_args(12), reg_query_info_key_w);
 }
 
 fn reg_open_key_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -448,22 +370,6 @@ fn reg_close_key(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return ERROR_SUCCESS;
     }
     vm.registry_close_handle(hkey);
-    ERROR_SUCCESS
-}
-
-fn reg_delete_value_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    ERROR_SUCCESS
-}
-
-fn reg_delete_value_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    ERROR_SUCCESS
-}
-
-fn reg_delete_key_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    ERROR_SUCCESS
-}
-
-fn reg_delete_key_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     ERROR_SUCCESS
 }
 

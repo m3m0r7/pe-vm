@@ -1,20 +1,19 @@
 //! IMAGEHLP.dll stubs.
 
+pub const DLL_NAME: &str = "imagehlp.dll";
+
+use crate::register_func_stub;
 use crate::vm::Vm;
-use crate::vm::windows::check_stub;
+
+register_func_stub!(DLL_NAME, make_sure_directory_path_exists, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "imagehlp.dll",
+        DLL_NAME,
         "MakeSureDirectoryPathExists",
         crate::vm::stdcall_args(1),
         make_sure_directory_path_exists,
     );
-}
-
-fn make_sure_directory_path_exists(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "imagehlp.dll", "MakeSureDirectoryPathExists");
-    1
 }
 
 #[cfg(test)]

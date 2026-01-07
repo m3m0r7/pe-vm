@@ -1,5 +1,7 @@
 //! User32 stub registration.
 
+pub const DLL_NAME: &str = "USER32.dll";
+
 mod message_box;
 mod cursor;
 mod class;

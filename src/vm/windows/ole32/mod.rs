@@ -1,5 +1,7 @@
 //! Minimal OLE32 stubs for COM hosting.
 
+pub const DLL_NAME: &str = "ole32.dll";
+
 use crate::vm::windows::{get_registry, registry::RegistryValue};
 use crate::vm::{Vm, VmError};
 use crate::vm_args;
@@ -13,47 +15,47 @@ const CLASS_E_CLASSNOTAVAILABLE: u32 = 0x8004_0111;
 const CO_E_CLASSSTRING: u32 = 0x8004_010F;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("ole32.dll", "CLSIDFromString", crate::vm::stdcall_args(2), clsid_from_string);
-    vm.register_import_stdcall("ole32.dll", "CLSIDFromProgID", crate::vm::stdcall_args(2), clsid_from_progid);
-    vm.register_import_stdcall("ole32.dll", "StringFromGUID2", crate::vm::stdcall_args(3), string_from_guid2);
-    vm.register_import_stdcall("ole32.dll", "CoCreateInstance", crate::vm::stdcall_args(5), co_create_instance);
-    vm.register_import_stdcall("ole32.dll", "CoGetClassObject", crate::vm::stdcall_args(5), co_get_class_object);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemAlloc", crate::vm::stdcall_args(1), co_task_mem_alloc);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemRealloc", crate::vm::stdcall_args(2), co_task_mem_realloc);
-    vm.register_import_stdcall("ole32.dll", "CoTaskMemFree", crate::vm::stdcall_args(1), co_task_mem_free);
+    vm.register_import_stdcall(DLL_NAME, "CLSIDFromString", crate::vm::stdcall_args(2), clsid_from_string);
+    vm.register_import_stdcall(DLL_NAME, "CLSIDFromProgID", crate::vm::stdcall_args(2), clsid_from_progid);
+    vm.register_import_stdcall(DLL_NAME, "StringFromGUID2", crate::vm::stdcall_args(3), string_from_guid2);
+    vm.register_import_stdcall(DLL_NAME, "CoCreateInstance", crate::vm::stdcall_args(5), co_create_instance);
+    vm.register_import_stdcall(DLL_NAME, "CoGetClassObject", crate::vm::stdcall_args(5), co_get_class_object);
+    vm.register_import_stdcall(DLL_NAME, "CoTaskMemAlloc", crate::vm::stdcall_args(1), co_task_mem_alloc);
+    vm.register_import_stdcall(DLL_NAME, "CoTaskMemRealloc", crate::vm::stdcall_args(2), co_task_mem_realloc);
+    vm.register_import_stdcall(DLL_NAME, "CoTaskMemFree", crate::vm::stdcall_args(1), co_task_mem_free);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "CreateDataAdviseHolder",
         crate::vm::stdcall_args(1),
         create_data_advise_holder,
     );
-    vm.register_import_stdcall("ole32.dll", "ReadClassStm", crate::vm::stdcall_args(2), read_class_stm);
-    vm.register_import_stdcall("ole32.dll", "WriteClassStm", crate::vm::stdcall_args(2), write_class_stm);
-    vm.register_import_stdcall("ole32.dll", "OleInitialize", crate::vm::stdcall_args(1), ole_initialize);
-    vm.register_import_stdcall("ole32.dll", "OleUninitialize", crate::vm::stdcall_args(0), ole_uninitialize);
-    vm.register_import_stdcall("ole32.dll", "OleSaveToStream", crate::vm::stdcall_args(2), ole_save_to_stream);
-    vm.register_import_stdcall("ole32.dll", "OleLockRunning", crate::vm::stdcall_args(3), ole_lock_running);
+    vm.register_import_stdcall(DLL_NAME, "ReadClassStm", crate::vm::stdcall_args(2), read_class_stm);
+    vm.register_import_stdcall(DLL_NAME, "WriteClassStm", crate::vm::stdcall_args(2), write_class_stm);
+    vm.register_import_stdcall(DLL_NAME, "OleInitialize", crate::vm::stdcall_args(1), ole_initialize);
+    vm.register_import_stdcall(DLL_NAME, "OleUninitialize", crate::vm::stdcall_args(0), ole_uninitialize);
+    vm.register_import_stdcall(DLL_NAME, "OleSaveToStream", crate::vm::stdcall_args(2), ole_save_to_stream);
+    vm.register_import_stdcall(DLL_NAME, "OleLockRunning", crate::vm::stdcall_args(3), ole_lock_running);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "CreateOleAdviseHolder",
         crate::vm::stdcall_args(1),
         create_ole_advise_holder,
     );
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "OleRegGetUserType",
         crate::vm::stdcall_args(3),
         ole_reg_get_user_type,
     );
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "OleRegGetMiscStatus",
         crate::vm::stdcall_args(3),
         ole_reg_get_misc_status,
     );
-    vm.register_import_stdcall("ole32.dll", "OleRegEnumVerbs", crate::vm::stdcall_args(2), ole_reg_enum_verbs);
+    vm.register_import_stdcall(DLL_NAME, "OleRegEnumVerbs", crate::vm::stdcall_args(2), ole_reg_enum_verbs);
     vm.register_import_stdcall(
-        "ole32.dll",
+        DLL_NAME,
         "CreateStreamOnHGlobal",
         crate::vm::stdcall_args(3),
         create_stream_on_hglobal,

@@ -1,11 +1,15 @@
 //! Kernel32 thread-related stubs.
 
+use crate::register_func_stub;
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 
+register_func_stub!(DLL_NAME, exit_thread, 0);
+
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "CreateThread", crate::vm::stdcall_args(6), create_thread);
-    vm.register_import_stdcall("KERNEL32.dll", "GetCurrentThreadId", crate::vm::stdcall_args(0), get_current_thread_id);
-    vm.register_import_stdcall("KERNEL32.dll", "ExitThread", crate::vm::stdcall_args(1), exit_thread);
+    vm.register_import_stdcall(DLL_NAME, "CreateThread", crate::vm::stdcall_args(6), create_thread);
+    vm.register_import_stdcall(DLL_NAME, "GetCurrentThreadId", crate::vm::stdcall_args(0), get_current_thread_id);
+    vm.register_import_stdcall(DLL_NAME, "ExitThread", crate::vm::stdcall_args(1), exit_thread);
 }
 
 pub(crate) fn create_thread(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -27,8 +31,4 @@ pub(crate) fn create_thread(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn get_current_thread_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     1
-}
-
-fn exit_thread(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
 }

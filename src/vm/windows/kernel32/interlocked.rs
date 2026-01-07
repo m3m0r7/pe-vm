@@ -1,33 +1,14 @@
 //! Kernel32 interlocked operation stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "InterlockedIncrement",
-        crate::vm::stdcall_args(1),
-        interlocked_increment,
-    );
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "InterlockedDecrement",
-        crate::vm::stdcall_args(1),
-        interlocked_decrement,
-    );
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "InterlockedPushEntrySList",
-        crate::vm::stdcall_args(2),
-        interlocked_push_entry_slist,
-    );
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "InterlockedPopEntrySList",
-        crate::vm::stdcall_args(1),
-        interlocked_pop_entry_slist,
-    );
+    vm.register_import_stdcall(DLL_NAME, "InterlockedIncrement", crate::vm::stdcall_args(1), interlocked_increment);
+    vm.register_import_stdcall(DLL_NAME, "InterlockedDecrement", crate::vm::stdcall_args(1), interlocked_decrement);
+    vm.register_import_stdcall(DLL_NAME, "InterlockedPushEntrySList", crate::vm::stdcall_args(2), interlocked_push_entry_slist);
+    vm.register_import_stdcall(DLL_NAME, "InterlockedPopEntrySList", crate::vm::stdcall_args(1), interlocked_pop_entry_slist);
 }
 
 fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {

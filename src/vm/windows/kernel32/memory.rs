@@ -1,33 +1,29 @@
 //! Kernel32 heap/global memory stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 const HEAP_HANDLE: u32 = 0x1000;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "GetProcessHeap", crate::vm::stdcall_args(0), get_process_heap);
-    vm.register_import_stdcall("KERNEL32.dll", "HeapAlloc", crate::vm::stdcall_args(3), heap_alloc);
-    vm.register_import_stdcall("KERNEL32.dll", "HeapReAlloc", crate::vm::stdcall_args(4), heap_realloc);
-    vm.register_import_stdcall("KERNEL32.dll", "HeapFree", crate::vm::stdcall_args(3), heap_free);
-    vm.register_import_stdcall("KERNEL32.dll", "HeapSize", crate::vm::stdcall_args(3), heap_size);
-    vm.register_import_stdcall("KERNEL32.dll", "HeapDestroy", crate::vm::stdcall_args(1), heap_destroy);
-    vm.register_import_stdcall("KERNEL32.dll", "GlobalAlloc", crate::vm::stdcall_args(2), global_alloc);
-    vm.register_import_stdcall("KERNEL32.dll", "GlobalFree", crate::vm::stdcall_args(1), global_free);
-    vm.register_import_stdcall("KERNEL32.dll", "GlobalLock", crate::vm::stdcall_args(1), global_lock);
-    vm.register_import_stdcall("KERNEL32.dll", "GlobalUnlock", crate::vm::stdcall_args(1), global_unlock);
-    vm.register_import_stdcall("KERNEL32.dll", "GlobalHandle", crate::vm::stdcall_args(1), global_handle);
-    vm.register_import_stdcall("KERNEL32.dll", "LocalFree", crate::vm::stdcall_args(1), local_free);
-    vm.register_import_stdcall("KERNEL32.dll", "VirtualAlloc", crate::vm::stdcall_args(4), virtual_alloc);
-    vm.register_import_stdcall("KERNEL32.dll", "VirtualFree", crate::vm::stdcall_args(3), virtual_free);
-    vm.register_import_stdcall("KERNEL32.dll", "VirtualProtect", crate::vm::stdcall_args(4), virtual_protect);
-    vm.register_import_stdcall("KERNEL32.dll", "VirtualQuery", crate::vm::stdcall_args(3), virtual_query);
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "FlushInstructionCache",
-        crate::vm::stdcall_args(3),
-        flush_instruction_cache,
-    );
+    vm.register_import_stdcall(DLL_NAME, "GetProcessHeap", crate::vm::stdcall_args(0), get_process_heap);
+    vm.register_import_stdcall(DLL_NAME, "HeapAlloc", crate::vm::stdcall_args(3), heap_alloc);
+    vm.register_import_stdcall(DLL_NAME, "HeapReAlloc", crate::vm::stdcall_args(4), heap_realloc);
+    vm.register_import_stdcall(DLL_NAME, "HeapFree", crate::vm::stdcall_args(3), heap_free);
+    vm.register_import_stdcall(DLL_NAME, "HeapSize", crate::vm::stdcall_args(3), heap_size);
+    vm.register_import_stdcall(DLL_NAME, "HeapDestroy", crate::vm::stdcall_args(1), heap_destroy);
+    vm.register_import_stdcall(DLL_NAME, "GlobalAlloc", crate::vm::stdcall_args(2), global_alloc);
+    vm.register_import_stdcall(DLL_NAME, "GlobalFree", crate::vm::stdcall_args(1), global_free);
+    vm.register_import_stdcall(DLL_NAME, "GlobalLock", crate::vm::stdcall_args(1), global_lock);
+    vm.register_import_stdcall(DLL_NAME, "GlobalUnlock", crate::vm::stdcall_args(1), global_unlock);
+    vm.register_import_stdcall(DLL_NAME, "GlobalHandle", crate::vm::stdcall_args(1), global_handle);
+    vm.register_import_stdcall(DLL_NAME, "LocalFree", crate::vm::stdcall_args(1), local_free);
+    vm.register_import_stdcall(DLL_NAME, "VirtualAlloc", crate::vm::stdcall_args(4), virtual_alloc);
+    vm.register_import_stdcall(DLL_NAME, "VirtualFree", crate::vm::stdcall_args(3), virtual_free);
+    vm.register_import_stdcall(DLL_NAME, "VirtualProtect", crate::vm::stdcall_args(4), virtual_protect);
+    vm.register_import_stdcall(DLL_NAME, "VirtualQuery", crate::vm::stdcall_args(3), virtual_query);
+    vm.register_import_stdcall(DLL_NAME, "FlushInstructionCache", crate::vm::stdcall_args(3), flush_instruction_cache);
 }
 
 fn get_process_heap(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

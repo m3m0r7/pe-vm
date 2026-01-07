@@ -1,14 +1,10 @@
 //! NTDLL SLIST stubs.
 
+use crate::vm::windows::ntdll::DLL_NAME;
 use crate::vm::Vm;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "ntdll.dll",
-        "RtlInitializeSListHead",
-        crate::vm::stdcall_args(1),
-        rtl_initialize_slist_head,
-    );
+    vm.register_import_stdcall(DLL_NAME, "RtlInitializeSListHead", crate::vm::stdcall_args(1), rtl_initialize_slist_head);
 }
 
 fn rtl_initialize_slist_head(vm: &mut Vm, stack_ptr: u32) -> u32 {

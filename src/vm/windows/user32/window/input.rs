@@ -1,51 +1,25 @@
+use crate::register_func_stub;
+use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::write_point;
 
+register_func_stub!(DLL_NAME, set_cursor, 0);
+register_func_stub!(DLL_NAME, set_capture, 0);
+register_func_stub!(DLL_NAME, release_capture, 1);
+register_func_stub!(DLL_NAME, get_key_state, 0);
+register_func_stub!(DLL_NAME, get_focus, 0);
+register_func_stub!(DLL_NAME, set_focus, 0);
+
 pub(super) fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetCursorPos",
-        crate::vm::stdcall_args(1),
-        get_cursor_pos,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetCursor",
-        crate::vm::stdcall_args(1),
-        set_cursor,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetCapture",
-        crate::vm::stdcall_args(1),
-        set_capture,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "ReleaseCapture",
-        crate::vm::stdcall_args(0),
-        release_capture,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetKeyState",
-        crate::vm::stdcall_args(1),
-        get_key_state,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "GetFocus",
-        crate::vm::stdcall_args(0),
-        get_focus,
-    );
-    vm.register_import_stdcall(
-        "USER32.dll",
-        "SetFocus",
-        crate::vm::stdcall_args(1),
-        set_focus,
-    );
+    vm.register_import_stdcall(DLL_NAME, "GetCursorPos", crate::vm::stdcall_args(1), get_cursor_pos);
+    vm.register_import_stdcall(DLL_NAME, "SetCursor", crate::vm::stdcall_args(1), set_cursor);
+    vm.register_import_stdcall(DLL_NAME, "SetCapture", crate::vm::stdcall_args(1), set_capture);
+    vm.register_import_stdcall(DLL_NAME, "ReleaseCapture", crate::vm::stdcall_args(0), release_capture);
+    vm.register_import_stdcall(DLL_NAME, "GetKeyState", crate::vm::stdcall_args(1), get_key_state);
+    vm.register_import_stdcall(DLL_NAME, "GetFocus", crate::vm::stdcall_args(0), get_focus);
+    vm.register_import_stdcall(DLL_NAME, "SetFocus", crate::vm::stdcall_args(1), set_focus);
 }
 
 pub(super) fn get_cursor_pos(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -54,28 +28,4 @@ pub(super) fn get_cursor_pos(vm: &mut Vm, stack_ptr: u32) -> u32 {
         write_point(vm, point_ptr, 0, 0);
     }
     1
-}
-
-pub(super) fn set_cursor(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn set_capture(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn release_capture(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    1
-}
-
-pub(super) fn get_key_state(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn get_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-pub(super) fn set_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
 }

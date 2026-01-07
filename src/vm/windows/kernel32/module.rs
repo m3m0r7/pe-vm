@@ -1,33 +1,29 @@
 //! Kernel32 module/loader stubs.
 
 use crate::pe::{ResourceData, ResourceId, ResourceNode};
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "GetModuleHandleA", crate::vm::stdcall_args(1), get_module_handle_a);
-    vm.register_import_stdcall("KERNEL32.dll", "GetModuleHandleW", crate::vm::stdcall_args(1), get_module_handle_w);
-    vm.register_import_stdcall("KERNEL32.dll", "GetModuleHandleExW", crate::vm::stdcall_args(3), get_module_handle_ex_w);
-    vm.register_import_stdcall("KERNEL32.dll", "GetModuleFileNameA", crate::vm::stdcall_args(3), get_module_file_name_a);
-    vm.register_import_stdcall("KERNEL32.dll", "GetModuleFileNameW", crate::vm::stdcall_args(3), get_module_file_name_w);
-    vm.register_import_stdcall("KERNEL32.dll", "LoadLibraryA", crate::vm::stdcall_args(1), load_library_a);
-    vm.register_import_stdcall("KERNEL32.dll", "LoadLibraryExA", crate::vm::stdcall_args(3), load_library_ex_a);
-    vm.register_import_stdcall("KERNEL32.dll", "LoadLibraryExW", crate::vm::stdcall_args(3), load_library_ex_w);
-    vm.register_import_stdcall("KERNEL32.dll", "FreeLibrary", crate::vm::stdcall_args(1), free_library);
-    vm.register_import_stdcall("KERNEL32.dll", "GetProcAddress", crate::vm::stdcall_args(2), get_proc_address);
-    vm.register_import_stdcall(
-        "KERNEL32.dll",
-        "DisableThreadLibraryCalls",
-        crate::vm::stdcall_args(1),
-        disable_thread_library_calls,
-    );
-    vm.register_import_stdcall("KERNEL32.dll", "GetCommandLineA", crate::vm::stdcall_args(0), get_command_line_a);
-    vm.register_import_stdcall("KERNEL32.dll", "FindResourceA", crate::vm::stdcall_args(3), find_resource_a);
-    vm.register_import_stdcall("KERNEL32.dll", "FindResourceW", crate::vm::stdcall_args(3), find_resource_w);
-    vm.register_import_stdcall("KERNEL32.dll", "FindResourceExW", crate::vm::stdcall_args(4), find_resource_ex_w);
-    vm.register_import_stdcall("KERNEL32.dll", "LoadResource", crate::vm::stdcall_args(2), load_resource);
-    vm.register_import_stdcall("KERNEL32.dll", "LockResource", crate::vm::stdcall_args(1), lock_resource);
-    vm.register_import_stdcall("KERNEL32.dll", "SizeofResource", crate::vm::stdcall_args(2), sizeof_resource);
+    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleA", crate::vm::stdcall_args(1), get_module_handle_a);
+    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleW", crate::vm::stdcall_args(1), get_module_handle_w);
+    vm.register_import_stdcall(DLL_NAME, "GetModuleHandleExW", crate::vm::stdcall_args(3), get_module_handle_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "GetModuleFileNameA", crate::vm::stdcall_args(3), get_module_file_name_a);
+    vm.register_import_stdcall(DLL_NAME, "GetModuleFileNameW", crate::vm::stdcall_args(3), get_module_file_name_w);
+    vm.register_import_stdcall(DLL_NAME, "LoadLibraryA", crate::vm::stdcall_args(1), load_library_a);
+    vm.register_import_stdcall(DLL_NAME, "LoadLibraryExA", crate::vm::stdcall_args(3), load_library_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "LoadLibraryExW", crate::vm::stdcall_args(3), load_library_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "FreeLibrary", crate::vm::stdcall_args(1), free_library);
+    vm.register_import_stdcall(DLL_NAME, "GetProcAddress", crate::vm::stdcall_args(2), get_proc_address);
+    vm.register_import_stdcall(DLL_NAME, "DisableThreadLibraryCalls", crate::vm::stdcall_args(1), disable_thread_library_calls);
+    vm.register_import_stdcall(DLL_NAME, "GetCommandLineA", crate::vm::stdcall_args(0), get_command_line_a);
+    vm.register_import_stdcall(DLL_NAME, "FindResourceA", crate::vm::stdcall_args(3), find_resource_a);
+    vm.register_import_stdcall(DLL_NAME, "FindResourceW", crate::vm::stdcall_args(3), find_resource_w);
+    vm.register_import_stdcall(DLL_NAME, "FindResourceExW", crate::vm::stdcall_args(4), find_resource_ex_w);
+    vm.register_import_stdcall(DLL_NAME, "LoadResource", crate::vm::stdcall_args(2), load_resource);
+    vm.register_import_stdcall(DLL_NAME, "LockResource", crate::vm::stdcall_args(1), lock_resource);
+    vm.register_import_stdcall(DLL_NAME, "SizeofResource", crate::vm::stdcall_args(2), sizeof_resource);
 }
 
 fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

@@ -375,6 +375,34 @@ macro_rules! vm_args_wstr_delim {
     }};
 }
 
+/// Macro to generate stub functions for not-yet-implemented Windows API functions.
+///
+/// # Usage
+///
+/// ```ignore
+/// register_func_stub!(DLL_NAME, function_name, return_value);
+/// ```
+///
+/// This generates a function that calls `check_stub()` and returns the specified value.
+/// The function name is used as-is for the Rust function and stringified for logging.
+///
+/// # Examples
+///
+/// ```ignore
+/// use crate::vm::windows::kernel32::DLL_NAME;
+/// register_func_stub!(DLL_NAME, create_event_w, 1);  // Returns 1 (success)
+/// register_func_stub!(DLL_NAME, get_version, 0);     // Returns 0
+/// ```
+#[macro_export]
+macro_rules! register_func_stub {
+    ($dll:expr, $name:ident, $ret:expr) => {
+        fn $name(vm: &mut $crate::vm::Vm, _sp: u32) -> u32 {
+            $crate::vm::windows::check_stub(vm, $dll, stringify!($name));
+            $ret
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

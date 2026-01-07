@@ -1,13 +1,14 @@
 //! Kernel32 TLS stubs.
 
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "TlsAlloc", crate::vm::stdcall_args(0), tls_alloc);
-    vm.register_import_stdcall("KERNEL32.dll", "TlsGetValue", crate::vm::stdcall_args(1), tls_get_value);
-    vm.register_import_stdcall("KERNEL32.dll", "TlsSetValue", crate::vm::stdcall_args(2), tls_set_value);
-    vm.register_import_stdcall("KERNEL32.dll", "TlsFree", crate::vm::stdcall_args(1), tls_free);
+    vm.register_import_stdcall(DLL_NAME, "TlsAlloc", crate::vm::stdcall_args(0), tls_alloc);
+    vm.register_import_stdcall(DLL_NAME, "TlsGetValue", crate::vm::stdcall_args(1), tls_get_value);
+    vm.register_import_stdcall(DLL_NAME, "TlsSetValue", crate::vm::stdcall_args(2), tls_set_value);
+    vm.register_import_stdcall(DLL_NAME, "TlsFree", crate::vm::stdcall_args(1), tls_free);
 }
 
 fn tls_alloc(vm: &mut Vm, _stack_ptr: u32) -> u32 {

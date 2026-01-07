@@ -1,18 +1,19 @@
 //! Kernel32 console and stdio stubs.
 
-use crate::vm::Vm;
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::windows::macros::{read_str_len, read_wstr_len};
+use crate::vm::Vm;
 use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "GetConsoleCP", crate::vm::stdcall_args(0), get_console_cp);
-    vm.register_import_stdcall("KERNEL32.dll", "GetConsoleMode", crate::vm::stdcall_args(2), get_console_mode);
-    vm.register_import_stdcall("KERNEL32.dll", "GetStdHandle", crate::vm::stdcall_args(1), get_std_handle);
-    vm.register_import_stdcall("KERNEL32.dll", "SetStdHandle", crate::vm::stdcall_args(2), set_std_handle);
-    vm.register_import_stdcall("KERNEL32.dll", "ReadConsoleW", crate::vm::stdcall_args(5), read_console_w);
-    vm.register_import_stdcall("KERNEL32.dll", "ReadFile", crate::vm::stdcall_args(5), read_file);
-    vm.register_import_stdcall("KERNEL32.dll", "WriteConsoleW", crate::vm::stdcall_args(5), write_console_w);
-    vm.register_import_stdcall("KERNEL32.dll", "WriteFile", crate::vm::stdcall_args(5), write_file);
+    vm.register_import_stdcall(DLL_NAME, "GetConsoleCP", crate::vm::stdcall_args(0), get_console_cp);
+    vm.register_import_stdcall(DLL_NAME, "GetConsoleMode", crate::vm::stdcall_args(2), get_console_mode);
+    vm.register_import_stdcall(DLL_NAME, "GetStdHandle", crate::vm::stdcall_args(1), get_std_handle);
+    vm.register_import_stdcall(DLL_NAME, "SetStdHandle", crate::vm::stdcall_args(2), set_std_handle);
+    vm.register_import_stdcall(DLL_NAME, "ReadConsoleW", crate::vm::stdcall_args(5), read_console_w);
+    vm.register_import_stdcall(DLL_NAME, "ReadFile", crate::vm::stdcall_args(5), read_file);
+    vm.register_import_stdcall(DLL_NAME, "WriteConsoleW", crate::vm::stdcall_args(5), write_console_w);
+    vm.register_import_stdcall(DLL_NAME, "WriteFile", crate::vm::stdcall_args(5), write_file);
 }
 
 fn get_console_cp(_vm: &mut Vm, _stack_ptr: u32) -> u32 {

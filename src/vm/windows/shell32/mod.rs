@@ -1,60 +1,27 @@
 //! SHELL32 stubs for shell execution helpers.
 
+pub const DLL_NAME: &str = "SHELL32.dll";
+
+use crate::register_func_stub;
 use crate::vm::Vm;
-use crate::vm::windows::check_stub;
 use crate::vm_args;
+
+register_func_stub!(DLL_NAME, shell_execute_a, 33);
+register_func_stub!(DLL_NAME, shell_execute_ex_a, 1);
+register_func_stub!(DLL_NAME, sh_browse_for_folder_a, 0);
+register_func_stub!(DLL_NAME, sh_get_file_info_a, 0);
 
 // Register shell entry points that may be imported by GUI DLLs.
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall(
-        "SHELL32.dll",
-        "ShellExecuteA",
-        crate::vm::stdcall_args(6),
-        shell_execute_a,
-    );
-    vm.register_import_stdcall(
-        "SHELL32.dll",
-        "ShellExecuteExA",
-        crate::vm::stdcall_args(1),
-        shell_execute_ex_a,
-    );
-    vm.register_import_stdcall(
-        "SHELL32.dll",
-        "SHBrowseForFolderA",
-        crate::vm::stdcall_args(1),
-        sh_browse_for_folder_a,
-    );
-    vm.register_import_stdcall(
-        "SHELL32.dll",
-        "SHGetPathFromIDListA",
-        crate::vm::stdcall_args(2),
-        sh_get_path_from_id_list_a,
-    );
-    vm.register_import_stdcall(
-        "SHELL32.dll",
-        "SHGetFileInfoA",
-        crate::vm::stdcall_args(5),
-        sh_get_file_info_a,
-    );
-}
-
-fn shell_execute_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "SHELL32.dll", "ShellExecuteA");
-    33
-}
-
-fn shell_execute_ex_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "SHELL32.dll", "ShellExecuteExA");
-    1
-}
-
-fn sh_browse_for_folder_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "SHELL32.dll", "SHBrowseForFolderA");
-    0
+    vm.register_import_stdcall(DLL_NAME, "ShellExecuteA", crate::vm::stdcall_args(6), shell_execute_a);
+    vm.register_import_stdcall(DLL_NAME, "ShellExecuteExA", crate::vm::stdcall_args(1), shell_execute_ex_a);
+    vm.register_import_stdcall(DLL_NAME, "SHBrowseForFolderA", crate::vm::stdcall_args(1), sh_browse_for_folder_a);
+    vm.register_import_stdcall(DLL_NAME, "SHGetPathFromIDListA", crate::vm::stdcall_args(2), sh_get_path_from_id_list_a);
+    vm.register_import_stdcall(DLL_NAME, "SHGetFileInfoA", crate::vm::stdcall_args(5), sh_get_file_info_a);
 }
 
 fn sh_get_path_from_id_list_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    check_stub(vm, "SHELL32.dll", "SHGetPathFromIDListA");
+    crate::vm::windows::check_stub(vm, DLL_NAME, "SHGetPathFromIDListA");
     let (_, buffer) = vm_args!(vm, stack_ptr; u32, u32);
     if buffer != 0 {
         let _ = vm.write_bytes(buffer, b"C:\\\0");
@@ -62,11 +29,6 @@ fn sh_get_path_from_id_list_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     } else {
         0
     }
-}
-
-fn sh_get_file_info_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "SHELL32.dll", "SHGetFileInfoA");
-    0
 }
 
 #[cfg(test)]

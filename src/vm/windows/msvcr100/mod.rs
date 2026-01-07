@@ -3,6 +3,8 @@
 //! This module provides stub implementations for the Microsoft Visual C++ 2010 Runtime Library.
 //! Functions are organized into categories for maintainability.
 
+pub const DLL_NAME: &str = "MSVCR100.dll";
+
 mod concurrency;
 mod crt;
 mod exception;

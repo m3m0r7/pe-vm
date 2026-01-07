@@ -1,28 +1,32 @@
 //! Kernel32 process-related stubs.
 
+use crate::register_func_stub;
+use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
+register_func_stub!(DLL_NAME, is_debugger_present, 0);
+register_func_stub!(DLL_NAME, is_processor_feature_present, 0);
+register_func_stub!(DLL_NAME, exit_process, 0);
+register_func_stub!(DLL_NAME, create_process_a, 0);
+register_func_stub!(DLL_NAME, output_debug_string_w, 0);
+
 pub fn register(vm: &mut Vm) {
-    vm.register_import_stdcall("KERNEL32.dll", "IsDebuggerPresent", crate::vm::stdcall_args(0), is_debugger_present);
-    vm.register_import_stdcall("KERNEL32.dll", "GetCurrentProcessId", crate::vm::stdcall_args(0), get_current_process_id);
-    vm.register_import_stdcall("KERNEL32.dll", "GetStartupInfoW", crate::vm::stdcall_args(1), get_startup_info_w);
+    vm.register_import_stdcall(DLL_NAME, "IsDebuggerPresent", crate::vm::stdcall_args(0), is_debugger_present);
+    vm.register_import_stdcall(DLL_NAME, "GetCurrentProcessId", crate::vm::stdcall_args(0), get_current_process_id);
+    vm.register_import_stdcall(DLL_NAME, "GetStartupInfoW", crate::vm::stdcall_args(1), get_startup_info_w);
     vm.register_import_stdcall(
-        "KERNEL32.dll",
+        DLL_NAME,
         "IsProcessorFeaturePresent",
         crate::vm::stdcall_args(1),
         is_processor_feature_present,
     );
-    vm.register_import_stdcall("KERNEL32.dll", "TerminateProcess", crate::vm::stdcall_args(2), terminate_process);
-    vm.register_import_stdcall("KERNEL32.dll", "GetCurrentProcess", crate::vm::stdcall_args(0), get_current_process);
-    vm.register_import_stdcall("KERNEL32.dll", "GetSystemInfo", crate::vm::stdcall_args(1), get_system_info);
-    vm.register_import_stdcall("KERNEL32.dll", "ExitProcess", crate::vm::stdcall_args(1), exit_process);
-    vm.register_import_stdcall("KERNEL32.dll", "CreateProcessA", crate::vm::stdcall_args(10), create_process_a);
-    vm.register_import_stdcall("KERNEL32.dll", "OutputDebugStringW", crate::vm::stdcall_args(1), output_debug_string_w);
-}
-
-fn is_debugger_present(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+    vm.register_import_stdcall(DLL_NAME, "TerminateProcess", crate::vm::stdcall_args(2), terminate_process);
+    vm.register_import_stdcall(DLL_NAME, "GetCurrentProcess", crate::vm::stdcall_args(0), get_current_process);
+    vm.register_import_stdcall(DLL_NAME, "GetSystemInfo", crate::vm::stdcall_args(1), get_system_info);
+    vm.register_import_stdcall(DLL_NAME, "ExitProcess", crate::vm::stdcall_args(1), exit_process);
+    vm.register_import_stdcall(DLL_NAME, "CreateProcessA", crate::vm::stdcall_args(10), create_process_a);
+    vm.register_import_stdcall(DLL_NAME, "OutputDebugStringW", crate::vm::stdcall_args(1), output_debug_string_w);
 }
 
 fn get_current_process_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -35,10 +39,6 @@ fn get_startup_info_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
         let _ = vm.write_bytes(info, &[0u8; 68]);
         let _ = vm.write_u32(info, 68);
     }
-    0
-}
-
-fn is_processor_feature_present(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     0
 }
 
@@ -76,14 +76,3 @@ fn get_system_info(vm: &mut Vm, stack_ptr: u32) -> u32 {
     0
 }
 
-fn exit_process(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-fn create_process_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}
-
-fn output_debug_string_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
-}

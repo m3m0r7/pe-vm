@@ -1,21 +1,20 @@
 //! IMM32 stubs for input method APIs.
 
+pub const DLL_NAME: &str = "IMM32.dll";
+
+use crate::register_func_stub;
 use crate::vm::Vm;
-use crate::vm::windows::check_stub;
+
+register_func_stub!(DLL_NAME, imm_associate_context, 0);
 
 // Register minimal IMM32 entry points used by GUI DLLs.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
-        "IMM32.dll",
+        DLL_NAME,
         "ImmAssociateContext",
         crate::vm::stdcall_args(2),
         imm_associate_context,
     );
-}
-
-fn imm_associate_context(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    check_stub(vm, "IMM32.dll", "ImmAssociateContext");
-    0
 }
 
 #[cfg(test)]

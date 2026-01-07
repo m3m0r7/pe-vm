@@ -1,5 +1,7 @@
 //! Kernel32 stub registration.
 
+pub const DLL_NAME: &str = "KERNEL32.dll";
+
 mod exceptions;
 mod error;
 mod env;
