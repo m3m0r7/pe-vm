@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::DUMMY_HDC;
 
@@ -50,7 +51,7 @@ pub(super) fn release_dc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn begin_paint(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ps_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, ps_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if ps_ptr != 0 {
         let _ = vm.write_bytes(ps_ptr, &[0u8; 64]);
     }

@@ -2,6 +2,7 @@
 
 use crate::pe::{ResourceData, ResourceId, ResourceNode};
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("KERNEL32.dll", "GetModuleHandleA", crate::vm::stdcall_args(1), get_module_handle_a);
@@ -30,7 +31,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [name] = vm_args!(vm, stack_ptr; u32);
     if name == 0 {
         return vm.base();
     }
@@ -38,7 +39,7 @@ fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_module_handle_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [name] = vm_args!(vm, stack_ptr; u32);
     if name == 0 {
         return vm.base();
     }
@@ -46,7 +47,7 @@ fn get_module_handle_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_module_handle_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out != 0 {
         let _ = vm.write_u32(out, vm.base());
     }
@@ -54,8 +55,8 @@ fn get_module_handle_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_module_file_name_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_, buffer, size) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let size = size as usize;
     if buffer == 0 || size == 0 {
         return 0;
     }
@@ -75,8 +76,8 @@ fn get_module_file_name_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_module_file_name_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_, buffer, size) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let size = size as usize;
     if buffer == 0 || size == 0 {
         return 0;
     }
@@ -114,8 +115,7 @@ fn free_library(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_proc_address(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let module = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let name_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (module, name_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     let name = if name_ptr & 0xFFFF_0000 == 0 {
         format!("#{}", name_ptr & 0xFFFF)
     } else {
@@ -139,33 +139,32 @@ fn get_command_line_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn find_resource_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let r#type = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, name, r#type) = vm_args!(vm, stack_ptr; u32, u32, u32);
     find_resource(vm, name, r#type, false)
 }
 
 fn find_resource_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let r#type = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, name, r#type) = vm_args!(vm, stack_ptr; u32, u32, u32);
     find_resource(vm, name, r#type, true)
 }
 
 fn find_resource_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let r#type = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let name = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, r#type, name) = vm_args!(vm, stack_ptr; u32, u32, u32);
     find_resource(vm, name, r#type, true)
 }
 
 fn load_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 8).unwrap_or(0)
+    let (_, handle) = vm_args!(vm, stack_ptr; u32, u32);
+    handle
 }
 
 fn lock_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 4).unwrap_or(0)
+    let [handle] = vm_args!(vm, stack_ptr; u32);
+    handle
 }
 
 fn sizeof_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, handle) = vm_args!(vm, stack_ptr; u32, u32);
     vm.resource_sizes.get(&handle).copied().unwrap_or(0)
 }
 

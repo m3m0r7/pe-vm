@@ -2,6 +2,7 @@
 
 use crate::vm::Vm;
 use crate::vm::windows::check_stub;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -39,8 +40,7 @@ fn wts_open_server_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 // BOOL WTSEnumerateSessionsA(HANDLE, DWORD, DWORD, PWTS_SESSION_INFO*, DWORD*)
 fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     check_stub(vm, "WTSAPI32.dll", "WTSEnumerateSessionsA");
-    let sessions_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let count_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
+    let (_, _, _, sessions_ptr, count_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if sessions_ptr != 0 {
         let _ = vm.write_u32(sessions_ptr, 0);
     }

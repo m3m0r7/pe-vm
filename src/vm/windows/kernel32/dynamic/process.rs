@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_any_stdcall(
@@ -33,8 +34,7 @@ fn get_current_processor_number(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_logical_processor_information(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let len_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (buffer_ptr, len_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if len_ptr != 0 {
         let _ = vm.write_u32(len_ptr, 0);
     }

@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 use crate::vm::windows::guid::format_guid;
 
 use super::super::constants::{
@@ -9,9 +10,7 @@ use super::super::typelib;
 use super::object::build_typeinfo_object;
 
 pub(super) fn typelib_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let iid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -33,7 +32,7 @@ pub(super) fn typelib_release(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn typelib_get_typeinfo_count(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [this] = vm_args!(vm, stack_ptr; u32);
     let lib_id = vm.read_u32(this.wrapping_add(4)).unwrap_or(0);
     let Some(lib) = typelib::get_typelib(lib_id) else {
         return 0;
@@ -42,9 +41,8 @@ pub(super) fn typelib_get_typeinfo_count(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn typelib_get_typeinfo(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let index = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, index, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let index = index as usize;
     if out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -78,9 +76,8 @@ pub(super) fn typelib_get_typeinfo(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn typelib_get_typeinfo_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let index = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, index, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let index = index as usize;
     if out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -99,9 +96,7 @@ pub(super) fn typelib_get_typeinfo_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn typelib_get_typeinfo_of_guid(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let guid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, guid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_INVALIDARG;
     }

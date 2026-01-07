@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::write_point;
 
@@ -48,7 +49,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 pub(super) fn get_cursor_pos(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let point_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [point_ptr] = vm_args!(vm, stack_ptr; u32);
     if point_ptr != 0 {
         write_point(vm, point_ptr, 0, 0);
     }

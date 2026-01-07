@@ -3,6 +3,7 @@
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::windows::{get_registry, get_registry_mut};
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::{
     ERROR_FILE_NOT_FOUND, ERROR_MORE_DATA, ERROR_NO_MORE_ITEMS, ERROR_SUCCESS, REG_BINARY,
@@ -128,9 +129,7 @@ fn reg_open_key_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_open_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let subkey_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
+    let (hkey, subkey_ptr, _, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if out_ptr == 0 {
         return ERROR_FILE_NOT_FOUND;
     }
@@ -181,9 +180,7 @@ fn reg_create_key_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_create_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let subkey_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 28).unwrap_or(0);
+    let (hkey, subkey_ptr, _, _, _, _, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
     if out_ptr == 0 {
         return ERROR_FILE_NOT_FOUND;
     }
@@ -217,11 +214,7 @@ fn reg_query_value_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let value_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let type_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let data_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let size_ptr = vm.read_u32(stack_ptr + 24).unwrap_or(0);
+    let (hkey, value_ptr, _, type_ptr, data_ptr, size_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
 
     let prefix = match registry_prefix(vm, hkey) {
         Ok(value) => value,
@@ -325,12 +318,8 @@ fn reg_set_value_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_set_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let value_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let _reserved = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let value_type = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let data_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let data_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (hkey, value_ptr, _reserved, value_type, data_ptr, data_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let data_len = data_len as usize;
 
     if data_ptr == 0 {
         return ERROR_SUCCESS;
@@ -454,7 +443,7 @@ fn decode_wide_units(bytes: &[u8]) -> Vec<u16> {
 }
 
 fn reg_close_key(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [hkey] = vm_args!(vm, stack_ptr; u32);
     if is_root_hive(hkey) {
         return ERROR_SUCCESS;
     }
@@ -495,13 +484,8 @@ fn reg_query_info_key_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let index = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let name_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let name_len_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let class_ptr = vm.read_u32(stack_ptr + 24).unwrap_or(0);
-    let class_len_ptr = vm.read_u32(stack_ptr + 28).unwrap_or(0);
-    let filetime_ptr = vm.read_u32(stack_ptr + 32).unwrap_or(0);
+    let (hkey, index, name_ptr, name_len_ptr, _, class_ptr, class_len_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32);
+    let index = index as usize;
     if name_len_ptr == 0 {
         return ERROR_FILE_NOT_FOUND;
     }
@@ -569,17 +553,7 @@ fn reg_enum_key_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
 }
 
 fn reg_query_info_key(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
-    let hkey = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let class_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let class_len_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let subkeys_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let max_subkey_ptr = vm.read_u32(stack_ptr + 24).unwrap_or(0);
-    let max_class_ptr = vm.read_u32(stack_ptr + 28).unwrap_or(0);
-    let values_ptr = vm.read_u32(stack_ptr + 32).unwrap_or(0);
-    let max_value_ptr = vm.read_u32(stack_ptr + 36).unwrap_or(0);
-    let max_value_len_ptr = vm.read_u32(stack_ptr + 40).unwrap_or(0);
-    let security_ptr = vm.read_u32(stack_ptr + 44).unwrap_or(0);
-    let filetime_ptr = vm.read_u32(stack_ptr + 48).unwrap_or(0);
+    let (hkey, class_ptr, class_len_ptr, _, subkeys_ptr, max_subkey_ptr, max_class_ptr, values_ptr, max_value_ptr, max_value_len_ptr, security_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
 
     let prefix = match registry_prefix(vm, hkey) {
         Ok(value) => value,

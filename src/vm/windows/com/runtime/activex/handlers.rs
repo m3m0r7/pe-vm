@@ -2,6 +2,7 @@
 
 use crate::vm::{Vm, VmError};
 use crate::vm::windows::guid::parse_guid;
+use crate::vm_args;
 
 use super::constants::{
     E_NOINTERFACE, E_NOTIMPL, IID_IOLECLIENTSITE, IID_IOLEINPLACEFRAME, IID_IOLEINPLACESITE,
@@ -10,9 +11,7 @@ use super::constants::{
 use super::super::IID_IUNKNOWN;
 
 pub(super) fn site_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let iid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -40,9 +39,7 @@ pub(super) fn site_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn in_place_site_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let iid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -70,9 +67,7 @@ pub(super) fn in_place_site_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 
 }
 
 pub(super) fn in_place_ui_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let iid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -88,9 +83,7 @@ pub(super) fn in_place_ui_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn in_place_frame_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let iid_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (this, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -123,7 +116,7 @@ pub(super) fn site_get_moniker(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn site_get_container(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -143,7 +136,7 @@ pub(super) fn site_request_new_object_layout(_vm: &mut Vm, _stack_ptr: u32) -> u
 }
 
 pub(super) fn ole_get_window(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -155,12 +148,7 @@ pub(super) fn ole_context_sensitive_help(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn in_place_site_get_window_context(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let this = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let frame_out = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let doc_out = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let pos_rect = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let clip_rect = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let frame_info = vm.read_u32(stack_ptr + 24).unwrap_or(0);
+    let (this, frame_out, doc_out, pos_rect, clip_rect, frame_info) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
 
     let in_place_frame = read_ptr(vm, this, 8);
     let in_place_ui = read_ptr(vm, this, 12);
@@ -177,7 +165,7 @@ pub(super) fn in_place_site_get_window_context(vm: &mut Vm, stack_ptr: u32) -> u
 }
 
 pub(super) fn ole_get_border(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     let _ = write_rect(vm, out_ptr);
     S_OK
 }

@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::{compare_strings, read_bytes, read_string_arg};
 
@@ -12,7 +13,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn lstrlen_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return 0;
     }
@@ -20,8 +21,7 @@ fn lstrlen_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dest = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (dest, src) = vm_args!(vm, stack_ptr; u32, u32);
     if dest == 0 || src == 0 {
         return dest;
     }
@@ -38,8 +38,7 @@ fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lstrcat_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dest = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (dest, src) = vm_args!(vm, stack_ptr; u32, u32);
     if dest == 0 || src == 0 {
         return dest;
     }
@@ -78,9 +77,7 @@ fn lstrcmpi_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lstrcpyn_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dest = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let count = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (dest, src, count) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if dest == 0 || src == 0 || count == 0 {
         return dest;
     }

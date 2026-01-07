@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use encoding_rs::{SHIFT_JIS, UTF_8, WINDOWS_1252};
 
@@ -21,12 +22,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn multi_byte_to_wide_char(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let code_page = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let _flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let src_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let dst_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -54,14 +50,7 @@ fn multi_byte_to_wide_char(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn wide_char_to_multi_byte(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let code_page = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let _flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let src_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let dst_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
-    let _def_char = vm.read_u32(stack_ptr + 28).unwrap_or(0);
-    let _used_default = vm.read_u32(stack_ptr + 32).unwrap_or(0);
+    let (code_page, _flags, src_ptr, src_len, dst_ptr, dst_len, _def_char, _used_default) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize, u32, u32);
     if src_ptr == 0 {
         return 0;
     }

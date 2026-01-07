@@ -1,6 +1,7 @@
 //! Path-related SHLWAPI stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("SHLWAPI.dll", "PathFileExistsA", crate::vm::stdcall_args(1), path_file_exists_a);
@@ -8,7 +9,7 @@ pub fn register(vm: &mut Vm) {
 
 // BOOL PathFileExistsA(LPCSTR pszPath)
 fn path_file_exists_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return 0;
     }

@@ -1,4 +1,5 @@
 use crate::vm::{Os, Vm};
+use crate::vm_args;
 
 /// Windows code page identifiers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,8 +109,7 @@ fn is_valid_code_page(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_cp_info(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let code_page = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let info_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (code_page, info_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if info_ptr == 0 {
         return 0;
     }

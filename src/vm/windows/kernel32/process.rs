@@ -1,6 +1,7 @@
 //! Kernel32 process-related stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("KERNEL32.dll", "IsDebuggerPresent", crate::vm::stdcall_args(0), is_debugger_present);
@@ -29,7 +30,7 @@ fn get_current_process_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_startup_info_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [info] = vm_args!(vm, stack_ptr; u32);
     if info != 0 {
         let _ = vm.write_bytes(info, &[0u8; 68]);
         let _ = vm.write_u32(info, 68);
@@ -57,7 +58,7 @@ fn get_current_process(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_system_info(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [info_ptr] = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }

@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::DUMMY_HWND;
 use super::helpers::{write_c_string, write_rect};
@@ -147,7 +148,7 @@ pub(super) fn set_window_pos(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_window_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let rect_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, rect_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if rect_ptr != 0 {
         write_rect(vm, rect_ptr, 0, 0, 640, 480);
     }
@@ -155,7 +156,7 @@ pub(super) fn get_window_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_client_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let rect_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, rect_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if rect_ptr != 0 {
         write_rect(vm, rect_ptr, 0, 0, 640, 480);
     }
@@ -167,8 +168,7 @@ pub(super) fn get_window_text_length_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_window_text_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let text_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_, text_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if text_ptr != 0 && max_len > 0 {
         write_c_string(vm, text_ptr, "", max_len);
     }
@@ -192,7 +192,7 @@ pub(super) fn get_desktop_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn is_window(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let hwnd = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [hwnd] = vm_args!(vm, stack_ptr; u32);
     if hwnd == 0 { 0 } else { 1 }
 }
 
@@ -201,8 +201,7 @@ pub(super) fn is_child(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_class_name_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buf_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_, buf_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if buf_ptr != 0 && max_len > 0 {
         write_c_string(vm, buf_ptr, "", max_len);
     }

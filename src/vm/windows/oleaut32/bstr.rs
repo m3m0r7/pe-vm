@@ -1,6 +1,7 @@
 //! BSTR helpers.
 
 use crate::vm::{Vm, VmError};
+use crate::vm_args;
 
 // Allocate a BSTR from UTF-16 units.
 pub(crate) fn alloc_bstr_from_utf16(vm: &mut Vm, utf16: &[u16]) -> Result<u32, VmError> {
@@ -64,7 +65,7 @@ fn read_utf16_len(vm: &Vm, ptr: u32, len: usize) -> Result<Vec<u16>, VmError> {
 
 // SysAllocString(wstr)
 pub(super) fn sys_alloc_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [src] = vm_args!(vm, stack_ptr; u32);
     if src == 0 {
         return 0;
     }
@@ -77,8 +78,8 @@ pub(super) fn sys_alloc_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // SysAllocStringLen(wstr, len)
 pub(super) fn sys_alloc_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let len = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (src, len) = vm_args!(vm, stack_ptr; u32, u32);
+    let len = len as usize;
     let utf16 = if src == 0 {
         vec![0u16; len]
     } else {
@@ -92,8 +93,8 @@ pub(super) fn sys_alloc_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // SysAllocStringByteLen(ptr, len)
 pub(super) fn sys_alloc_string_byte_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let len = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (src, len) = vm_args!(vm, stack_ptr; u32, u32);
+    let len = len as usize;
     if src == 0 {
         return alloc_bstr_from_utf16(vm, &[]).unwrap_or(0);
     }
@@ -112,7 +113,7 @@ pub(super) fn sys_free_string(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // SysStringLen(wstr)
 pub(super) fn sys_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 || ptr < 4 {
         return 0;
     }
@@ -121,7 +122,7 @@ pub(super) fn sys_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // SysStringByteLen(wstr)
 pub(super) fn sys_string_byte_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 || ptr < 4 {
         return 0;
     }

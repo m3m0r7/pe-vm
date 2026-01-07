@@ -1,6 +1,7 @@
 //! ITypeInfo method stubs except Invoke.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 use crate::vm::windows::oleaut32::typelib;
 use crate::vm::windows::guid::format_guid;
@@ -11,8 +12,12 @@ use super::super::guid::guid_matches;
 
 pub(super) fn typeinfo_query_interface(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (this, thiscall) = resolve_typeinfo_this(vm, stack_ptr).unwrap_or((0, false));
-    let iid_ptr = vm.read_u32(stack_ptr + if thiscall { 4 } else { 8 }).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + if thiscall { 8 } else { 12 }).unwrap_or(0);
+    let (iid_ptr, out_ptr) = if thiscall {
+        vm_args!(vm, stack_ptr; u32, u32)
+    } else {
+        let (_, iid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
+        (iid_ptr, out_ptr)
+    };
     if out_ptr == 0 {
         return E_NOINTERFACE;
     }
@@ -39,7 +44,13 @@ pub(super) fn typeinfo_get_type_attr(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let Some((_this, info_id, thiscall)) = resolve_typeinfo_info(vm, stack_ptr) else {
         return E_NOTIMPL;
     };
-    let out_ptr = vm.read_u32(stack_ptr + if thiscall { 4 } else { 8 }).unwrap_or(0);
+    let out_ptr = if thiscall {
+        let [out_ptr] = vm_args!(vm, stack_ptr; u32);
+        out_ptr
+    } else {
+        let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
+        out_ptr
+    };
     if out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -81,8 +92,13 @@ pub(super) fn typeinfo_get_func_desc(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let Some((_this, info_id, thiscall)) = resolve_typeinfo_info(vm, stack_ptr) else {
         return E_NOTIMPL;
     };
-    let index = vm.read_u32(stack_ptr + if thiscall { 4 } else { 8 }).unwrap_or(0) as usize;
-    let out_ptr = vm.read_u32(stack_ptr + if thiscall { 8 } else { 12 }).unwrap_or(0);
+    let (index, out_ptr) = if thiscall {
+        vm_args!(vm, stack_ptr; u32, u32)
+    } else {
+        let (_, index, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
+        (index, out_ptr)
+    };
+    let index = index as usize;
     if out_ptr == 0 {
         return E_INVALIDARG;
     }

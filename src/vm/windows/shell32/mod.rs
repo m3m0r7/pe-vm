@@ -2,6 +2,7 @@
 
 use crate::vm::Vm;
 use crate::vm::windows::check_stub;
+use crate::vm_args;
 
 // Register shell entry points that may be imported by GUI DLLs.
 pub fn register(vm: &mut Vm) {
@@ -54,7 +55,7 @@ fn sh_browse_for_folder_a(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 fn sh_get_path_from_id_list_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     check_stub(vm, "SHELL32.dll", "SHGetPathFromIDListA");
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, buffer) = vm_args!(vm, stack_ptr; u32, u32);
     if buffer != 0 {
         let _ = vm.write_bytes(buffer, b"C:\\\0");
         1

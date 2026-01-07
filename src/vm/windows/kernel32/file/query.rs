@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::{
     ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL,
@@ -28,7 +29,7 @@ fn flush_file_buffers(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_FILE_ATTRIBUTES;
@@ -51,8 +52,7 @@ fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let high_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (handle, high_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     match vm.file_size(handle) {
         Some(size) => {
             if high_ptr != 0 {
@@ -68,9 +68,7 @@ fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_file_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let creation = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let access = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let write = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_handle, creation, access, write) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     if creation != 0 {
         let _ = vm.write_u32(creation, 0);
         let _ = vm.write_u32(creation + 4, 0);

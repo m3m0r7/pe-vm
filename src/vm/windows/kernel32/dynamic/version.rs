@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_any_stdcall("GetVersionExA", crate::vm::stdcall_args(1), get_version_ex_a);
@@ -12,7 +13,7 @@ pub(super) fn register(vm: &mut Vm) {
 
 // Provide a stable OS version for version checks inside DLLs.
 fn get_version_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [info_ptr] = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }
@@ -22,7 +23,7 @@ fn get_version_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_version_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [info_ptr] = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }
@@ -32,9 +33,7 @@ fn get_version_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn rtl_get_nt_version_numbers(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let major_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let minor_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let build_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (major_ptr, minor_ptr, build_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if major_ptr != 0 {
         let _ = vm.write_u32(major_ptr, 10);
     }

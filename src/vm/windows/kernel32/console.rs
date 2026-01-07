@@ -1,6 +1,8 @@
 //! Kernel32 console and stdio stubs.
 
 use crate::vm::Vm;
+use crate::vm::windows::macros::{read_str_len, read_wstr_len};
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall("KERNEL32.dll", "GetConsoleCP", crate::vm::stdcall_args(0), get_console_cp);
@@ -18,7 +20,7 @@ fn get_console_cp(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_console_mode(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out) = vm_args!(vm, stack_ptr; u32, u32);
     if out != 0 {
         let _ = vm.write_u32(out, 0);
     }
@@ -26,7 +28,8 @@ fn get_console_mode(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_std_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 4).unwrap_or(0)
+    let [n_std_handle] = vm_args!(vm, stack_ptr; u32);
+    n_std_handle
 }
 
 fn set_std_handle(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -34,7 +37,7 @@ fn set_std_handle(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn read_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let chars_read = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, _, _, chars_read, _) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if chars_read != 0 {
         let _ = vm.write_u32(chars_read, 0);
     }
@@ -42,10 +45,7 @@ fn read_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let count = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
-    let bytes_read = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (handle, buffer, count, bytes_read, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if let Some(bytes) = vm.file_read(handle, count) {
         if buffer != 0 {
             let _ = vm.write_bytes(buffer, &bytes);
@@ -62,47 +62,30 @@ fn read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn write_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let count = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let written = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, buffer, count, written, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if buffer != 0 && count > 0 {
-        let mut units = Vec::with_capacity(count as usize);
-        for i in 0..count {
-            if let Ok(unit) = vm.read_u16(buffer + i * 2) {
-                units.push(unit);
-            }
-        }
-        let text = String::from_utf16_lossy(&units);
+        let text = read_wstr_len(vm, buffer, count);
         vm.write_stdout(&text);
         if written != 0 {
-            let _ = vm.write_u32(written, count);
+            let _ = vm.write_u32(written, count as u32);
         }
     }
     1
 }
 
 fn write_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let count = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let written = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (handle, buffer, count, written, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if buffer != 0 && count > 0 {
-        let mut bytes = Vec::with_capacity(count as usize);
-        for i in 0..count {
-            if let Ok(byte) = vm.read_u8(buffer + i) {
-                bytes.push(byte);
-            }
-        }
-        if let Some(wrote) = vm.file_write(handle, &bytes) {
+        let bytes = read_str_len(vm, buffer, count);
+        if let Some(wrote) = vm.file_write(handle, bytes.as_bytes()) {
             if written != 0 {
                 let _ = vm.write_u32(written, wrote as u32);
             }
             return 1;
         }
-        let text = String::from_utf8_lossy(&bytes);
-        vm.write_stdout(&text);
+        vm.write_stdout(&bytes);
         if written != 0 {
-            let _ = vm.write_u32(written, count);
+            let _ = vm.write_u32(written, count as u32);
         }
     }
     1

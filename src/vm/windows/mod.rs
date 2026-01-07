@@ -1,5 +1,7 @@
 //! Windows API stub registry.
 
+#[macro_use]
+pub mod macros;
 pub mod kernel32;
 pub mod ntdll;
 pub mod com;

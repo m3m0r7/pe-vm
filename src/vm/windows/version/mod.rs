@@ -2,6 +2,7 @@
 
 use crate::vm::Vm;
 use crate::vm::windows::check_stub;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -21,7 +22,7 @@ pub fn register(vm: &mut Vm) {
 
 fn get_file_version_info_size_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     check_stub(vm, "VERSION.dll", "GetFileVersionInfoSizeA");
-    let handle_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, handle_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if handle_ptr != 0 {
         let _ = vm.write_u32(handle_ptr, 0);
     }

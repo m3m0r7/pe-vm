@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::read_w_len;
 
@@ -31,9 +32,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_string_type_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as i32;
-    let out_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_type, src_ptr, src_len, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, i32, u32);
     if src_ptr == 0 || out_ptr == 0 {
         return 0;
     }
@@ -45,10 +44,7 @@ fn get_string_type_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn compare_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let left_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let left_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let right_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let right_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as i32;
+    let (_locale, _flags, left_ptr, left_len, right_ptr, right_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, i32);
     if left_ptr == 0 || right_ptr == 0 {
         return 0;
     }
@@ -62,11 +58,7 @@ fn compare_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lc_map_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let src_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let dst_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (_locale, flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }
@@ -94,9 +86,10 @@ fn is_dbcs_lead_byte(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn mul_div(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let number = vm.read_u32(stack_ptr + 4).unwrap_or(0) as i64;
-    let numerator = vm.read_u32(stack_ptr + 8).unwrap_or(0) as i64;
-    let denominator = vm.read_u32(stack_ptr + 12).unwrap_or(1) as i64;
+    let (number, numerator, denominator) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let number = number as i64;
+    let numerator = numerator as i64;
+    let denominator = denominator as i64;
     if denominator == 0 {
         return 0;
     }

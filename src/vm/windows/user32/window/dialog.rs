@@ -1,5 +1,6 @@
 use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::{write_c_string, write_rect};
 
@@ -60,8 +61,7 @@ pub(super) fn get_dlg_item(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_dlg_item_text_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buf_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (_, _, buf_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, u32, usize);
     if buf_ptr != 0 && max_len > 0 {
         write_c_string(vm, buf_ptr, "", max_len);
     }
@@ -85,7 +85,7 @@ pub(super) fn map_window_points(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn map_dialog_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let rect_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, rect_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if rect_ptr != 0 {
         write_rect(vm, rect_ptr, 0, 0, 0, 0);
     }
@@ -93,9 +93,7 @@ pub(super) fn map_dialog_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn load_string_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let string_id = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let buf_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (_, string_id, buf_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, u32, usize);
     if buf_ptr != 0 && max_len > 0 {
         if let Some(text) = load_string_resource(vm, string_id) {
             if std::env::var("PE_VM_TRACE").is_ok() {
@@ -172,8 +170,7 @@ fn read_string_entry(data: &ResourceData, entry: usize) -> Option<String> {
 }
 
 pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buf_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let fmt_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (buf_ptr, fmt_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if buf_ptr == 0 || fmt_ptr == 0 {
         return 0;
     }

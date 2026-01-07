@@ -1,6 +1,7 @@
 //! Kernel32 heap/global memory stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 const HEAP_HANDLE: u32 = 0x1000;
 
@@ -34,22 +35,17 @@ fn get_process_heap(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn heap_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let _heap = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let _flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_heap, _flags, size) = vm_args!(vm, stack_ptr; u32, u32, usize);
     vm.heap_alloc(size)
 }
 
 fn heap_realloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let _heap = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let _flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let mem = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (_heap, _flags, mem, size) = vm_args!(vm, stack_ptr; u32, u32, u32, usize);
     vm.heap_realloc(mem, size)
 }
 
 fn heap_free(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let mem = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, mem) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if mem == 0 {
         return 0;
     }
@@ -61,7 +57,7 @@ fn heap_free(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn heap_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let mem = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, mem) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if let Some(size) = vm.heap_size(mem) {
         size as u32
     } else {
@@ -74,8 +70,7 @@ fn heap_destroy(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let _flags = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (_flags, size) = vm_args!(vm, stack_ptr; u32, usize);
     vm.heap_alloc(size)
 }
 
@@ -84,7 +79,8 @@ fn global_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_lock(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 4).unwrap_or(0)
+    let [h_mem] = vm_args!(vm, stack_ptr; u32);
+    h_mem
 }
 
 fn global_unlock(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -92,7 +88,8 @@ fn global_unlock(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 4).unwrap_or(0)
+    let [p_mem] = vm_args!(vm, stack_ptr; u32);
+    p_mem
 }
 
 fn local_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -100,10 +97,7 @@ fn local_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn virtual_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let _addr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let _alloc_type = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let _protect = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_addr, size, _alloc_type, _protect) = vm_args!(vm, stack_ptr; u32, usize, u32, u32);
     vm.alloc_bytes(&vec![0u8; size], 8).unwrap_or(0)
 }
 
@@ -112,7 +106,7 @@ fn virtual_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn virtual_protect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let old_protect_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, _, _, old_protect_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     if old_protect_ptr != 0 {
         let _ = vm.write_u32(old_protect_ptr, 0x04);
     }
@@ -120,8 +114,7 @@ fn virtual_protect(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn virtual_query(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (_, info_ptr, len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if info_ptr == 0 || len < 28 {
         return 0;
     }

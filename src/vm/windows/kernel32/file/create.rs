@@ -1,8 +1,9 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::{
     CREATE_ALWAYS, CREATE_NEW, ERROR_FILE_NOT_FOUND, GENERIC_READ, GENERIC_WRITE,
-    INVALID_HANDLE_VALUE, OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING,
+    INVALID_HANDLE_VALUE, OPEN_ALWAYS, TRUNCATE_EXISTING,
 };
 use super::helpers::read_w_string;
 
@@ -31,7 +32,7 @@ fn copy_file_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn create_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         return 0;
     }
@@ -41,14 +42,12 @@ fn create_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let (path_ptr, desired, _share_mode, _security_attrs, disposition) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
     }
     let path = vm.read_c_string(path_ptr).unwrap_or_default();
-    let desired = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let disposition = vm.read_u32(stack_ptr + 20).unwrap_or(OPEN_EXISTING);
     let readable = desired & GENERIC_READ != 0;
     let writable = desired & GENERIC_WRITE != 0;
     let create = matches!(disposition, CREATE_NEW | CREATE_ALWAYS | OPEN_ALWAYS);
@@ -68,14 +67,12 @@ fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn create_file_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let (path_ptr, desired, _share_mode, _security_attrs, disposition) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
     }
     let path = read_w_string(vm, path_ptr);
-    let desired = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let disposition = vm.read_u32(stack_ptr + 20).unwrap_or(OPEN_EXISTING);
     let readable = desired & GENERIC_READ != 0;
     let writable = desired & GENERIC_WRITE != 0;
     let create = matches!(disposition, CREATE_NEW | CREATE_ALWAYS | OPEN_ALWAYS);
@@ -95,7 +92,7 @@ fn create_file_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn delete_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         return 0;
     }

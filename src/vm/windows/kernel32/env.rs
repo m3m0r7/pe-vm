@@ -1,6 +1,7 @@
 //! Kernel32 environment stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -26,9 +27,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let buffer_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let buffer_size = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (name_ptr, buffer_ptr, buffer_size) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if name_ptr == 0 {
         return 0;
     }
@@ -52,8 +51,7 @@ fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn set_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let name_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let value_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (name_ptr, value_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if name_ptr == 0 {
         return 0;
     }
@@ -68,9 +66,7 @@ fn set_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn expand_environment_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let src_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let dst_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (src_ptr, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }

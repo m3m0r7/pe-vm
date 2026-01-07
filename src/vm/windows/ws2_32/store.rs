@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::{EVENT_HANDLE_BASE, SOCKET_HANDLE_BASE};
 
@@ -67,7 +68,7 @@ pub(super) fn wsa_get_last_error(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn wsa_set_last_error(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let code = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [code] = vm_args!(vm, stack_ptr; u32);
     set_last_error(code);
     0
 }

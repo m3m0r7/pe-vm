@@ -5,6 +5,7 @@ mod methods;
 mod object;
 
 use crate::vm::Vm;
+use crate::vm_args;
 use crate::vm::windows::guid::format_guid;
 
 use super::bstr::read_utf16_z;
@@ -37,7 +38,7 @@ pub(super) const TYPELIB_METHODS: &[OleMethod] = &[
 
 // RegisterTypeLib(...)
 pub(super) fn register_type_lib(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out != 0 {
         let _ = vm.write_u32(out, 0);
     }
@@ -46,8 +47,7 @@ pub(super) fn register_type_lib(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // LoadTypeLib(...)
 pub(super) fn load_type_lib(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (path_ptr, out) = vm_args!(vm, stack_ptr; u32, u32);
     if out == 0 {
         return E_INVALIDARG;
     }
@@ -70,10 +70,9 @@ pub(super) fn load_type_lib(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // LoadRegTypeLib(...)
 pub(super) fn load_reg_type_lib(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let guid_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let major = vm.read_u32(stack_ptr + 8).unwrap_or(0) as u16;
-    let minor = vm.read_u32(stack_ptr + 12).unwrap_or(0) as u16;
-    let out = vm.read_u32(stack_ptr + 20).unwrap_or(0);
+    let (guid_ptr, major, minor, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let major = major as u16;
+    let minor = minor as u16;
     if out == 0 {
         return E_INVALIDARG;
     }

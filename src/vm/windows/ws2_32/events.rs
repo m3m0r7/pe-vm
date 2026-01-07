@@ -1,6 +1,7 @@
 //! Winsock event helpers.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::{WSAEINVAL, WSANETWORKEVENTS_SIZE};
 use super::store::{alloc_event, set_last_error};
@@ -11,7 +12,7 @@ pub(super) fn wsa_create_event(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn wsa_close_event(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [handle] = vm_args!(vm, stack_ptr; u32);
     if handle == 0 {
         set_last_error(WSAEINVAL);
         return 0;
@@ -26,7 +27,7 @@ pub(super) fn wsa_event_select(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn wsa_enum_network_events(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let events_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, events_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if events_ptr != 0 {
         let _ = vm.memset(events_ptr, 0, WSANETWORKEVENTS_SIZE);
     }
@@ -40,8 +41,7 @@ pub(super) fn wsa_wait_for_multiple_events(_vm: &mut Vm, _stack_ptr: u32) -> u32
 }
 
 pub(super) fn wsafd_is_set(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let set_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (handle, set_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if set_ptr == 0 {
         return 0;
     }

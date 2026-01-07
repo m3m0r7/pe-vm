@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::DRIVE_FIXED;
 
@@ -30,7 +31,7 @@ fn get_drive_type_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_logical_drive_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_buffer_len, buffer) = vm_args!(vm, stack_ptr; u32, u32);
     if buffer == 0 {
         return 0;
     }
@@ -44,8 +45,8 @@ fn get_temp_file_name_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_windows_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (buffer, size) = vm_args!(vm, stack_ptr; u32, u32);
+    let size = size as usize;
     if buffer == 0 || size == 0 {
         return 0;
     }
@@ -59,12 +60,8 @@ fn get_windows_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn search_path_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let path_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let file_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let ext_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let buffer_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
-    let buffer_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let file_part_ptr = vm.read_u32(stack_ptr + 24).unwrap_or(0);
+    let (path_ptr, file_ptr, ext_ptr, buffer_len, buffer_ptr, file_part_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let buffer_len = buffer_len as usize;
 
     if file_ptr == 0 {
         return 0;

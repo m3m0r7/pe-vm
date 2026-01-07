@@ -1,6 +1,7 @@
 //! VARIANT helpers.
 
 use crate::vm::{Vm, VmError};
+use crate::vm_args;
 
 use super::bstr::read_bstr;
 use super::constants::{
@@ -9,7 +10,7 @@ use super::constants::{
 
 // VariantInit(ptr)
 pub(super) fn variant_init(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return E_INVALIDARG;
     }
@@ -19,7 +20,7 @@ pub(super) fn variant_init(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // VariantClear(ptr)
 pub(super) fn variant_clear(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [ptr] = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return E_INVALIDARG;
     }
@@ -29,9 +30,8 @@ pub(super) fn variant_clear(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // VariantChangeType(dest, src, flags, vt)
 pub(super) fn variant_change_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dest = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let vt = vm.read_u32(stack_ptr + 16).unwrap_or(0) as u16;
+    let (dest, src, _, vt) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let vt = vt as u16;
     if dest == 0 || src == 0 {
         return E_INVALIDARG;
     }

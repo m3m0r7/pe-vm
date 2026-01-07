@@ -1,10 +1,11 @@
 //! Time conversion stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 // SystemTimeToVariantTime(...)
 pub(super) fn system_time_to_variant_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out) = vm_args!(vm, stack_ptr; u32, u32);
     if out == 0 {
         return 0;
     }
@@ -15,7 +16,7 @@ pub(super) fn system_time_to_variant_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // VariantTimeToSystemTime(...)
 pub(super) fn variant_time_to_system_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out == 0 {
         return 0;
     }

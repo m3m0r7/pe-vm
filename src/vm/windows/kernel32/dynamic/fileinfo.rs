@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_any_stdcall(
@@ -14,8 +15,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_file_information_by_handle_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (info_ptr, size) = vm_args!(vm, stack_ptr; u32, usize);
     if info_ptr == 0 || size == 0 {
         return 0;
     }

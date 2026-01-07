@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::constants::DUMMY_HMONITOR;
 use super::helpers::write_rect;
@@ -35,7 +36,7 @@ pub(super) fn monitor_from_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_monitor_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, info_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if info_ptr != 0 {
         let _ = vm.write_u32(info_ptr, 40);
         write_rect(vm, info_ptr + 4, 0, 0, 640, 480);
@@ -46,7 +47,7 @@ pub(super) fn get_monitor_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_system_metrics(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let index = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [index] = vm_args!(vm, stack_ptr; u32);
     match index {
         0 => 1024,
         1 => 768,

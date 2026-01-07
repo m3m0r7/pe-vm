@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 const HANDLE_BASE: u32 = 0x7300_0000;
 
@@ -115,7 +116,7 @@ fn restore_dc(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn select_object(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let object = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, object) = vm_args!(vm, stack_ptr; u32, u32);
     if object == 0 {
         return 0;
     }
@@ -123,35 +124,39 @@ fn select_object(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn set_bk_color(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 8).unwrap_or(0)
+    let (_, color) = vm_args!(vm, stack_ptr; u32, u32);
+    color
 }
 
 fn set_text_color(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 8).unwrap_or(0)
+    let (_, color) = vm_args!(vm, stack_ptr; u32, u32);
+    color
 }
 
 fn set_text_align(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 8).unwrap_or(0)
+    let (_, align) = vm_args!(vm, stack_ptr; u32, u32);
+    align
 }
 
 fn set_map_mode(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    vm.read_u32(stack_ptr + 8).unwrap_or(0)
+    let (_, mode) = vm_args!(vm, stack_ptr; u32, u32);
+    mode
 }
 
 fn set_window_org_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, _, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     write_point(vm, out);
     1
 }
 
 fn set_window_ext_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, _, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     write_point(vm, out);
     1
 }
 
 fn set_viewport_org_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (_, _, _, out) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     write_point(vm, out);
     1
 }
@@ -165,10 +170,9 @@ fn text_out_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_object_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let buffer = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (_, size, buffer) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if buffer != 0 && size > 0 {
-        let _ = vm.memset(buffer, 0, size);
+        let _ = vm.memset(buffer, 0, size as usize);
     }
     0
 }
@@ -210,17 +214,17 @@ fn create_solid_brush(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn delete_dc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [handle] = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 
 fn delete_meta_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [handle] = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 
 fn delete_object(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [handle] = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 

@@ -2,6 +2,7 @@
 
 use crate::vm::windows::{get_registry, registry::RegistryValue};
 use crate::vm::{Vm, VmError};
+use crate::vm_args;
 
 use super::guid::{format_guid, parse_guid};
 
@@ -61,8 +62,7 @@ pub fn register(vm: &mut Vm) {
 
 // CLSIDFromString(lpsz, pclsid)
 fn clsid_from_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let str_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (str_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if str_ptr == 0 || out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -79,8 +79,7 @@ fn clsid_from_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // CLSIDFromProgID(lpszProgID, pclsid)
 fn clsid_from_progid(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let progid_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (progid_ptr, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if progid_ptr == 0 || out_ptr == 0 {
         return E_INVALIDARG;
     }
@@ -105,9 +104,8 @@ fn clsid_from_progid(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // StringFromGUID2(rguid, lpsz, cchMax)
 fn string_from_guid2(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let guid_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let max_len = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
+    let (guid_ptr, out_ptr, max_len) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let max_len = max_len as usize;
     if guid_ptr == 0 || out_ptr == 0 || max_len == 0 {
         return 0;
     }
@@ -139,15 +137,15 @@ fn co_get_class_object(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // CoTaskMemAlloc(size)
 fn co_task_mem_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let size = vm.read_u32(stack_ptr + 4).unwrap_or(0) as usize;
-    let buf = vec![0u8; size];
+    let [size] = vm_args!(vm, stack_ptr; u32);
+    let buf = vec![0u8; size as usize];
     vm.alloc_bytes(&buf, 8).unwrap_or(0)
 }
 
 // CoTaskMemRealloc(ptr, size)
 fn co_task_mem_realloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let size = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
-    let buf = vec![0u8; size];
+    let (_, size) = vm_args!(vm, stack_ptr; u32, u32);
+    let buf = vec![0u8; size as usize];
     vm.alloc_bytes(&buf, 8).unwrap_or(0)
 }
 
@@ -198,7 +196,7 @@ fn create_ole_advise_holder(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // OleRegGetUserType(...)
 fn ole_reg_get_user_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -207,7 +205,7 @@ fn ole_reg_get_user_type(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // OleRegGetMiscStatus(...)
 fn ole_reg_get_misc_status(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (_, _, out_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }
@@ -216,7 +214,7 @@ fn ole_reg_get_misc_status(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // OleRegEnumVerbs(...)
 fn ole_reg_enum_verbs(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
+    let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if out_ptr != 0 {
         let _ = vm.write_u32(out_ptr, 0);
     }

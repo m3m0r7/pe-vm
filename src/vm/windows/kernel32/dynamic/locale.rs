@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_any_stdcall(
@@ -44,10 +45,7 @@ fn enum_system_locales_ex(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn compare_string_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let left_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let left_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let right_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let right_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as i32;
+    let (left_ptr, left_len, right_ptr, right_len) = vm_args!(vm, stack_ptr; u32, i32, u32, i32);
     if left_ptr == 0 || right_ptr == 0 {
         return 0;
     }
@@ -63,9 +61,7 @@ fn compare_string_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_date_format_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let time_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (time_ptr, out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if out_ptr == 0 || out_len == 0 {
         return 0;
     }
@@ -79,8 +75,7 @@ fn get_date_format_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_locale_info_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, usize);
     if out_ptr == 0 || out_len == 0 {
         return 0;
     }
@@ -88,9 +83,7 @@ fn get_locale_info_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_time_format_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let time_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (time_ptr, out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, u32, usize);
     if out_ptr == 0 || out_len == 0 {
         return 0;
     }
@@ -104,8 +97,7 @@ fn get_time_format_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_user_default_locale_name(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr + 8).unwrap_or(0) as usize;
+    let (out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, usize);
     if out_ptr == 0 || out_len == 0 {
         return 0;
     }
@@ -117,11 +109,7 @@ fn is_valid_locale_name(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn lc_map_string_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let flags = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let src_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as i32;
-    let dst_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
-    let dst_len = vm.read_u32(stack_ptr + 24).unwrap_or(0) as usize;
+    let (flags, src_ptr, src_len, dst_ptr, dst_len) = vm_args!(vm, stack_ptr; u32, u32, i32, u32, usize);
     if src_ptr == 0 {
         return 0;
     }

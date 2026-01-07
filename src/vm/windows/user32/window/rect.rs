@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::write_rect;
 
@@ -50,9 +51,7 @@ pub(super) fn equal_rect(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn offset_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let rect_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let dx = vm.read_u32(stack_ptr + 8).unwrap_or(0) as i32;
-    let dy = vm.read_u32(stack_ptr + 12).unwrap_or(0) as i32;
+    let (rect_ptr, dx, dy) = vm_args!(vm, stack_ptr; u32, i32, i32);
     if rect_ptr != 0 {
         let left = vm.read_u32(rect_ptr).unwrap_or(0) as i32 + dx;
         let top = vm.read_u32(rect_ptr + 4).unwrap_or(0) as i32 + dy;
@@ -64,9 +63,7 @@ pub(super) fn offset_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn union_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dst_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src1_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src2_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (dst_ptr, src1_ptr, src2_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if dst_ptr != 0 && src1_ptr != 0 && src2_ptr != 0 {
         let l1 = vm.read_u32(src1_ptr).unwrap_or(0) as i32;
         let t1 = vm.read_u32(src1_ptr + 4).unwrap_or(0) as i32;
@@ -82,9 +79,7 @@ pub(super) fn union_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn intersect_rect(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dst_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let src1_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let src2_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
+    let (dst_ptr, src1_ptr, src2_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if dst_ptr == 0 || src1_ptr == 0 || src2_ptr == 0 {
         return 0;
     }

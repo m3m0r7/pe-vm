@@ -1,6 +1,7 @@
 //! WinINet API entry points.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::client::send_http_request;
 use super::store::{alloc_handle, remove_handle, store};
@@ -24,7 +25,7 @@ const INTERNET_FLAG_SECURE: u32 = 0x0080_0000;
 
 pub(super) fn internet_open_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetOpenA(hAgent, accessType, proxy, bypass, flags).
-    let agent_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [agent_ptr] = vm_args!(vm, stack_ptr; u32);
     let agent = read_c_string(vm, agent_ptr);
     let handle = InternetHandle::Session(Session { user_agent: agent });
     alloc_handle(handle)
@@ -32,9 +33,8 @@ pub(super) fn internet_open_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetConnectA(hInternet, server, port, user, pass, service, flags, context).
-    let session_handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let server_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let mut port = vm.read_u32(stack_ptr + 12).unwrap_or(0) as u16;
+    let (session_handle, server_ptr, port_arg) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let mut port = port_arg as u16;
     if std::env::var("PE_VM_TRACE").is_ok() && server_ptr != 0 {
         let mut raw = String::new();
         let mut ascii = String::new();
@@ -133,10 +133,7 @@ pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpOpenRequestA(hConnect, verb, object, version, referrer, accept, flags, context).
-    let connection_handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let verb_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let object_ptr = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let flags = vm.read_u32(stack_ptr + 28).unwrap_or(0);
+    let (connection_handle, verb_ptr, object_ptr, _, _, _, flags) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32, u32);
     if std::env::var("PE_VM_TRACE").is_ok() && object_ptr != 0 {
         let mut raw = String::new();
         let mut ascii = String::new();
@@ -190,11 +187,7 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpSendRequestA(hRequest, headers, headersLen, optional, optionalLen).
-    let request_handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let headers_ptr = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let headers_len = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let optional_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let optional_len = vm.read_u32(stack_ptr + 20).unwrap_or(0);
+    let (request_handle, headers_ptr, headers_len, optional_ptr, optional_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
 
     let headers = read_optional_string(vm, headers_ptr, headers_len);
     let mut body = read_optional_bytes(vm, optional_ptr, optional_len as usize);
@@ -263,11 +256,7 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpQueryInfoA(hRequest, infoLevel, buffer, bufferLen, index).
-    let request_handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let info_level = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let buffer = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let buffer_len_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
-    let _index_ptr = vm.read_u32(stack_ptr + 20).unwrap_or(0);
+    let (request_handle, info_level, buffer, buffer_len_ptr, _index_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
 
     let response = {
         let guard = store().lock().expect("wininet store");
@@ -345,10 +334,8 @@ pub(super) fn http_query_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(super) fn internet_read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetReadFile(hRequest, buffer, bytesToRead, bytesRead).
-    let request_handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let buffer = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let bytes_to_read = vm.read_u32(stack_ptr + 12).unwrap_or(0) as usize;
-    let bytes_read_ptr = vm.read_u32(stack_ptr + 16).unwrap_or(0);
+    let (request_handle, buffer, bytes_to_read, bytes_read_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let bytes_to_read = bytes_to_read as usize;
     if buffer == 0 || bytes_read_ptr == 0 {
         return 0;
     }
@@ -374,10 +361,8 @@ pub(super) fn internet_read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn internet_set_option_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
-    let option = vm.read_u32(stack_ptr + 8).unwrap_or(0);
-    let buffer = vm.read_u32(stack_ptr + 12).unwrap_or(0);
-    let buffer_len = vm.read_u32(stack_ptr + 16).unwrap_or(0) as usize;
+    let (handle, option, buffer, buffer_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    let buffer_len = buffer_len as usize;
     if std::env::var("PE_VM_TRACE").is_ok() {
         let mut preview = String::new();
         if buffer != 0 && buffer_len > 0 {
@@ -401,7 +386,7 @@ pub(super) fn internet_set_option_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn internet_close_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let handle = vm.read_u32(stack_ptr + 4).unwrap_or(0);
+    let [handle] = vm_args!(vm, stack_ptr; u32);
     if handle == 0 {
         return 0;
     }
