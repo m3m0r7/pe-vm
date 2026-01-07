@@ -11,11 +11,14 @@ pub mod gdi32;
 pub mod imagehlp;
 pub mod imm32;
 pub mod comdlg32;
+pub mod msvcr100;
+pub mod ole;
 pub mod ole32;
 pub mod oleaut32;
 pub mod registry;
 pub mod shell32;
 pub mod shlwapi;
+pub mod stkit432;
 pub mod user32;
 pub mod ucrt;
 pub mod vcruntime;
@@ -89,6 +92,8 @@ pub fn register_default(vm: &mut Vm) {
     shell32::register(vm);
     vcruntime::register(vm);
     ucrt::register(vm);
+    msvcr100::register(vm);
+    ole::register(vm);
     ole32::register(vm);
     oleaut32::register(vm);
     shlwapi::register(vm);
@@ -97,4 +102,5 @@ pub fn register_default(vm: &mut Vm) {
     ws2_32::register(vm);
     wtsapi32::register(vm);
     wininet::register(vm);
+    stkit432::register(vm);
 }
