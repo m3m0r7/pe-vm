@@ -28,6 +28,8 @@ impl Vm {
         }
         self.apply_values(values)?;
         self.execute(self.base + rva)?;
+        // Run any threads spawned during execution (e.g., CreateThread callbacks)
+        self.run_pending_threads();
         Ok(self.regs.eax)
     }
 
