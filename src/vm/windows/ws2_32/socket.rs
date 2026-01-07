@@ -1,7 +1,5 @@
 //! Socket-related Winsock stubs.
 
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -68,32 +66,11 @@ pub(super) fn recv(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (_, buf, len) = vm_args!(vm, stack_ptr; u32, u32, u32);
     trace_net(&format!("WSA recv called buf=0x{buf:08X} len={len}"));
     if buf != 0 && len != 0 {
-        let packet = build_ntp_response();
-        let copy_len = (len as usize).min(packet.len());
-        let _ = vm.write_bytes(buf, &packet[..copy_len]);
-        trace_net(&format!(
-            "WSA recv stubbed {copy_len} byte{}",
-            if copy_len == 1 { "" } else { "s" }
-        ));
         set_last_error(0);
-        return copy_len as u32;
+        return 0;
     }
     set_last_error(0);
     0
-}
-
-fn build_ntp_response() -> [u8; 48] {
-    let mut packet = [0u8; 48];
-    packet[0] = 0x1C; // LI=0, VN=3, Mode=4 (server)
-    packet[1] = 1; // stratum
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let ntp_seconds = now.as_secs().wrapping_add(2_208_988_800);
-    let ntp_fraction = ((now.subsec_nanos() as u64) << 32) / 1_000_000_000;
-    packet[40..44].copy_from_slice(&(ntp_seconds as u32).to_be_bytes());
-    packet[44..48].copy_from_slice(&(ntp_fraction as u32).to_be_bytes());
-    packet
 }
 
 pub(super) fn select(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -159,8 +136,8 @@ pub(super) fn gethostbyname(vm: &mut Vm, stack_ptr: u32) -> u32 {
         set_last_error(WSAEINVAL);
         return 0;
     }
-    let addr = parse_ipv4(&name).unwrap_or(u32::from_be_bytes([127, 0, 0, 1]));
-    let ptr = alloc_hostent(vm, &name, addr);
+    let addr = parse_ipv4(&name).unwrap_or(default_addr_for_host(&name));
+    let ptr = alloc_hostent(vm, name.as_str(), addr);
     set_last_error(0);
     ptr
 }
@@ -172,8 +149,8 @@ pub(super) fn gethostbyaddr(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     let addr = vm.read_u32(addr_ptr).unwrap_or(0);
-    let name = "ntp.local";
-    let ptr = alloc_hostent(vm, name, addr);
+    let name = format_host_by_addr(addr);
+    let ptr = alloc_hostent(vm, name.as_str(), addr);
     set_last_error(0);
     ptr
 }
@@ -210,6 +187,19 @@ fn alloc_u32_list(vm: &mut Vm, values: &[u32]) -> u32 {
         bytes.extend_from_slice(&value.to_le_bytes());
     }
     vm.alloc_bytes(&bytes, 4).unwrap_or(0)
+}
+
+fn default_addr_for_host(name: &str) -> u32 {
+    if name.eq_ignore_ascii_case("localhost") {
+        u32::from_be_bytes([127, 0, 0, 1])
+    } else {
+        u32::from_be_bytes([192, 0, 2, 1])
+    }
+}
+
+fn format_host_by_addr(addr: u32) -> String {
+    let bytes = addr.to_be_bytes();
+    format!("{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3])
 }
 
 pub(super) fn wsa_startup(vm: &mut Vm, stack_ptr: u32) -> u32 {
