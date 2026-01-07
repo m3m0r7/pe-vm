@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::{
     filetime_from_parts, filetime_now, parts_from_filetime, read_filetime, read_system_time,
@@ -40,7 +41,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_system_time_as_filetime(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let filetime_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (filetime_ptr,) = vm_args!(vm, stack_ptr; u32);
     if filetime_ptr == 0 {
         return 0;
     }
@@ -52,7 +53,7 @@ fn get_system_time_as_filetime(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_local_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let out_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (out_ptr,) = vm_args!(vm, stack_ptr; u32);
     if out_ptr == 0 {
         return 0;
     }
@@ -62,8 +63,7 @@ fn get_local_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn system_time_to_filetime(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let time_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let filetime_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (time_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if time_ptr == 0 || filetime_ptr == 0 {
         return 0;
     }
@@ -74,8 +74,7 @@ fn system_time_to_filetime(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn file_time_to_system_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let filetime_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let time_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (filetime_ptr, time_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if filetime_ptr == 0 || time_ptr == 0 {
         return 0;
     }
@@ -86,8 +85,7 @@ fn file_time_to_system_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn local_file_time_to_file_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let local_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let filetime_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (local_ptr, filetime_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if local_ptr == 0 || filetime_ptr == 0 {
         return 0;
     }
@@ -97,8 +95,7 @@ fn local_file_time_to_file_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn file_time_to_local_file_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let filetime_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let local_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (filetime_ptr, local_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     if filetime_ptr == 0 || local_ptr == 0 {
         return 0;
     }

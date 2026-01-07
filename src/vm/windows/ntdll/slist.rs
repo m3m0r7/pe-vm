@@ -2,13 +2,14 @@
 
 use crate::vm::windows::ntdll::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "RtlInitializeSListHead", crate::vm::stdcall_args(1), rtl_initialize_slist_head);
 }
 
 fn rtl_initialize_slist_head(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let header = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (header,) = vm_args!(vm, stack_ptr; u32);
     if header != 0 {
         let _ = vm.write_u32(header, 0);
         let _ = vm.write_u32(header.wrapping_add(4), 0);

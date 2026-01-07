@@ -1,65 +1,65 @@
 //! Kernel32 synchronization stubs.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, create_event_a, 1);
-register_func_stub!(DLL_NAME, initialize_critical_section_and_spin_count, 1);
-register_func_stub!(DLL_NAME, enter_critical_section, 0);
-register_func_stub!(DLL_NAME, leave_critical_section, 0);
-register_func_stub!(DLL_NAME, delete_critical_section, 0);
-register_func_stub!(DLL_NAME, set_event, 1);
+define_stub_fn!(DLL_NAME, create_event_a, 1);
+define_stub_fn!(DLL_NAME, initialize_critical_section_and_spin_count, 1);
+define_stub_fn!(DLL_NAME, enter_critical_section, 0);
+define_stub_fn!(DLL_NAME, leave_critical_section, 0);
+define_stub_fn!(DLL_NAME, delete_critical_section, 0);
+define_stub_fn!(DLL_NAME, set_event, 1);
 
 // Additional stubs
-register_func_stub!(DLL_NAME, create_event_w, 1);
-register_func_stub!(DLL_NAME, create_event_ex_a, 1);
-register_func_stub!(DLL_NAME, create_mutex_a, 1);
-register_func_stub!(DLL_NAME, create_mutex_w, 1);
-register_func_stub!(DLL_NAME, create_mutex_ex_a, 1);
-register_func_stub!(DLL_NAME, create_mutex_ex_w, 1);
-register_func_stub!(DLL_NAME, open_mutex_a, 1);
-register_func_stub!(DLL_NAME, open_mutex_w, 1);
-register_func_stub!(DLL_NAME, release_mutex, 1);
-register_func_stub!(DLL_NAME, create_semaphore_a, 1);
-register_func_stub!(DLL_NAME, create_semaphore_w, 1);
-register_func_stub!(DLL_NAME, create_semaphore_ex_a, 1);
-register_func_stub!(DLL_NAME, create_semaphore_ex_w, 1);
-register_func_stub!(DLL_NAME, open_semaphore_a, 1);
-register_func_stub!(DLL_NAME, open_semaphore_w, 1);
-register_func_stub!(DLL_NAME, release_semaphore, 1);
-register_func_stub!(DLL_NAME, open_event_a, 1);
-register_func_stub!(DLL_NAME, open_event_w, 1);
-register_func_stub!(DLL_NAME, reset_event, 1);
-register_func_stub!(DLL_NAME, pulse_event, 1);
-register_func_stub!(DLL_NAME, initialize_critical_section, 0);
-register_func_stub!(DLL_NAME, initialize_critical_section_ex, 1);
-register_func_stub!(DLL_NAME, try_enter_critical_section, 1);
-register_func_stub!(DLL_NAME, set_critical_section_spin_count, 0);
-register_func_stub!(DLL_NAME, wait_for_multiple_objects, 0);
-register_func_stub!(DLL_NAME, wait_for_multiple_objects_ex, 0);
-register_func_stub!(DLL_NAME, wait_for_single_object_ex, 0);
-register_func_stub!(DLL_NAME, signal_object_and_wait, 0);
-register_func_stub!(DLL_NAME, sleep_ex, 0);
+define_stub_fn!(DLL_NAME, create_event_w, 1);
+define_stub_fn!(DLL_NAME, create_event_ex_a, 1);
+define_stub_fn!(DLL_NAME, create_mutex_a, 1);
+define_stub_fn!(DLL_NAME, create_mutex_w, 1);
+define_stub_fn!(DLL_NAME, create_mutex_ex_a, 1);
+define_stub_fn!(DLL_NAME, create_mutex_ex_w, 1);
+define_stub_fn!(DLL_NAME, open_mutex_a, 1);
+define_stub_fn!(DLL_NAME, open_mutex_w, 1);
+define_stub_fn!(DLL_NAME, release_mutex, 1);
+define_stub_fn!(DLL_NAME, create_semaphore_a, 1);
+define_stub_fn!(DLL_NAME, create_semaphore_w, 1);
+define_stub_fn!(DLL_NAME, create_semaphore_ex_a, 1);
+define_stub_fn!(DLL_NAME, create_semaphore_ex_w, 1);
+define_stub_fn!(DLL_NAME, open_semaphore_a, 1);
+define_stub_fn!(DLL_NAME, open_semaphore_w, 1);
+define_stub_fn!(DLL_NAME, release_semaphore, 1);
+define_stub_fn!(DLL_NAME, open_event_a, 1);
+define_stub_fn!(DLL_NAME, open_event_w, 1);
+define_stub_fn!(DLL_NAME, reset_event, 1);
+define_stub_fn!(DLL_NAME, pulse_event, 1);
+define_stub_fn!(DLL_NAME, initialize_critical_section, 0);
+define_stub_fn!(DLL_NAME, initialize_critical_section_ex, 1);
+define_stub_fn!(DLL_NAME, try_enter_critical_section, 1);
+define_stub_fn!(DLL_NAME, set_critical_section_spin_count, 0);
+define_stub_fn!(DLL_NAME, wait_for_multiple_objects, 0);
+define_stub_fn!(DLL_NAME, wait_for_multiple_objects_ex, 0);
+define_stub_fn!(DLL_NAME, wait_for_single_object_ex, 0);
+define_stub_fn!(DLL_NAME, signal_object_and_wait, 0);
+define_stub_fn!(DLL_NAME, sleep_ex, 0);
 
 // SRW locks and condition variables
-register_func_stub!(DLL_NAME, initialize_srw_lock, 0);
-register_func_stub!(DLL_NAME, acquire_srw_lock_exclusive, 0);
-register_func_stub!(DLL_NAME, acquire_srw_lock_shared, 0);
-register_func_stub!(DLL_NAME, release_srw_lock_exclusive, 0);
-register_func_stub!(DLL_NAME, release_srw_lock_shared, 0);
-register_func_stub!(DLL_NAME, try_acquire_srw_lock_exclusive, 1);
-register_func_stub!(DLL_NAME, try_acquire_srw_lock_shared, 1);
-register_func_stub!(DLL_NAME, initialize_condition_variable, 0);
-register_func_stub!(DLL_NAME, wake_condition_variable, 0);
-register_func_stub!(DLL_NAME, wake_all_condition_variable, 0);
-register_func_stub!(DLL_NAME, sleep_condition_variable_cs, 1);
-register_func_stub!(DLL_NAME, sleep_condition_variable_srw, 1);
+define_stub_fn!(DLL_NAME, initialize_srw_lock, 0);
+define_stub_fn!(DLL_NAME, acquire_srw_lock_exclusive, 0);
+define_stub_fn!(DLL_NAME, acquire_srw_lock_shared, 0);
+define_stub_fn!(DLL_NAME, release_srw_lock_exclusive, 0);
+define_stub_fn!(DLL_NAME, release_srw_lock_shared, 0);
+define_stub_fn!(DLL_NAME, try_acquire_srw_lock_exclusive, 1);
+define_stub_fn!(DLL_NAME, try_acquire_srw_lock_shared, 1);
+define_stub_fn!(DLL_NAME, initialize_condition_variable, 0);
+define_stub_fn!(DLL_NAME, wake_condition_variable, 0);
+define_stub_fn!(DLL_NAME, wake_all_condition_variable, 0);
+define_stub_fn!(DLL_NAME, sleep_condition_variable_cs, 1);
+define_stub_fn!(DLL_NAME, sleep_condition_variable_srw, 1);
 
 // Init once
-register_func_stub!(DLL_NAME, init_once_begin_initialize, 1);
-register_func_stub!(DLL_NAME, init_once_complete, 1);
-register_func_stub!(DLL_NAME, init_once_execute_once, 1);
+define_stub_fn!(DLL_NAME, init_once_begin_initialize, 1);
+define_stub_fn!(DLL_NAME, init_once_complete, 1);
+define_stub_fn!(DLL_NAME, init_once_execute_once, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "CreateEventA", crate::vm::stdcall_args(4), create_event_a);

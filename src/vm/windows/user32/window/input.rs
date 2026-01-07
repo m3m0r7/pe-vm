@@ -1,16 +1,16 @@
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::write_point;
 
-register_func_stub!(DLL_NAME, set_cursor, 0);
-register_func_stub!(DLL_NAME, set_capture, 0);
-register_func_stub!(DLL_NAME, release_capture, 1);
-register_func_stub!(DLL_NAME, get_key_state, 0);
-register_func_stub!(DLL_NAME, get_focus, 0);
-register_func_stub!(DLL_NAME, set_focus, 0);
+define_stub_fn!(DLL_NAME, set_cursor, 0);
+define_stub_fn!(DLL_NAME, set_capture, 0);
+define_stub_fn!(DLL_NAME, release_capture, 1);
+define_stub_fn!(DLL_NAME, get_key_state, 0);
+define_stub_fn!(DLL_NAME, get_focus, 0);
+define_stub_fn!(DLL_NAME, set_focus, 0);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "GetCursorPos", crate::vm::stdcall_args(1), get_cursor_pos);
@@ -23,7 +23,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 pub(super) fn get_cursor_pos(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [point_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (point_ptr,) = vm_args!(vm, stack_ptr; u32);
     if point_ptr != 0 {
         write_point(vm, point_ptr, 0, 0);
     }

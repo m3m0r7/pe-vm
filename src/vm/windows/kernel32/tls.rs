@@ -16,7 +16,7 @@ fn tls_alloc(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn tls_get_value(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [index] = vm_args!(vm, stack_ptr; u32);
+    let (index,) = vm_args!(vm, stack_ptr; u32);
     vm.tls_get(index)
 }
 
@@ -30,7 +30,7 @@ fn tls_set_value(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn tls_free(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [index] = vm_args!(vm, stack_ptr; u32);
+    let (index,) = vm_args!(vm, stack_ptr; u32);
     if vm.tls_free(index) {
         1
     } else {

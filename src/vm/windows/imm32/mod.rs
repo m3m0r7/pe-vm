@@ -2,10 +2,10 @@
 
 pub const DLL_NAME: &str = "IMM32.dll";
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, imm_associate_context, 0);
+define_stub_fn!(DLL_NAME, imm_associate_context, 0);
 
 // Register minimal IMM32 entry points used by GUI DLLs.
 pub fn register(vm: &mut Vm) {

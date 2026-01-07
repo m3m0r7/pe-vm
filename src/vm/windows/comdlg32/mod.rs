@@ -2,10 +2,10 @@
 
 pub const DLL_NAME: &str = "COMDLG32.dll";
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, get_open_file_name_a, 0);
+define_stub_fn!(DLL_NAME, get_open_file_name_a, 0);
 
 // Register minimal common dialog APIs used by dialog clients.
 pub fn register(vm: &mut Vm) {

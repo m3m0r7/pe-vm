@@ -12,7 +12,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [addr] = vm_args!(vm, stack_ptr; u32);
+    let (addr,) = vm_args!(vm, stack_ptr; u32);
     if addr == 0 {
         return 0;
     }
@@ -22,7 +22,7 @@ fn interlocked_increment(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn interlocked_decrement(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [addr] = vm_args!(vm, stack_ptr; u32);
+    let (addr,) = vm_args!(vm, stack_ptr; u32);
     if addr == 0 {
         return 0;
     }
@@ -43,7 +43,7 @@ fn interlocked_push_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn interlocked_pop_entry_slist(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [header] = vm_args!(vm, stack_ptr; u32);
+    let (header,) = vm_args!(vm, stack_ptr; u32);
     if header == 0 {
         return 0;
     }

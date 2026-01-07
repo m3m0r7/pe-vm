@@ -6,7 +6,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn close_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     if handle != 0 {
         vm.file_close(handle);
     }

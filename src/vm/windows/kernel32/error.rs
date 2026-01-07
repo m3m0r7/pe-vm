@@ -14,7 +14,7 @@ fn get_last_error(vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn set_last_error(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [value] = vm_args!(vm, stack_ptr; u32);
+    let (value,) = vm_args!(vm, stack_ptr; u32);
     vm.set_last_error(value);
     0
 }

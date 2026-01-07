@@ -27,7 +27,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [name] = vm_args!(vm, stack_ptr; u32);
+    let (name,) = vm_args!(vm, stack_ptr; u32);
     if name == 0 {
         return vm.base();
     }
@@ -35,7 +35,7 @@ fn get_module_handle_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_module_handle_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [name] = vm_args!(vm, stack_ptr; u32);
+    let (name,) = vm_args!(vm, stack_ptr; u32);
     if name == 0 {
         return vm.base();
     }
@@ -155,7 +155,7 @@ fn load_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn lock_resource(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     handle
 }
 

@@ -1,11 +1,11 @@
 //! User32 cursor-related stubs.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, load_cursor_a, 1);
-register_func_stub!(DLL_NAME, load_cursor_w, 1);
+define_stub_fn!(DLL_NAME, load_cursor_a, 1);
+define_stub_fn!(DLL_NAME, load_cursor_w, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "LoadCursorA", crate::vm::stdcall_args(2), load_cursor_a);

@@ -1,6 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -12,7 +13,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn query_performance_counter(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let counter_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (counter_ptr,) = vm_args!(vm, stack_ptr; u32);
     if counter_ptr == 0 {
         return 0;
     }

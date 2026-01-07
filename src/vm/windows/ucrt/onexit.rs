@@ -1,6 +1,7 @@
 //! UCRT onexit table stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import(
@@ -31,7 +32,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn initialize_onexit_table(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let table_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (table_ptr,) = vm_args!(vm, stack_ptr; u32);
     if table_ptr == 0 {
         return 1;
     }
@@ -44,8 +45,7 @@ fn initialize_onexit_table(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn register_onexit_function(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let table_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let func = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
+    let (table_ptr, func) = vm_args!(vm, stack_ptr; u32, u32);
     if table_ptr == 0 || func == 0 {
         return 1;
     }
@@ -54,7 +54,7 @@ fn register_onexit_function(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn execute_onexit_table(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let table_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (table_ptr,) = vm_args!(vm, stack_ptr; u32);
     if table_ptr == 0 {
         return 0;
     }
@@ -71,7 +71,7 @@ fn execute_onexit_table(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn crt_atexit(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let func = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (func,) = vm_args!(vm, stack_ptr; u32);
     if func == 0 {
         return 1;
     }

@@ -68,7 +68,7 @@ pub(super) fn wsa_get_last_error(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn wsa_set_last_error(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [code] = vm_args!(vm, stack_ptr; u32);
+    let (code,) = vm_args!(vm, stack_ptr; u32);
     set_last_error(code);
     0
 }

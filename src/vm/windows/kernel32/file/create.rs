@@ -32,7 +32,7 @@ fn copy_file_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn create_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (path_ptr,) = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         return 0;
     }
@@ -92,7 +92,7 @@ fn create_file_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn delete_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (path_ptr,) = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         return 0;
     }

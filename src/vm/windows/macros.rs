@@ -4,10 +4,10 @@
 //!
 //! ```ignore
 //! // Basic u32 arguments
-//! let [handle, buffer, count, written] = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+//! let (handle, buffer, count, written,) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
 //!
 //! // Mixed types
-//! let [handle, count] = vm_args!(vm, stack_ptr; u32, usize);
+//! let (handle, count,) = vm_args!(vm, stack_ptr; u32, usize);
 //!
 //! // With strings (ANSI)
 //! let (path,) = vm_args!(vm, stack_ptr; str);
@@ -120,10 +120,10 @@ pub fn read_wstr_delim(vm: &Vm, ptr: u32, delim: u16) -> String {
 ///
 /// ```ignore
 /// // Read 4 u32 arguments
-/// let [handle, buffer, count, written] = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+/// let (handle, buffer, count, written,) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
 ///
 /// // Read mixed types
-/// let [handle, index] = vm_args!(vm, stack_ptr; u32, usize);
+/// let (handle, index,) = vm_args!(vm, stack_ptr; u32, usize);
 ///
 /// // Read with string (returns tuple for strings)
 /// let (path, flags) = vm_args!(vm, stack_ptr; str, u32);
@@ -159,10 +159,10 @@ macro_rules! vm_args {
     // Entry point: generate tuple/array based on types
     // For all-numeric types, returns array. For strings, returns tuple.
 
-    // 1 argument
+    // 1 argument (returns single-element tuple for consistency)
     ($vm:expr, $sp:expr; $t1:tt) => {{
         let v1 = $crate::vm_args!(@read $vm, $sp + 4, $t1);
-        [v1]
+        (v1,)
     }};
 
     // 2 arguments
@@ -380,7 +380,7 @@ macro_rules! vm_args_wstr_delim {
 /// # Usage
 ///
 /// ```ignore
-/// register_func_stub!(DLL_NAME, function_name, return_value);
+/// define_stub_fn!(DLL_NAME, function_name, return_value);
 /// ```
 ///
 /// This generates a function that calls `check_stub()` and returns the specified value.
@@ -390,17 +390,114 @@ macro_rules! vm_args_wstr_delim {
 ///
 /// ```ignore
 /// use crate::vm::windows::kernel32::DLL_NAME;
-/// register_func_stub!(DLL_NAME, create_event_w, 1);  // Returns 1 (success)
-/// register_func_stub!(DLL_NAME, get_version, 0);     // Returns 0
+/// define_stub_fn!(DLL_NAME, create_event_w, 1);  // Returns 1 (success)
+/// define_stub_fn!(DLL_NAME, get_version, 0);     // Returns 0
 /// ```
 #[macro_export]
-macro_rules! register_func_stub {
+macro_rules! define_stub_fn {
     ($dll:expr, $name:ident, $ret:expr) => {
         fn $name(vm: &mut $crate::vm::Vm, _sp: u32) -> u32 {
             $crate::vm::windows::check_stub(vm, $dll, stringify!($name));
             $ret
         }
     };
+}
+
+/// Macro to write function arguments to the stack (for testing).
+///
+/// # Syntax
+///
+/// ```ignore
+/// vm_set_args!(vm, stack_ptr; val1, val2, ...)
+/// ```
+///
+/// This writes u32 values to stack_ptr+4, stack_ptr+8, etc.
+/// For strings, you can pass a string slice or &[u8] which will be written
+/// to heap and its pointer placed on the stack.
+///
+/// # Examples
+///
+/// ```ignore
+/// // Set up 3 arguments
+/// vm_set_args!(vm, stack; 0x1234, 0x5678, 42);
+///
+/// // With string (writes to heap and puts pointer on stack)
+/// vm_set_args!(vm, stack; "Hello", 42);
+/// ```
+#[macro_export]
+macro_rules! vm_set_args {
+    // Internal: write single value
+    (@write $vm:expr, $offset:expr, $val:expr) => {
+        $vm.write_u32($offset, $val as u32).unwrap();
+    };
+
+    // 1 argument
+    ($vm:expr, $sp:expr; $v1:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+    }};
+
+    // 2 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+    }};
+
+    // 3 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+    }};
+
+    // 4 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
+    }};
+
+    // 5 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
+        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
+    }};
+
+    // 6 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
+        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
+        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
+    }};
+
+    // 7 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr, $v7:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
+        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
+        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
+        $crate::vm_set_args!(@write $vm, $sp + 28, $v7);
+    }};
+
+    // 8 arguments
+    ($vm:expr, $sp:expr; $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr, $v7:expr, $v8:expr) => {{
+        $crate::vm_set_args!(@write $vm, $sp + 4, $v1);
+        $crate::vm_set_args!(@write $vm, $sp + 8, $v2);
+        $crate::vm_set_args!(@write $vm, $sp + 12, $v3);
+        $crate::vm_set_args!(@write $vm, $sp + 16, $v4);
+        $crate::vm_set_args!(@write $vm, $sp + 20, $v5);
+        $crate::vm_set_args!(@write $vm, $sp + 24, $v6);
+        $crate::vm_set_args!(@write $vm, $sp + 28, $v7);
+        $crate::vm_set_args!(@write $vm, $sp + 32, $v8);
+    }};
 }
 
 #[cfg(test)]
@@ -433,7 +530,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
         vm.write_u32(stack + 4, 0x1234).unwrap();
-        let [value] = vm_args!(&vm, stack; u32);
+        let (value,) = vm_args!(&vm, stack; u32);
         assert_eq!(value, 0x1234);
     }
 
@@ -470,7 +567,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
         vm.write_u32(stack + 4, 0x00001234).unwrap();
-        let [value] = vm_args!(&vm, stack; u16);
+        let (value,) = vm_args!(&vm, stack; u16);
         assert_eq!(value, 0x1234u16);
     }
 
@@ -498,7 +595,7 @@ mod tests {
         vm.write_u16(str_ptr + 2, 'i' as u16).unwrap();
         vm.write_u16(str_ptr + 4, 0).unwrap();
         vm.write_u32(stack + 4, str_ptr).unwrap();
-        let [s] = vm_args!(&vm, stack; wstr);
+        let (s,) = vm_args!(&vm, stack; wstr);
         assert_eq!(s, "Hi");
     }
 
@@ -507,7 +604,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
         vm.write_u32(stack + 4, 0).unwrap(); // NULL pointer
-        let [s] = vm_args!(&vm, stack; str);
+        let (s,) = vm_args!(&vm, stack; str);
         assert_eq!(s, "");
     }
 
@@ -516,7 +613,7 @@ mod tests {
         let mut vm = create_test_vm();
         let stack = vm.stack_top - 8;
         vm.write_u32(stack + 4, 0).unwrap(); // NULL pointer
-        let [s] = vm_args!(&vm, stack; wstr);
+        let (s,) = vm_args!(&vm, stack; wstr);
         assert_eq!(s, "");
     }
 

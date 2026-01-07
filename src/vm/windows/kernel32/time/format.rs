@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 use super::helpers::{now_parts, read_system_time, write_utf16};
 
@@ -8,9 +9,8 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_date_format_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let time_ptr = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr.wrapping_add(20)).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr.wrapping_add(24)).unwrap_or(0) as usize;
+    let (_locale, _flags, time_ptr, _format, out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let out_len = out_len as usize;
     let parts = if time_ptr == 0 {
         now_parts()
     } else {
@@ -21,9 +21,8 @@ fn get_date_format_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_time_format_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let time_ptr = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
-    let out_ptr = vm.read_u32(stack_ptr.wrapping_add(20)).unwrap_or(0);
-    let out_len = vm.read_u32(stack_ptr.wrapping_add(24)).unwrap_or(0) as usize;
+    let (_locale, _flags, time_ptr, _format, out_ptr, out_len) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
+    let out_len = out_len as usize;
     let parts = if time_ptr == 0 {
         now_parts()
     } else {

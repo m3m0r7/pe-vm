@@ -1,10 +1,11 @@
 //! Kernel32 thread-related stubs.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
 
-register_func_stub!(DLL_NAME, exit_thread, 0);
+define_stub_fn!(DLL_NAME, exit_thread, 0);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "CreateThread", crate::vm::stdcall_args(6), create_thread);
@@ -13,10 +14,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 pub(crate) fn create_thread(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let start = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
-    let param = vm.read_u32(stack_ptr.wrapping_add(16)).unwrap_or(0);
-    let _flags = vm.read_u32(stack_ptr.wrapping_add(20)).unwrap_or(0);
-    let thread_id_ptr = vm.read_u32(stack_ptr.wrapping_add(24)).unwrap_or(0);
+    let (_attrs, _stack_size, start, param, _flags, thread_id_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32, u32);
 
     if start == 0 {
         return 0;

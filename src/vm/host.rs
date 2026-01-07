@@ -2,11 +2,13 @@
 
 use super::Vm;
 use crate::vm::windows;
+use crate::vm_args;
 
 pub fn host_printf(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let Ok(ptr) = vm.read_u32(stack_ptr.wrapping_add(4)) else {
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
+    if ptr == 0 {
         return 0;
-    };
+    }
     let text = vm.read_c_string(ptr).unwrap_or_default();
     vm.write_stdout(&text);
     text.len() as u32

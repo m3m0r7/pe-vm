@@ -2,14 +2,14 @@
 
 pub const DLL_NAME: &str = "SHELL32.dll";
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::Vm;
 use crate::vm_args;
 
-register_func_stub!(DLL_NAME, shell_execute_a, 33);
-register_func_stub!(DLL_NAME, shell_execute_ex_a, 1);
-register_func_stub!(DLL_NAME, sh_browse_for_folder_a, 0);
-register_func_stub!(DLL_NAME, sh_get_file_info_a, 0);
+define_stub_fn!(DLL_NAME, shell_execute_a, 33);
+define_stub_fn!(DLL_NAME, shell_execute_ex_a, 1);
+define_stub_fn!(DLL_NAME, sh_browse_for_folder_a, 0);
+define_stub_fn!(DLL_NAME, sh_get_file_info_a, 0);
 
 // Register shell entry points that may be imported by GUI DLLs.
 pub fn register(vm: &mut Vm) {

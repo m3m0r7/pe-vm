@@ -29,7 +29,7 @@ fn flush_file_buffers(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [path_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (path_ptr,) = vm_args!(vm, stack_ptr; u32);
     if path_ptr == 0 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_FILE_ATTRIBUTES;

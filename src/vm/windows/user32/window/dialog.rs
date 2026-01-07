@@ -1,16 +1,16 @@
 use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::{write_c_string, write_rect};
 
-register_func_stub!(DLL_NAME, get_dlg_item, 0);
-register_func_stub!(DLL_NAME, send_dlg_item_message_a, 0);
-register_func_stub!(DLL_NAME, end_dialog, 1);
-register_func_stub!(DLL_NAME, dialog_box_indirect_param_a, 1);
-register_func_stub!(DLL_NAME, map_window_points, 0);
+define_stub_fn!(DLL_NAME, get_dlg_item, 0);
+define_stub_fn!(DLL_NAME, send_dlg_item_message_a, 0);
+define_stub_fn!(DLL_NAME, end_dialog, 1);
+define_stub_fn!(DLL_NAME, dialog_box_indirect_param_a, 1);
+define_stub_fn!(DLL_NAME, map_window_points, 0);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "GetDlgItem", crate::vm::stdcall_args(2), get_dlg_item);

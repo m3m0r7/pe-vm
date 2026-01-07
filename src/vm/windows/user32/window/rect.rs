@@ -1,13 +1,13 @@
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::write_rect;
 
-register_func_stub!(DLL_NAME, pt_in_rect, 0);
-register_func_stub!(DLL_NAME, equal_rect, 0);
-register_func_stub!(DLL_NAME, fill_rect, 1);
+define_stub_fn!(DLL_NAME, pt_in_rect, 0);
+define_stub_fn!(DLL_NAME, equal_rect, 0);
+define_stub_fn!(DLL_NAME, fill_rect, 1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "PtInRect", crate::vm::stdcall_args(3), pt_in_rect);

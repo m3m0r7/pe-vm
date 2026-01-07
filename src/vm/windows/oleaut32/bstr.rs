@@ -65,7 +65,7 @@ fn read_utf16_len(vm: &Vm, ptr: u32, len: usize) -> Result<Vec<u16>, VmError> {
 
 // SysAllocString(wstr)
 pub(super) fn sys_alloc_string(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [src] = vm_args!(vm, stack_ptr; u32);
+    let (src,) = vm_args!(vm, stack_ptr; u32);
     if src == 0 {
         return 0;
     }
@@ -113,7 +113,7 @@ pub(super) fn sys_free_string(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // SysStringLen(wstr)
 pub(super) fn sys_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 || ptr < 4 {
         return 0;
     }
@@ -122,7 +122,7 @@ pub(super) fn sys_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // SysStringByteLen(wstr)
 pub(super) fn sys_string_byte_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 || ptr < 4 {
         return 0;
     }

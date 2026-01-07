@@ -12,7 +12,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_current_package_id(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [len_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (len_ptr,) = vm_args!(vm, stack_ptr; u32);
     if len_ptr != 0 {
         let _ = vm.write_u32(len_ptr, 0);
     }

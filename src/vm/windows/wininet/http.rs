@@ -25,7 +25,7 @@ const INTERNET_FLAG_SECURE: u32 = 0x0080_0000;
 
 pub(super) fn internet_open_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetOpenA(hAgent, accessType, proxy, bypass, flags).
-    let [agent_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (agent_ptr,) = vm_args!(vm, stack_ptr; u32);
     let agent = read_c_string(vm, agent_ptr);
     let handle = InternetHandle::Session(Session { user_agent: agent });
     alloc_handle(handle)
@@ -386,7 +386,7 @@ pub(super) fn internet_set_option_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn internet_close_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     if handle == 0 {
         return 0;
     }

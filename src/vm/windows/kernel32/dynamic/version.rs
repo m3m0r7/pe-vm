@@ -13,7 +13,7 @@ pub(super) fn register(vm: &mut Vm) {
 
 // Provide a stable OS version for version checks inside DLLs.
 fn get_version_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [info_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (info_ptr,) = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }
@@ -23,7 +23,7 @@ fn get_version_ex_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_version_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [info_ptr] = vm_args!(vm, stack_ptr; u32);
+    let (info_ptr,) = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }

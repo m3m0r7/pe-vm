@@ -28,7 +28,7 @@ pub(super) fn get_monitor_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn get_system_metrics(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [index] = vm_args!(vm, stack_ptr; u32);
+    let (index,) = vm_args!(vm, stack_ptr; u32);
     match index {
         0 => 1024,
         1 => 768,

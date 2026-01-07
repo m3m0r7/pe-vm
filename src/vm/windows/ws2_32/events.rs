@@ -12,7 +12,7 @@ pub(super) fn wsa_create_event(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn wsa_close_event(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     if handle == 0 {
         set_last_error(WSAEINVAL);
         return 0;

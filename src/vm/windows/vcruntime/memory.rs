@@ -1,15 +1,16 @@
 //! VCRUNTIME memory stubs.
 
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub fn register(vm: &mut Vm) {
     vm.register_import("VCRUNTIME140.dll", "memset", memset);
 }
 
 fn memset(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let dest = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
-    let value = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0) as u8;
-    let size = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0) as usize;
+    let (dest, value, size) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let value = value as u8;
+    let size = size as usize;
     if dest == 0 {
         return 0;
     }

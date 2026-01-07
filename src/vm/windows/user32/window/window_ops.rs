@@ -1,4 +1,4 @@
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
@@ -6,19 +6,19 @@ use crate::vm_args;
 use super::constants::DUMMY_HWND;
 use super::helpers::{write_c_string, write_rect};
 
-register_func_stub!(DLL_NAME, destroy_window, 1);
-register_func_stub!(DLL_NAME, show_window, 1);
-register_func_stub!(DLL_NAME, move_window, 1);
-register_func_stub!(DLL_NAME, set_window_pos, 1);
-register_func_stub!(DLL_NAME, get_window_text_length_a, 0);
-register_func_stub!(DLL_NAME, set_window_text_a, 1);
-register_func_stub!(DLL_NAME, get_window, 0);
-register_func_stub!(DLL_NAME, get_parent, 0);
-register_func_stub!(DLL_NAME, is_child, 0);
-register_func_stub!(DLL_NAME, get_window_long_a, 0);
-register_func_stub!(DLL_NAME, set_window_long_a, 0);
-register_func_stub!(DLL_NAME, set_parent, 0);
-register_func_stub!(DLL_NAME, get_active_window, 0);
+define_stub_fn!(DLL_NAME, destroy_window, 1);
+define_stub_fn!(DLL_NAME, show_window, 1);
+define_stub_fn!(DLL_NAME, move_window, 1);
+define_stub_fn!(DLL_NAME, set_window_pos, 1);
+define_stub_fn!(DLL_NAME, get_window_text_length_a, 0);
+define_stub_fn!(DLL_NAME, set_window_text_a, 1);
+define_stub_fn!(DLL_NAME, get_window, 0);
+define_stub_fn!(DLL_NAME, get_parent, 0);
+define_stub_fn!(DLL_NAME, is_child, 0);
+define_stub_fn!(DLL_NAME, get_window_long_a, 0);
+define_stub_fn!(DLL_NAME, set_window_long_a, 0);
+define_stub_fn!(DLL_NAME, set_parent, 0);
+define_stub_fn!(DLL_NAME, get_active_window, 0);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "CreateWindowExA", crate::vm::stdcall_args(12), create_window_ex_a);
@@ -76,7 +76,7 @@ pub(super) fn get_desktop_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn is_window(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [hwnd] = vm_args!(vm, stack_ptr; u32);
+    let (hwnd,) = vm_args!(vm, stack_ptr; u32);
     if hwnd == 0 { 0 } else { 1 }
 }
 

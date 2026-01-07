@@ -216,17 +216,17 @@ fn create_solid_brush(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn delete_dc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 
 fn delete_meta_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 
 fn delete_object(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [handle] = vm_args!(vm, stack_ptr; u32);
+    let (handle,) = vm_args!(vm, stack_ptr; u32);
     free_handle(handle) as u32
 }
 

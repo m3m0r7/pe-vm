@@ -1,15 +1,16 @@
 //! Kernel32 exception-related stubs.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
+use crate::vm_args;
 
-register_func_stub!(DLL_NAME, raise_exception, 0);
-register_func_stub!(DLL_NAME, rtl_unwind, 0);
-register_func_stub!(DLL_NAME, add_vectored_exception_handler, 1);
-register_func_stub!(DLL_NAME, remove_vectored_exception_handler, 1);
-register_func_stub!(DLL_NAME, add_vectored_continue_handler, 1);
-register_func_stub!(DLL_NAME, remove_vectored_continue_handler, 1);
+define_stub_fn!(DLL_NAME, raise_exception, 0);
+define_stub_fn!(DLL_NAME, rtl_unwind, 0);
+define_stub_fn!(DLL_NAME, add_vectored_exception_handler, 1);
+define_stub_fn!(DLL_NAME, remove_vectored_exception_handler, 1);
+define_stub_fn!(DLL_NAME, add_vectored_continue_handler, 1);
+define_stub_fn!(DLL_NAME, remove_vectored_continue_handler, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "SetUnhandledExceptionFilter", crate::vm::stdcall_args(1), set_unhandled_exception_filter);
@@ -23,7 +24,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn set_unhandled_exception_filter(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let filter = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (filter,) = vm_args!(vm, stack_ptr; u32);
     let previous = vm.unhandled_exception_filter();
     vm.set_unhandled_exception_filter(filter);
     previous

@@ -45,7 +45,7 @@ pub(super) fn typeinfo_get_type_attr(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return E_NOTIMPL;
     };
     let out_ptr = if thiscall {
-        let [out_ptr] = vm_args!(vm, stack_ptr; u32);
+        let (out_ptr,) = vm_args!(vm, stack_ptr; u32);
         out_ptr
     } else {
         let (_, out_ptr) = vm_args!(vm, stack_ptr; u32, u32);

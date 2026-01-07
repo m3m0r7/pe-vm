@@ -1,21 +1,21 @@
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, screen_to_client, 1);
-register_func_stub!(DLL_NAME, client_to_screen, 1);
-register_func_stub!(DLL_NAME, set_window_rgn, 1);
-register_func_stub!(DLL_NAME, set_window_context_help_id, 1);
-register_func_stub!(DLL_NAME, set_foreground_window, 1);
-register_func_stub!(DLL_NAME, invalidate_rect, 1);
-register_func_stub!(DLL_NAME, invalidate_rgn, 1);
-register_func_stub!(DLL_NAME, redraw_window, 1);
-register_func_stub!(DLL_NAME, post_message_a, 1);
-register_func_stub!(DLL_NAME, send_message_a, 0);
-register_func_stub!(DLL_NAME, register_window_message_a, 1);
-register_func_stub!(DLL_NAME, call_window_proc_a, 0);
-register_func_stub!(DLL_NAME, def_window_proc_a, 0);
-register_func_stub!(DLL_NAME, unregister_class_a, 1);
+define_stub_fn!(DLL_NAME, screen_to_client, 1);
+define_stub_fn!(DLL_NAME, client_to_screen, 1);
+define_stub_fn!(DLL_NAME, set_window_rgn, 1);
+define_stub_fn!(DLL_NAME, set_window_context_help_id, 1);
+define_stub_fn!(DLL_NAME, set_foreground_window, 1);
+define_stub_fn!(DLL_NAME, invalidate_rect, 1);
+define_stub_fn!(DLL_NAME, invalidate_rgn, 1);
+define_stub_fn!(DLL_NAME, redraw_window, 1);
+define_stub_fn!(DLL_NAME, post_message_a, 1);
+define_stub_fn!(DLL_NAME, send_message_a, 0);
+define_stub_fn!(DLL_NAME, register_window_message_a, 1);
+define_stub_fn!(DLL_NAME, call_window_proc_a, 0);
+define_stub_fn!(DLL_NAME, def_window_proc_a, 0);
+define_stub_fn!(DLL_NAME, unregister_class_a, 1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "ScreenToClient", crate::vm::stdcall_args(2), screen_to_client);

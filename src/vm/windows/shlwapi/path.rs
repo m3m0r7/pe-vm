@@ -10,7 +10,7 @@ pub fn register(vm: &mut Vm) {
 
 // BOOL PathFileExistsA(LPCSTR pszPath)
 fn path_file_exists_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return 0;
     }

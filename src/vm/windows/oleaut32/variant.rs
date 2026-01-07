@@ -10,7 +10,7 @@ use super::constants::{
 
 // VariantInit(ptr)
 pub(super) fn variant_init(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return E_INVALIDARG;
     }
@@ -20,7 +20,7 @@ pub(super) fn variant_init(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // VariantClear(ptr)
 pub(super) fn variant_clear(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return E_INVALIDARG;
     }

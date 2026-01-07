@@ -1,4 +1,5 @@
 use crate::vm::Vm;
+use crate::vm_args;
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -10,7 +11,7 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_time_zone_information(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let info_ptr = vm.read_u32(stack_ptr.wrapping_add(4)).unwrap_or(0);
+    let (info_ptr,) = vm_args!(vm, stack_ptr; u32);
     if info_ptr == 0 {
         return 0;
     }

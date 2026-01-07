@@ -2,10 +2,10 @@
 
 pub const DLL_NAME: &str = "imagehlp.dll";
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::Vm;
 
-register_func_stub!(DLL_NAME, make_sure_directory_path_exists, 1);
+define_stub_fn!(DLL_NAME, make_sure_directory_path_exists, 1);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(

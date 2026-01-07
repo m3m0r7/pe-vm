@@ -32,7 +32,7 @@ pub(super) fn typelib_release(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 pub(super) fn typelib_get_typeinfo_count(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [this] = vm_args!(vm, stack_ptr; u32);
+    let (this,) = vm_args!(vm, stack_ptr; u32);
     let lib_id = vm.read_u32(this.wrapping_add(4)).unwrap_or(0);
     let Some(lib) = typelib::get_typelib(lib_id) else {
         return 0;

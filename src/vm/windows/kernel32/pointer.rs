@@ -12,7 +12,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn encode_pointer(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [value] = vm_args!(vm, stack_ptr; u32);
+    let (value,) = vm_args!(vm, stack_ptr; u32);
     if value == 0 {
         POINTER_COOKIE
     } else {
@@ -21,7 +21,7 @@ fn encode_pointer(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn decode_pointer(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [value] = vm_args!(vm, stack_ptr; u32);
+    let (value,) = vm_args!(vm, stack_ptr; u32);
     if value == POINTER_COOKIE {
         0
     } else {

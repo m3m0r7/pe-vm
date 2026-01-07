@@ -139,7 +139,7 @@ fn co_get_class_object(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 // CoTaskMemAlloc(size)
 fn co_task_mem_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [size] = vm_args!(vm, stack_ptr; u32);
+    let (size,) = vm_args!(vm, stack_ptr; u32);
     let buf = vec![0u8; size as usize];
     vm.alloc_bytes(&buf, 8).unwrap_or(0)
 }

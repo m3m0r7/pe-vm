@@ -1,14 +1,14 @@
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::constants::DUMMY_HDC;
 
-register_func_stub!(DLL_NAME, release_dc, 1);
-register_func_stub!(DLL_NAME, end_paint, 1);
-register_func_stub!(DLL_NAME, create_accelerator_table_a, 1);
-register_func_stub!(DLL_NAME, destroy_accelerator_table, 1);
+define_stub_fn!(DLL_NAME, release_dc, 1);
+define_stub_fn!(DLL_NAME, end_paint, 1);
+define_stub_fn!(DLL_NAME, create_accelerator_table_a, 1);
+define_stub_fn!(DLL_NAME, destroy_accelerator_table, 1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "GetDC", crate::vm::stdcall_args(1), get_dc);

@@ -75,7 +75,7 @@ fn global_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_lock(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [h_mem] = vm_args!(vm, stack_ptr; u32);
+    let (h_mem,) = vm_args!(vm, stack_ptr; u32);
     h_mem
 }
 
@@ -84,7 +84,7 @@ fn global_unlock(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [p_mem] = vm_args!(vm, stack_ptr; u32);
+    let (p_mem,) = vm_args!(vm, stack_ptr; u32);
     p_mem
 }
 

@@ -2,13 +2,13 @@
 
 pub const DLL_NAME: &str = "VERSION.dll";
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 use crate::vm_args;
 
-register_func_stub!(DLL_NAME, get_file_version_info_a, 0);
-register_func_stub!(DLL_NAME, ver_query_value_a, 0);
+define_stub_fn!(DLL_NAME, get_file_version_info_a, 0);
+define_stub_fn!(DLL_NAME, ver_query_value_a, 0);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(

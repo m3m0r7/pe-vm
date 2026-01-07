@@ -2,6 +2,7 @@
 
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::{MessageBoxMode, Vm};
+use crate::vm_args;
 
 mod sdl;
 
@@ -14,9 +15,7 @@ pub fn register(vm: &mut Vm) {
 
 pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // Read Win32 MessageBoxA arguments from the guest stack.
-    let text_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
-    let caption_ptr = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
-    let _utype = vm.read_u32(stack_ptr.wrapping_add(16)).unwrap_or(0);
+    let (_hwnd, text_ptr, caption_ptr, _utype) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     let text = if text_ptr != 0 {
         vm.read_c_string(text_ptr).unwrap_or_default()
     } else {
@@ -47,9 +46,7 @@ pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 pub(crate) fn message_box_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // Read Win32 MessageBoxW arguments from the guest stack.
-    let text_ptr = vm.read_u32(stack_ptr.wrapping_add(8)).unwrap_or(0);
-    let caption_ptr = vm.read_u32(stack_ptr.wrapping_add(12)).unwrap_or(0);
-    let _utype = vm.read_u32(stack_ptr.wrapping_add(16)).unwrap_or(0);
+    let (_hwnd, text_ptr, caption_ptr, _utype) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
     let text = if text_ptr != 0 {
         read_w_string(vm, text_ptr)
     } else {

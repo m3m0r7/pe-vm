@@ -29,7 +29,7 @@ fn get_console_mode(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_std_handle(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [n_std_handle] = vm_args!(vm, stack_ptr; u32);
+    let (n_std_handle,) = vm_args!(vm, stack_ptr; u32);
     n_std_handle
 }
 

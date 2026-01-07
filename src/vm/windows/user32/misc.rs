@@ -1,11 +1,11 @@
 //! Miscellaneous User32 helpers.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
-register_func_stub!(DLL_NAME, enable_window, 1);
+define_stub_fn!(DLL_NAME, enable_window, 1);
 
 // Register smaller helpers that don't warrant their own module.
 pub fn register(vm: &mut Vm) {
@@ -15,7 +15,7 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn char_next_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return 0;
     }
@@ -23,7 +23,7 @@ fn char_next_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [ptr] = vm_args!(vm, stack_ptr; u32);
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
     if ptr == 0 {
         return 0;
     }

@@ -1,6 +1,6 @@
 //! Registry API entry points.
 
-use crate::register_func_stub;
+use crate::define_stub_fn;
 use crate::vm::windows::advapi32::DLL_NAME;
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::windows::{get_registry, get_registry_mut};
@@ -17,10 +17,10 @@ use super::helpers::{
     resolve_registry_value,
 };
 
-register_func_stub!(DLL_NAME, reg_delete_value_a, ERROR_SUCCESS);
-register_func_stub!(DLL_NAME, reg_delete_value_w, ERROR_SUCCESS);
-register_func_stub!(DLL_NAME, reg_delete_key_a, ERROR_SUCCESS);
-register_func_stub!(DLL_NAME, reg_delete_key_w, ERROR_SUCCESS);
+define_stub_fn!(DLL_NAME, reg_delete_value_a, ERROR_SUCCESS);
+define_stub_fn!(DLL_NAME, reg_delete_value_w, ERROR_SUCCESS);
+define_stub_fn!(DLL_NAME, reg_delete_key_a, ERROR_SUCCESS);
+define_stub_fn!(DLL_NAME, reg_delete_key_w, ERROR_SUCCESS);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(DLL_NAME, "RegOpenKeyExA", crate::vm::stdcall_args(5), reg_open_key_ex_a);
@@ -365,7 +365,7 @@ fn decode_wide_units(bytes: &[u8]) -> Vec<u16> {
 }
 
 fn reg_close_key(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let [hkey] = vm_args!(vm, stack_ptr; u32);
+    let (hkey,) = vm_args!(vm, stack_ptr; u32);
     if is_root_hive(hkey) {
         return ERROR_SUCCESS;
     }
