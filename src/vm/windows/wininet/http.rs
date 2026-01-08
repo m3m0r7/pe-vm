@@ -258,8 +258,17 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         Ok(response) => response,
         Err(err) => {
             trace_net(&format!("HttpSendRequestA failed: {err}"));
-            vm.set_last_error(ERROR_INTERNET_CONNECTION_ABORTED);
-            return 0;
+            // Return a stub HTTP 200 response on connection failure to allow
+            // applications that require network initialization to proceed.
+            // This prevents JVLink from interpreting connection errors as
+            // "server maintenance" and aborting initialization.
+            use super::types::Response;
+            trace_net("HttpSendRequestA: returning stub 200 response");
+            Response {
+                status: 200,
+                body: Vec::new(),
+                raw_headers: "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n".to_string(),
+            }
         }
     };
 
