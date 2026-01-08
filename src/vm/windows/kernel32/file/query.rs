@@ -50,10 +50,7 @@ fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return INVALID_FILE_ATTRIBUTES;
     }
     let path = vm.read_c_string(path_ptr).unwrap_or_default();
-    if std::env::var("PE_VM_TRACE").is_ok() {
-        eprintln!("[pe_vm] GetFileAttributesA: {path}");
-    }
-    if vm.file_exists(&path) {
+    let result = if vm.file_exists(&path) {
         let host_path = vm.map_path(&path);
         if std::path::Path::new(&host_path).is_dir() {
             FILE_ATTRIBUTE_DIRECTORY
@@ -63,7 +60,14 @@ fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     } else {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         INVALID_FILE_ATTRIBUTES
+    };
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        let host_path = vm.map_path(&path);
+        eprintln!(
+            "[pe_vm] GetFileAttributesA: {path} -> 0x{result:08X} (host={host_path})"
+        );
     }
+    result
 }
 
 fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
