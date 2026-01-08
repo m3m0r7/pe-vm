@@ -381,21 +381,20 @@ fn reg_set_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
         REG_BINARY => RegistryValue::Binary(data),
         _ => return ERROR_SUCCESS,
     };
-    let redirected = redirect_wow6432_key(vm, &key);
+    // For 32-bit processes, Windows automatically redirects HKLM\SOFTWARE\... to
+    // HKLM\SOFTWARE\WOW6432Node\... The key path should already be redirected if
+    // it was opened via RegOpenKeyEx/RegCreateKeyEx (since those apply redirection).
+    // However, if this is a direct write using a root hive handle, we need to apply
+    // the redirection here.
+    let write_key = redirect_wow6432_key(vm, &key).unwrap_or(key);
     let registry = match get_registry_mut(vm) {
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    let _ = registry.set(&key, value.clone());
-    if let Some(redirected) = redirected {
-        let _ = registry.set(&redirected, value.clone());
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] {api}: writing to {write_key}");
     }
-    for extra in extra_keys {
-        let _ = registry.set(&extra, value.clone());
-        if let Some(redirected_extra) = redirect_wow6432_key(vm, &extra) {
-            let _ = registry.set(&redirected_extra, value.clone());
-        }
-    }
+    let _ = registry.set(&write_key, value);
     ERROR_SUCCESS
 }
 

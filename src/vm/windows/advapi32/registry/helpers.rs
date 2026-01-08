@@ -176,6 +176,7 @@ pub(super) fn is_root_hive(hkey: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::vm::{Os, VmConfig};
 
     #[test]
     fn test_join_key_empty_subkey() {
@@ -219,5 +220,106 @@ mod tests {
         assert!(!is_root_hive(1));
         assert!(!is_root_hive(0x1234));
         assert!(!is_root_hive(0x7FFF_FFFF));
+    }
+
+    // WOW6432Node redirect tests
+
+    fn create_x86_vm() -> Vm {
+        let config = VmConfig::from_default_settings()
+            .unwrap()
+            .os(Os::Windows)
+            .architecture(Architecture::X86);
+        Vm::new(config).unwrap()
+    }
+
+    fn create_x64_vm() -> Vm {
+        let config = VmConfig::from_default_settings()
+            .unwrap()
+            .os(Os::Windows)
+            .architecture(Architecture::X86_64);
+        Vm::new(config).unwrap()
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_hklm_software() {
+        let vm = create_x86_vm();
+        // HKLM\Software\App should redirect to HKLM\Software\WOW6432Node\App
+        let result = redirect_wow6432_key(&vm, "HKLM\\Software\\App");
+        assert_eq!(result, Some("HKLM\\Software\\WOW6432Node\\App".to_string()));
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_hklm_software_with_value() {
+        let vm = create_x86_vm();
+        // HKLM\Software\App@Value should redirect to HKLM\Software\WOW6432Node\App@Value
+        let result = redirect_wow6432_key(&vm, "HKLM\\Software\\App@Value");
+        assert_eq!(
+            result,
+            Some("HKLM\\Software\\WOW6432Node\\App@Value".to_string())
+        );
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_hkcu_software() {
+        let vm = create_x86_vm();
+        // HKCU\Software\App should redirect to HKCU\Software\WOW6432Node\App
+        let result = redirect_wow6432_key(&vm, "HKCU\\Software\\App");
+        assert_eq!(result, Some("HKCU\\Software\\WOW6432Node\\App".to_string()));
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_already_has_wow6432node() {
+        let vm = create_x86_vm();
+        // Already has WOW6432Node, should not redirect again
+        let result = redirect_wow6432_key(&vm, "HKLM\\Software\\WOW6432Node\\App");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_non_software_key() {
+        let vm = create_x86_vm();
+        // Non-Software keys should not be redirected
+        let result = redirect_wow6432_key(&vm, "HKLM\\System\\CurrentControlSet");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_x86_hkcr() {
+        let vm = create_x86_vm();
+        // HKCR is not redirected at the root level
+        let result = redirect_wow6432_key(&vm, "HKCR\\CLSID\\{12345}");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    #[ignore = "x86_64 architecture not yet supported"]
+    fn test_redirect_wow6432_key_x64_no_redirect() {
+        let vm = create_x64_vm();
+        // 64-bit processes should not have WOW6432Node redirection
+        let result = redirect_wow6432_key(&vm, "HKLM\\Software\\App");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_deep_path() {
+        let vm = create_x86_vm();
+        // Deep paths should still be redirected
+        let result =
+            redirect_wow6432_key(&vm, "HKLM\\Software\\Vendor\\Product\\SubKey@ValueName");
+        assert_eq!(
+            result,
+            Some("HKLM\\Software\\WOW6432Node\\Vendor\\Product\\SubKey@ValueName".to_string())
+        );
+    }
+
+    #[test]
+    fn test_redirect_wow6432_key_case_insensitive() {
+        let vm = create_x86_vm();
+        // Should be case-insensitive
+        let result = redirect_wow6432_key(&vm, "hklm\\SOFTWARE\\App");
+        assert_eq!(
+            result,
+            Some("hklm\\SOFTWARE\\WOW6432Node\\App".to_string())
+        );
     }
 }
