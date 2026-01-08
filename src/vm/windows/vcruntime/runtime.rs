@@ -101,7 +101,8 @@ fn except_handler4_common(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
     // Read exception flags from EXCEPTION_RECORD + 4
     let exception_flags = if exception_record_ptr != 0 {
-        vm.read_u32(exception_record_ptr.wrapping_add(4)).unwrap_or(0)
+        vm.read_u32(exception_record_ptr.wrapping_add(4))
+            .unwrap_or(0)
     } else {
         0
     };

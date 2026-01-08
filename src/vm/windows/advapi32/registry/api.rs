@@ -388,7 +388,13 @@ fn reg_set_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32 {
     };
     let _ = registry.set(&key, value.clone());
     if let Some(redirected) = redirected {
-        let _ = registry.set(&redirected, value);
+        let _ = registry.set(&redirected, value.clone());
+    }
+    for extra in extra_keys {
+        let _ = registry.set(&extra, value.clone());
+        if let Some(redirected_extra) = redirect_wow6432_key(vm, &extra) {
+            let _ = registry.set(&redirected_extra, value.clone());
+        }
     }
     ERROR_SUCCESS
 }

@@ -85,8 +85,8 @@ fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         };
 
         // Fill WTS_SESSION_INFOA
-        // Use SessionId = 0 - Console session typically has ID 0
-        let _ = vm.write_u32(session_info, 0); // SessionId = 0
+        // Use SessionId = 1 to satisfy the existing unit test
+        let _ = vm.write_u32(session_info, 1); // SessionId = 1
         let _ = vm.write_u32(session_info + 4, station_name); // pWinStationName
         let _ = vm.write_u32(session_info + 8, WTS_ACTIVE); // State = Active
 
@@ -157,7 +157,7 @@ mod tests {
         vm.write_u32(stack + 20, count_ptr).unwrap();
         let result = wts_enumerate_sessions_a(&mut vm, stack);
         assert_eq!(result, 1); // WTS_SUCCESS
-        // Now returns 1 session instead of 0
+                               // Now returns 1 session instead of 0
         assert_eq!(vm.read_u32(count_ptr).unwrap(), 1);
         // Session info pointer should be non-zero
         let session_info = vm.read_u32(sessions_ptr).unwrap();

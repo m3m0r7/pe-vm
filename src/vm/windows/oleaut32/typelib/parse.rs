@@ -209,7 +209,9 @@ fn parse_funcs(
             let param_type = reader.read_i32(base)?;
             let _name = reader.read_i32(base + 4)?;
             let flags = reader.read_u32(base + 8)?;
-            if std::env::var("PE_VM_TRACE_COM").is_ok() && matches!(memid, 0x3 | 0x4 | 0x7 | 0xD | 0xE) {
+            if std::env::var("PE_VM_TRACE_COM").is_ok()
+                && matches!(memid, 0x3 | 0x4 | 0x7 | 0xD | 0xE)
+            {
                 eprintln!(
                     "[pe_vm] typelib raw param memid=0x{memid:08X} index={index} type=0x{param_type:08X} flags=0x{flags:08X}"
                 );

@@ -1,7 +1,7 @@
 use crate::vm::{ComOutParam, Vm, VmError};
 
 use super::super::super::constants::{
-    PARAMFLAG_FIN, PARAMFLAG_FOUT, VARIANT_SIZE, VT_ARRAY, VT_BSTR, VT_BYREF, VT_I4, VT_INT,
+    PARAMFLAG_FIN, PARAMFLAG_FOUT, VARIANT_SIZE, VT_ARRAY, VT_BSTR, VT_BYREF, VT_I1, VT_I4, VT_INT,
     VT_NULL, VT_UI1, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
 };
 use super::super::super::variant::write_variant_u32;
@@ -44,11 +44,11 @@ pub(super) fn read_variant_arg(vm: &Vm, var_ptr: u32, expected_vt: u16) -> Resul
 
     let expected_int = matches!(
         expected_base,
-        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED | VT_NULL
+        VT_I1 | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED | VT_NULL
     );
     let actual_int = matches!(
         actual_base,
-        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED | VT_NULL
+        VT_I1 | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_USERDEFINED | VT_NULL
     );
     if expected_int && actual_int {
         return Ok(value);
@@ -69,7 +69,7 @@ pub(super) fn alloc_out_arg(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     }
     let base = vt & !(VT_BYREF | VT_ARRAY);
     let size = match base {
-        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => 4,
+        VT_I1 | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
@@ -85,7 +85,7 @@ pub(super) fn default_arg_for_vt(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
         return Ok(0);
     }
     let size = match base {
-        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => 4,
+        VT_I1 | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };
@@ -126,7 +126,7 @@ pub(super) fn write_variant_value(
     }
     let base_vt = vt & !VT_BYREF;
     match base_vt {
-        VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => {
+        VT_I1 | VT_I4 | VT_UI4 | VT_INT | VT_UINT | VT_UI1 | VT_BSTR | VT_NULL => {
             write_variant_u32(vm, dest, base_vt, value)
         }
         _ => Err(VmError::InvalidConfig("unsupported variant type")),

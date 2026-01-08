@@ -34,7 +34,7 @@ pub(super) fn valid_vtable(vm: &Vm, instance: u32, offset: u16) -> bool {
 }
 
 pub(super) fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
-    let mut bytes = [0u8; 96];
+    let mut bytes = [0u8; 160];
     for (idx, slot) in bytes.iter_mut().enumerate() {
         *slot = vm.read_u8(entry.wrapping_add(idx as u32)).unwrap_or(0);
     }
@@ -42,6 +42,13 @@ pub(super) fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
     for idx in 0..bytes.len().saturating_sub(3) {
         if bytes[idx] == 0x8B
             && bytes[idx + 1] == 0x44
+            && bytes[idx + 2] == 0x24
+            && bytes[idx + 3] == 0x04
+        {
+            return false;
+        }
+        if bytes[idx] == 0xFF
+            && bytes[idx + 1] == 0x74
             && bytes[idx + 2] == 0x24
             && bytes[idx + 3] == 0x04
         {
@@ -65,6 +72,12 @@ pub(super) fn detect_thiscall(vm: &Vm, entry: u32) -> bool {
             return false;
         }
         if bytes[idx] == 0x8B && bytes[idx + 1] == 0x7D && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0xFF && bytes[idx + 1] == 0x75 && bytes[idx + 2] == 0x08 {
+            return false;
+        }
+        if bytes[idx] == 0x8D && bytes[idx + 1] == 0x45 && bytes[idx + 2] == 0x08 {
             return false;
         }
     }

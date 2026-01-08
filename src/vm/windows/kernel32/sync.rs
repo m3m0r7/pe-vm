@@ -65,15 +65,19 @@ fn enter_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
     if cs_ptr != 0 {
         // In single-threaded VM, just increment recursion count
-        let recursion = vm
-            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
-            .unwrap_or(0);
-        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion.wrapping_add(1));
+        let recursion = vm.read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET).unwrap_or(0);
+        let _ = vm.write_u32(
+            cs_ptr + CS_RECURSION_COUNT_OFFSET,
+            recursion.wrapping_add(1),
+        );
         // Increment lock count (from -1 to 0, or higher if recursive)
         let lock_count = vm
             .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
             .unwrap_or((-1i32) as u32) as i32;
-        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_add(1) as u32);
+        let _ = vm.write_u32(
+            cs_ptr + CS_LOCK_COUNT_OFFSET,
+            lock_count.wrapping_add(1) as u32,
+        );
     }
     0 // void return
 }
@@ -84,14 +88,18 @@ fn try_enter_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
     if cs_ptr != 0 {
         // In single-threaded VM, always succeeds
-        let recursion = vm
-            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
-            .unwrap_or(0);
-        let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion.wrapping_add(1));
+        let recursion = vm.read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET).unwrap_or(0);
+        let _ = vm.write_u32(
+            cs_ptr + CS_RECURSION_COUNT_OFFSET,
+            recursion.wrapping_add(1),
+        );
         let lock_count = vm
             .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
             .unwrap_or((-1i32) as u32) as i32;
-        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_add(1) as u32);
+        let _ = vm.write_u32(
+            cs_ptr + CS_LOCK_COUNT_OFFSET,
+            lock_count.wrapping_add(1) as u32,
+        );
     }
     1 // TRUE - successfully entered
 }
@@ -102,17 +110,16 @@ fn leave_critical_section(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let cs_ptr = vm.read_u32(stack_ptr + 4).unwrap_or(0);
     if cs_ptr != 0 {
         // Decrement recursion count
-        let recursion = vm
-            .read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET)
-            .unwrap_or(1);
+        let recursion = vm.read_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET).unwrap_or(1);
         if recursion > 0 {
             let _ = vm.write_u32(cs_ptr + CS_RECURSION_COUNT_OFFSET, recursion - 1);
         }
         // Decrement lock count
-        let lock_count = vm
-            .read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET)
-            .unwrap_or(0) as i32;
-        let _ = vm.write_u32(cs_ptr + CS_LOCK_COUNT_OFFSET, lock_count.wrapping_sub(1) as u32);
+        let lock_count = vm.read_u32(cs_ptr + CS_LOCK_COUNT_OFFSET).unwrap_or(0) as i32;
+        let _ = vm.write_u32(
+            cs_ptr + CS_LOCK_COUNT_OFFSET,
+            lock_count.wrapping_sub(1) as u32,
+        );
     }
     0 // void return
 }

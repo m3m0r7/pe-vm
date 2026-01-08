@@ -1,7 +1,7 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
-use crate::vm::{windows, Architecture, ExecuteOptions, Value, Vm, VmConfig};
+use crate::vm::{windows, ExecuteOptions, Value, Vm, VmConfig};
 
 use super::super::error::{clear_last_error, set_last_error};
 use super::handle::PeHandle;
@@ -47,7 +47,8 @@ pub unsafe extern "C" fn pevm_pe_execute_symbol_u32(
         slice.iter().copied().map(Value::U32).collect()
     };
 
-    let mut vm = match Vm::new(VmConfig::new().architecture(Architecture::X86)) {
+    let arch = handle.file.architecture();
+    let mut vm = match Vm::new(VmConfig::new().architecture(arch)) {
         Ok(vm) => vm,
         Err(err) => {
             set_last_error(format!("failed to create VM: {err}"));

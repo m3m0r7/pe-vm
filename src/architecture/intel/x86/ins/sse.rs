@@ -13,7 +13,12 @@ pub(crate) fn exec_rm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<
         0x61 => punpcklwd(vm, &modrm, prefixes)?, // PUNPCKLWD
         0x6E => movd_xmm_from_r32(vm, &modrm, prefixes)?, // MOVD xmm, r/m32
         0x6F => mov_xmm_from_rm(vm, &modrm, prefixes)?,
-        0x70 => pshufd(vm, &modrm, prefixes, vm.read_u8(cursor + 2 + modrm.len as u32)?)?, // PSHUFD
+        0x70 => pshufd(
+            vm,
+            &modrm,
+            prefixes,
+            vm.read_u8(cursor + 2 + modrm.len as u32)?,
+        )?, // PSHUFD
         0x7E => movd_r32_from_xmm(vm, &modrm, prefixes)?, // MOVD r32, xmm
         0x7F => mov_rm_from_xmm(vm, &modrm, prefixes)?,
         0xD6 => movq_rm_from_xmm(vm, &modrm, prefixes)?,
@@ -92,11 +97,7 @@ fn movd_xmm_from_r32(
 }
 
 /// PUNPCKLBW xmm, xmm/m128 (66 0F 60) - Unpack low bytes
-fn punpcklbw(
-    vm: &mut Vm,
-    modrm: &super::core::ModRm,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+fn punpcklbw(vm: &mut Vm, modrm: &super::core::ModRm, prefixes: Prefixes) -> Result<(), VmError> {
     let dst = vm.xmm(modrm.reg);
     let src = if modrm.mod_bits == 3 {
         vm.xmm(modrm.rm)
@@ -116,11 +117,7 @@ fn punpcklbw(
 }
 
 /// PUNPCKLWD xmm, xmm/m128 (66 0F 61) - Unpack low words
-fn punpcklwd(
-    vm: &mut Vm,
-    modrm: &super::core::ModRm,
-    prefixes: Prefixes,
-) -> Result<(), VmError> {
+fn punpcklwd(vm: &mut Vm, modrm: &super::core::ModRm, prefixes: Prefixes) -> Result<(), VmError> {
     let dst = vm.xmm(modrm.reg);
     let src = if modrm.mod_bits == 3 {
         vm.xmm(modrm.rm)

@@ -137,6 +137,22 @@ pub(crate) fn mov_moffs_to_eax(
     Ok(())
 }
 
+pub(crate) fn mov_moffs_to_al(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
+    let value = vm.read_u8(addr)?;
+    vm.set_reg8(REG_AL, value);
+    vm.set_eip(cursor + 5);
+    Ok(())
+}
+
+pub(crate) fn mov_al_to_moffs(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), VmError> {
+    let addr = vm.read_u32(cursor + 1)?.wrapping_add(prefixes.segment_base);
+    let value = vm.reg8(REG_AL);
+    vm.write_u8(addr, value)?;
+    vm.set_eip(cursor + 5);
+    Ok(())
+}
+
 pub(crate) fn mov_eax_to_moffs(
     vm: &mut Vm,
     cursor: u32,

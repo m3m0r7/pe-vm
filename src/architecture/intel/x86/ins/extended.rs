@@ -36,8 +36,8 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
         }
 
         // Conditional set (SETcc)
-        Seto | Setno | Setb | Setae | Sete | Setne | Setbe | Seta | Sets | Setns | Setp
-        | Setnp | Setl | Setge | Setle | Setg => control::setcc(vm, cursor, ext, prefixes),
+        Seto | Setno | Setb | Setae | Sete | Setne | Setbe | Seta | Sets | Setns | Setp | Setnp
+        | Setl | Setge | Setle | Setg => control::setcc(vm, cursor, ext, prefixes),
 
         // Multiplication
         Imul => imul::imul_r32_rm32(vm, cursor, prefixes),

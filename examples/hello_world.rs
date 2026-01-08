@@ -1,6 +1,4 @@
-use pe_vm::{
-    Architecture, ExecuteOptions, Os, Pe, Renderer, SymbolExecutor, Value, Vm, VmConfig,
-};
+use pe_vm::{Architecture, ExecuteOptions, Os, Pe, Renderer, SymbolExecutor, Value, Vm, VmConfig};
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

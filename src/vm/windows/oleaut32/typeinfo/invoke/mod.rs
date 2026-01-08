@@ -19,6 +19,8 @@ use dispatch::{detect_thiscall, valid_vtable, vtable_entry};
 use layout::{read_stack_slots, select_invoke_args};
 use variants::{read_retval_value, trace_out_params, write_variant_value};
 
+const CC_STDCALL: u16 = 0x4;
+
 pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let Some((_this, info_id, thiscall)) = resolve_typeinfo_info(vm, stack_ptr) else {
         return DISP_E_MEMBERNOTFOUND;
@@ -175,7 +177,10 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
         eprintln!("[pe_vm] ITypeInfo::Invoke entry=0x{entry:08X}");
     }
-    let thiscall_entry = detect_thiscall(vm, entry);
+    let thiscall_entry = match func.callconv {
+        CC_STDCALL => false,
+        _ => detect_thiscall(vm, entry),
+    };
     if std::env::var("PE_VM_TRACE_COM").is_ok() {
         eprintln!("[pe_vm] ITypeInfo::Invoke entry thiscall={thiscall_entry}");
         let mut bytes = Vec::new();
@@ -301,9 +306,13 @@ fn expected_inputs(func: &typelib::FuncDesc) -> usize {
     // non-FRETVAL params and single FRETVAL params as potential inputs.
     let has_explicit_return = func.ret_vt != VT_VOID && func.ret_vt != VT_EMPTY;
     let only_fretval = func.params.len() == 1
-        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+        && func
+            .params
+            .iter()
+            .all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
 
-    let count = func.params
+    let count = func
+        .params
         .iter()
         .filter(|param| {
             let is_fretval = (param.flags & PARAMFLAG_FRETVAL) != 0;

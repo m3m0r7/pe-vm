@@ -7,7 +7,7 @@ use crate::vm::{ComOutParam, Vm, VmError};
 use super::{ComArg, ComValue};
 use super::{
     DISP_E_TYPEMISMATCH, PARAMFLAG_FIN, PARAMFLAG_FOUT, PARAMFLAG_FRETVAL, VARIANT_SIZE, VT_BSTR,
-    VT_BYREF, VT_EMPTY, VT_I4, VT_INT, VT_NULL, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
+    VT_BYREF, VT_EMPTY, VT_I1, VT_I4, VT_INT, VT_NULL, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
 };
 
 // Build a VARIANT array in right-to-left order.
@@ -38,7 +38,10 @@ pub(super) fn build_variant_array_typed(
     // If caller passed no args, the FRETVAL param is a true output (not an input).
     let has_explicit_return = func.ret_vt != VT_EMPTY && func.ret_vt != 0;
     let only_fretval = func.params.len() == 1
-        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+        && func
+            .params
+            .iter()
+            .all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
     let fretval_is_input = has_explicit_return && only_fretval && !args.is_empty();
 
     let expected_inputs = func
@@ -145,6 +148,9 @@ fn write_variant(vm: &mut Vm, addr: u32, arg: &ComArg) -> Result<(), VmError> {
             vm.write_u16(addr, VT_BSTR)?;
             vm.write_u32(addr + 8, bstr)?;
         }
+        ComArg::Ansi(_) => {
+            return Err(VmError::Com(DISP_E_TYPEMISMATCH));
+        }
     }
     Ok(())
 }
@@ -163,21 +169,37 @@ fn build_param_variant(
     let base_vt = vt & !VT_BYREF;
     let mut out_ptr = None;
     let value = if let Some(arg) = arg {
-        let base_value = match (base_vt, arg) {
-            (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::I4(value)) => *value as u32,
-            (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::U32(value)) => *value,
-            (VT_UI4 | VT_UINT, ComArg::I4(value)) => *value as u32,
-            (VT_UI4 | VT_UINT, ComArg::U32(value)) => *value,
-            (VT_BSTR, ComArg::BStr(text)) => oleaut32::alloc_bstr(vm, text)?,
-            _ => return Err(VmError::Com(DISP_E_TYPEMISMATCH)),
-        };
-        if (vt & VT_BYREF) != 0 {
-            let ptr = alloc_param_buffer(vm, vt)?;
-            write_base_value(vm, base_vt, ptr, base_value)?;
-            out_ptr = Some(ptr);
-            ptr
+        if base_vt == VT_I1 {
+            if let ComArg::Ansi(text) = arg {
+                let mut bytes = text.as_bytes().to_vec();
+                bytes.push(0);
+                let data_ptr = vm.alloc_bytes(&bytes, 1)?;
+                if (vt & VT_BYREF) != 0 {
+                    out_ptr = Some(data_ptr);
+                    data_ptr
+                } else {
+                    bytes[0] as u32
+                }
+            } else {
+                return Err(VmError::Com(DISP_E_TYPEMISMATCH));
+            }
         } else {
-            base_value
+            let base_value = match (base_vt, arg) {
+                (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::I4(value)) => *value as u32,
+                (VT_I4 | VT_INT | VT_USERDEFINED | VT_NULL, ComArg::U32(value)) => *value,
+                (VT_UI4 | VT_UINT, ComArg::I4(value)) => *value as u32,
+                (VT_UI4 | VT_UINT, ComArg::U32(value)) => *value,
+                (VT_BSTR, ComArg::BStr(text)) => oleaut32::alloc_bstr(vm, text)?,
+                _ => return Err(VmError::Com(DISP_E_TYPEMISMATCH)),
+            };
+            if (vt & VT_BYREF) != 0 {
+                let ptr = alloc_param_buffer(vm, vt)?;
+                write_base_value(vm, base_vt, ptr, base_value)?;
+                out_ptr = Some(ptr);
+                ptr
+            } else {
+                base_value
+            }
         }
     } else if force_out
         || (vt & VT_BYREF) != 0
@@ -205,7 +227,7 @@ fn write_variant_raw(vm: &mut Vm, addr: u32, vt: u16, value: u32) -> Result<(), 
 
 fn write_base_value(vm: &mut Vm, base_vt: u16, ptr: u32, value: u32) -> Result<(), VmError> {
     match base_vt {
-        VT_I4 | VT_UI4 | VT_BSTR | VT_NULL => vm.write_u32(ptr, value),
+        VT_I1 | VT_I4 | VT_INT | VT_UI4 | VT_UINT | VT_BSTR | VT_NULL => vm.write_u32(ptr, value),
         _ => Err(VmError::Com(DISP_E_TYPEMISMATCH)),
     }
 }
@@ -213,7 +235,7 @@ fn write_base_value(vm: &mut Vm, base_vt: u16, ptr: u32, value: u32) -> Result<(
 fn alloc_param_buffer(vm: &mut Vm, vt: u16) -> Result<u32, VmError> {
     let base = vt & !VT_BYREF;
     let size = match base {
-        VT_I4 | VT_UI4 | VT_BSTR | VT_NULL => 4,
+        VT_I1 | VT_I4 | VT_UI4 | VT_BSTR | VT_NULL | VT_INT | VT_UINT => 4,
         VT_VARIANT | VT_USERDEFINED => VARIANT_SIZE,
         _ => 4,
     };

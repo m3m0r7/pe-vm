@@ -20,8 +20,12 @@ pub(super) fn register(vm: &mut Vm) {
     );
 }
 
+const OS_MAJOR: u32 = 5;
+const OS_MINOR: u32 = 1;
+const OS_BUILD: u32 = 2600;
+
 fn get_version(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    (19045u32 << 16) | 0x0A
+    (OS_BUILD << 16) | (OS_MINOR << 8) | OS_MAJOR
 }
 
 // Provide a stable OS version for version checks inside DLLs.
@@ -48,13 +52,13 @@ fn get_version_ex_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn rtl_get_nt_version_numbers(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (major_ptr, minor_ptr, build_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
     if major_ptr != 0 {
-        let _ = vm.write_u32(major_ptr, 10);
+        let _ = vm.write_u32(major_ptr, OS_MAJOR);
     }
     if minor_ptr != 0 {
-        let _ = vm.write_u32(minor_ptr, 0);
+        let _ = vm.write_u32(minor_ptr, OS_MINOR);
     }
     if build_ptr != 0 {
-        let _ = vm.write_u32(build_ptr, 19045);
+        let _ = vm.write_u32(build_ptr, OS_BUILD);
     }
     0
 }
@@ -63,9 +67,9 @@ fn write_os_version_a(vm: &mut Vm, base: u32, size: usize) {
     if size < 20 {
         return;
     }
-    let _ = vm.write_u32(base + 4, 10);
-    let _ = vm.write_u32(base + 8, 0);
-    let _ = vm.write_u32(base + 12, 19045);
+    let _ = vm.write_u32(base + 4, OS_MAJOR);
+    let _ = vm.write_u32(base + 8, OS_MINOR);
+    let _ = vm.write_u32(base + 12, OS_BUILD);
     let _ = vm.write_u32(base + 16, 2);
     if size >= 20 + 128 {
         for idx in 0..128 {
@@ -85,9 +89,9 @@ fn write_os_version_w(vm: &mut Vm, base: u32, size: usize) {
     if size < 20 {
         return;
     }
-    let _ = vm.write_u32(base + 4, 10);
-    let _ = vm.write_u32(base + 8, 0);
-    let _ = vm.write_u32(base + 12, 19045);
+    let _ = vm.write_u32(base + 4, OS_MAJOR);
+    let _ = vm.write_u32(base + 8, OS_MINOR);
+    let _ = vm.write_u32(base + 12, OS_BUILD);
     let _ = vm.write_u32(base + 16, 2);
     if size >= 20 + 256 {
         for idx in 0..128 {

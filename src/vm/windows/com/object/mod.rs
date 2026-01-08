@@ -22,6 +22,7 @@ const DISPID_PROPERTYPUT: i32 = -3;
 pub(super) const VT_EMPTY: u16 = 0;
 pub(super) const VT_NULL: u16 = 1;
 pub(super) const VT_I4: u16 = 3;
+pub(super) const VT_I1: u16 = 16;
 pub(super) const VT_BSTR: u16 = 8;
 pub(super) const VT_UI4: u16 = 19;
 pub(super) const VT_INT: u16 = 22;
@@ -446,7 +447,10 @@ fn expected_inputs_for_func(func: &FuncDesc) -> usize {
     // FRETVAL params as potential inputs.
     let has_explicit_return = func.ret_vt != VT_EMPTY && func.ret_vt != 0;
     let only_fretval = func.params.len() == 1
-        && func.params.iter().all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
+        && func
+            .params
+            .iter()
+            .all(|p| (p.flags & PARAMFLAG_FRETVAL) != 0);
 
     func.params
         .iter()

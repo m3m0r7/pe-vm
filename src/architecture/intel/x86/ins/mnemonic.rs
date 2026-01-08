@@ -178,7 +178,9 @@ pub(crate) enum Opcode {
     Pushfd = 0x9C,
 
     // MOV with memory offset
+    MovMoffsToAl = 0xA0,
     MovMoffsToEax = 0xA1,
+    MovAlToMoffs = 0xA2,
     MovEaxToMoffs = 0xA3,
 
     // String operations
@@ -269,6 +271,7 @@ pub(crate) enum Opcode {
 
 impl Opcode {
     /// Try to convert a byte to an Opcode
+    #[allow(dead_code)]
     pub(crate) fn from_byte(byte: u8) -> Option<Self> {
         match byte {
             // ADD
@@ -444,7 +447,9 @@ impl Opcode {
             0x9C => Some(Self::Pushfd),
 
             // MOV moffs
+            0xA0 => Some(Self::MovMoffsToAl),
             0xA1 => Some(Self::MovMoffsToEax),
+            0xA2 => Some(Self::MovAlToMoffs),
             0xA3 => Some(Self::MovEaxToMoffs),
 
             // String ops

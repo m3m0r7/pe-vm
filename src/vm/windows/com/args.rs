@@ -6,6 +6,7 @@ pub enum ComArg {
     I4(i32),
     U32(u32),
     BStr(String),
+    Ansi(String),
 }
 
 impl ComArg {
@@ -26,6 +27,13 @@ impl ComArg {
     pub fn as_bstr(&self) -> Option<&str> {
         match self {
             ComArg::BStr(value) => Some(value.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn as_ansi(&self) -> Option<&str> {
+        match self {
+            ComArg::Ansi(value) => Some(value.as_str()),
             _ => None,
         }
     }

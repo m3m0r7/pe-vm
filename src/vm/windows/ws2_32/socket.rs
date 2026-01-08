@@ -7,8 +7,8 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
 
 use super::constants::{
-    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL,
-    WSAENOTSOCK, WSAEWOULDBLOCK,
+    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL, WSAENOTSOCK,
+    WSAEWOULDBLOCK,
 };
 use super::store::{alloc_socket, close_socket, register_socket, set_last_error, socket_by_handle};
 use super::trace::{log_connect, log_send, trace_net};

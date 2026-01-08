@@ -17,6 +17,7 @@ mod tls;
 use super::error::PeParseError;
 use super::image::PeImage;
 use super::types::*;
+use crate::vm::Architecture;
 
 const DIRECTORY_COUNT: usize = 16;
 const DIR_EXPORT: usize = 0;
@@ -64,8 +65,10 @@ impl PeFile {
 
         let file_header_off = pe_off + 4;
         let file_header = headers::parse_file_header(image, file_header_off)?;
-        if file_header.machine != 0x014C {
-            return Err(PeParseError::Unsupported("only x86 PE32 supported"));
+        match file_header.machine {
+            0x014C => {}
+            0x8664 => panic!("64-bit PE files are not supported yet"),
+            _ => return Err(PeParseError::Unsupported("only x86 PE32 supported")),
         }
 
         let optional_off = file_header_off + 20;
@@ -164,6 +167,14 @@ impl PeFile {
 
     pub fn image_base(&self) -> u32 {
         self.optional_header.image_base
+    }
+
+    pub fn architecture(&self) -> Architecture {
+        match self.file_header.machine {
+            0x014C => Architecture::X86,
+            0x8664 => Architecture::X86_64,
+            _ => Architecture::X86,
+        }
     }
 
     pub fn rva_to_offset(&self, rva: u32) -> Option<u32> {

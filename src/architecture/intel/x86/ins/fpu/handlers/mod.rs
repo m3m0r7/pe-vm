@@ -119,8 +119,8 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
     let modrm = decode_modrm(vm, cursor + 1)?;
     let next = cursor + 1 + modrm.len as u32;
 
-    let instruction = FpuInstruction::decode(opcode, &modrm)
-        .ok_or(VmError::UnsupportedInstruction(opcode))?;
+    let instruction =
+        FpuInstruction::decode(opcode, &modrm).ok_or(VmError::UnsupportedInstruction(opcode))?;
 
     match instruction {
         FpuInstruction::Fadd => fadd::fadd_m64(vm, &modrm, prefixes.segment_base)?,

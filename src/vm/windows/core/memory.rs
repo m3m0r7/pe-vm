@@ -85,7 +85,11 @@ impl Vm {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
-        let value = self.memory.get(offset).copied().ok_or(VmError::MemoryOutOfRange)?;
+        let value = self
+            .memory
+            .get(offset)
+            .copied()
+            .ok_or(VmError::MemoryOutOfRange)?;
         self.trace_read("read_u8", addr, 1, value as u32);
         Ok(value)
     }

@@ -9,8 +9,9 @@ use crate::vm::*;
 
 impl Vm {
     pub fn new(config: VmConfig) -> Result<Self, VmError> {
-        if config.architecture_value() != Architecture::X86 {
-            return Err(VmError::InvalidConfig("only x86 is supported"));
+        match config.architecture_value() {
+            Architecture::X86 => {}
+            Architecture::X86_64 => panic!("64-bit architecture is not supported yet"),
         }
         let os_state = match config.os_value() {
             Os::Windows => OsState::Windows(windows::WindowsState::new(&config)?),

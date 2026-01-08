@@ -208,7 +208,9 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     inst.register(Pushfd, stack::pushfd);
 
     // MOV with memory offset
+    inst.register(MovMoffsToAl, mov::mov_moffs_to_al);
     inst.register(MovMoffsToEax, mov::mov_moffs_to_eax);
+    inst.register(MovAlToMoffs, mov::mov_al_to_moffs);
     inst.register(MovEaxToMoffs, mov::mov_eax_to_moffs);
 
     // String operations
