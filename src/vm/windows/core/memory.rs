@@ -61,25 +61,6 @@ impl Vm {
         self.string_overlays.remove(&addr);
     }
 
-    pub fn read_c_string(&self, addr: u32) -> Result<String, VmError> {
-        if let Some(overlay) = self.string_overlays.get(&addr) {
-            if self.read_u8(addr).unwrap_or(0) == 0 {
-                return Ok(overlay.clone());
-            }
-        }
-        let mut bytes = Vec::new();
-        let mut cursor = addr;
-        loop {
-            let value = self.read_u8(cursor)?;
-            if value == 0 {
-                break;
-            }
-            bytes.push(value);
-            cursor = cursor.wrapping_add(1);
-        }
-        Ok(String::from_utf8_lossy(&bytes).to_string())
-    }
-
     pub fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
         if addr < self.base && addr < NULL_PAGE_LIMIT {
             return Ok(0);
