@@ -1,4 +1,3 @@
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -62,7 +61,7 @@ fn create_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if path_ptr == 0 {
         return 0;
     }
-    let path = read_wide_or_utf16le_str(vm, path_ptr);
+    let path = read_wide_or_utf16le_str!(vm, path_ptr);
     let host_path = vm.map_path(&path);
     std::fs::create_dir_all(host_path).map(|_| 1).unwrap_or(0)
 }
@@ -74,7 +73,7 @@ fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
     }
-    let path = read_wide_or_utf16le_str(vm, path_ptr);
+    let path = read_wide_or_utf16le_str!(vm, path_ptr);
     let readable = desired & GENERIC_READ != 0;
     let writable = desired & GENERIC_WRITE != 0;
     let create = matches!(disposition, CREATE_NEW | CREATE_ALWAYS | OPEN_ALWAYS);
@@ -124,7 +123,7 @@ fn delete_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if path_ptr == 0 {
         return 0;
     }
-    let path = read_wide_or_utf16le_str(vm, path_ptr);
+    let path = read_wide_or_utf16le_str!(vm, path_ptr);
     let existed = vm.file_exists(&path);
     vm.file_delete(&path);
     if existed {

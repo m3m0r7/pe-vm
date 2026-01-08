@@ -1,9 +1,8 @@
 //! Kernel32 console and stdio stubs.
 
 use crate::vm::windows::kernel32::DLL_NAME;
-use crate::vm::windows::macros::{read_str_len, read_wstr_len};
 use crate::vm::Vm;
-use crate::vm_args;
+use crate::{read_str_len, read_wstr_len, vm_args};
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -100,7 +99,7 @@ fn read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn write_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (_, buffer, count, written, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if buffer != 0 && count > 0 {
-        let text = read_wstr_len(vm, buffer, count);
+        let text = read_wstr_len!(vm, buffer, count);
         vm.write_stdout(&text);
         if written != 0 {
             let _ = vm.write_u32(written, count as u32);
@@ -112,7 +111,7 @@ fn write_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn write_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (handle, buffer, count, written, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if buffer != 0 && count > 0 {
-        let bytes = read_str_len(vm, buffer, count);
+        let bytes = read_str_len!(vm, buffer, count);
         if let Some(wrote) = vm.file_write(handle, bytes.as_bytes()) {
             if written != 0 {
                 let _ = vm.write_u32(written, wrote as u32);

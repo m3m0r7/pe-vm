@@ -12,7 +12,6 @@ use super::utils::{
     ensure_host_header, form_overrides, network_fallback_host, parse_host,
     read_optional_bytes, read_optional_string,
 };
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 
 const ERROR_ACCESS_DENIED: u32 = 5;
 const ERROR_INTERNET_NAME_NOT_RESOLVED: u32 = 12007;
@@ -27,7 +26,7 @@ const INTERNET_FLAG_SECURE: u32 = 0x0080_0000;
 pub(super) fn internet_open_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetOpenA(hAgent, accessType, proxy, bypass, flags).
     let (agent_ptr,) = vm_args!(vm, stack_ptr; u32);
-    let agent = read_wide_or_utf16le_str(vm, agent_ptr);
+    let agent = read_wide_or_utf16le_str!(vm, agent_ptr);
     let handle = InternetHandle::Session(Session { user_agent: agent });
     alloc_handle(handle)
 }
@@ -55,7 +54,7 @@ pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             "InternetConnectA server_ptr=0x{server_ptr:08X} raw={raw} ascii={ascii}"
         ));
     }
-    let (mut server, mut secure_hint) = parse_host(&read_wide_or_utf16le_str(vm, server_ptr));
+    let (mut server, mut secure_hint) = parse_host(&read_wide_or_utf16le_str!(vm, server_ptr));
     if port == 0 {
         if let Some((host, port_str)) = server.rsplit_once(':') {
             if let Ok(parsed) = port_str.parse::<u16>() {
@@ -155,8 +154,8 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             "HttpOpenRequestA object_ptr=0x{object_ptr:08X} raw={raw} ascii={ascii}"
         ));
     }
-    let verb = read_wide_or_utf16le_str(vm, verb_ptr);
-    let object = read_wide_or_utf16le_str(vm, object_ptr);
+    let verb = read_wide_or_utf16le_str!(vm, verb_ptr);
+    let object = read_wide_or_utf16le_str!(vm, object_ptr);
     let secure = (flags & INTERNET_FLAG_SECURE) != 0;
     let method = if verb.is_empty() {
         "GET".to_string()

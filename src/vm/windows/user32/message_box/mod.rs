@@ -1,6 +1,5 @@
 //! SDL-backed MessageBoxA implementation.
 
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::{MessageBoxMode, Vm};
 use crate::vm_args;
@@ -27,8 +26,8 @@ pub fn register(vm: &mut Vm) {
 pub(crate) fn message_box_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // Read Win32 MessageBoxA arguments from the guest stack.
     let (_hwnd, text_ptr, caption_ptr, _utype) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
-    let text = read_wide_or_utf16le_str(vm, text_ptr);
-    let caption = read_wide_or_utf16le_str(vm, caption_ptr);
+    let text = read_wide_or_utf16le_str!(vm, text_ptr);
+    let caption = read_wide_or_utf16le_str!(vm, caption_ptr);
     // Dispatch based on the configured message box mode.
     match vm.message_box_mode() {
         MessageBoxMode::Stdout => {

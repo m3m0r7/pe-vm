@@ -1,6 +1,5 @@
 //! Utility helpers for WinINet stubs.
 
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 
 pub(super) fn read_optional_string(vm: &Vm, ptr: u32, len: u32) -> String {
@@ -8,7 +7,7 @@ pub(super) fn read_optional_string(vm: &Vm, ptr: u32, len: u32) -> String {
         return String::new();
     }
     if len == 0 || len == 0xFFFF_FFFF {
-        return read_wide_or_utf16le_str(vm, ptr);
+        return read_wide_or_utf16le_str!(vm, ptr);
     }
     let mut bytes = Vec::with_capacity(len as usize);
     for offset in 0..len {

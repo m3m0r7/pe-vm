@@ -16,107 +16,161 @@
 //! let (path,) = vm_args!(vm, stack_ptr; wstr);
 //! ```
 
+#[cfg(test)]
 use crate::vm::Vm;
 
 /// Read a null-terminated ANSI string from a pointer.
-#[inline]
-pub fn read_str_arg(vm: &Vm, ptr: u32) -> String {
-    read_str_delim(vm, ptr, 0)
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_str_arg {
+    ($vm:expr, $ptr:expr) => {{
+        $crate::read_str_delim!($vm, $ptr, 0u8)
+    }};
 }
 
 /// Read a null-terminated string, auto-detecting ANSI or wide (UTF-16LE).
-#[inline]
-pub fn read_wide_or_utf16le_str(vm: &Vm, ptr: u32) -> String {
-    if ptr == 0 {
-        return String::new();
-    }
-    let dword = vm.read_u32(ptr).unwrap_or(0);
-    let b0 = (dword & 0xFF) as u8;
-    let b1 = ((dword >> 8) & 0xFF) as u8;
-    let b2 = ((dword >> 16) & 0xFF) as u8;
-    let b3 = ((dword >> 24) & 0xFF) as u8;
-    // UTF-16LE: non-zero char followed by 0x00
-    let looks_wide = b0 != 0 && b1 == 0 && (b2 != 0 || b3 == 0);
-    if looks_wide {
-        let text = read_wstr_delim(vm, ptr, 0);
-        if !text.is_empty() {
-            return text;
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_wide_or_utf16le_str {
+    ($vm:expr, $ptr:expr) => {{
+        let ptr = $ptr as u64;
+        if ptr == 0 {
+            String::new()
+        } else {
+            let dword = $vm.read_u32(ptr as u32).unwrap_or(0);
+            let b0 = (dword & 0xFF) as u8;
+            let b1 = ((dword >> 8) & 0xFF) as u8;
+            let b2 = ((dword >> 16) & 0xFF) as u8;
+            let b3 = ((dword >> 24) & 0xFF) as u8;
+            // UTF-16LE: non-zero char followed by 0x00
+            let looks_wide = b0 != 0 && b1 == 0 && (b2 != 0 || b3 == 0);
+            if looks_wide {
+                let text = $crate::read_wstr_delim!($vm, ptr, 0u16);
+                if !text.is_empty() {
+                    text
+                } else {
+                    $crate::read_str_delim!($vm, ptr, 0u8)
+                }
+            } else {
+                $crate::read_str_delim!($vm, ptr, 0u8)
+            }
         }
-    }
-    read_str_delim(vm, ptr, 0)
+    }};
 }
 
 /// Read a null-terminated wide (UTF-16) string from a pointer.
-#[inline]
-pub fn read_wstr_arg(vm: &Vm, ptr: u32) -> String {
-    read_wstr_delim(vm, ptr, 0)
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_wstr_arg {
+    ($vm:expr, $ptr:expr) => {{
+        $crate::read_wstr_delim!($vm, $ptr, 0u16)
+    }};
 }
 
 /// Read an ANSI string with specified length.
-#[inline]
-pub fn read_str_len(vm: &Vm, ptr: u32, len: usize) -> String {
-    if ptr == 0 || len == 0 {
-        return String::new();
-    }
-    let mut bytes = Vec::with_capacity(len);
-    for i in 0..len {
-        let b = vm.read_u8(ptr + i as u32).unwrap_or(0);
-        bytes.push(b);
-    }
-    String::from_utf8_lossy(&bytes).into_owned()
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_str_len {
+    ($vm:expr, $ptr:expr, $len:expr) => {{
+        let ptr = $ptr as u64;
+        let len = $len as usize;
+        if ptr == 0 || len == 0 {
+            String::new()
+        } else {
+            let mut bytes = Vec::with_capacity(len);
+            for i in 0..len {
+                let b = $vm.read_u8((ptr + i as u64) as u32).unwrap_or(0);
+                bytes.push(b);
+            }
+            String::from_utf8_lossy(&bytes).into_owned()
+        }
+    }};
 }
 
 /// Read a wide (UTF-16) string with specified length (in characters).
-#[inline]
-pub fn read_wstr_len(vm: &Vm, ptr: u32, len: usize) -> String {
-    if ptr == 0 || len == 0 {
-        return String::new();
-    }
-    let mut units = Vec::with_capacity(len);
-    for i in 0..len {
-        let unit = vm.read_u16(ptr + (i as u32) * 2).unwrap_or(0);
-        units.push(unit);
-    }
-    String::from_utf16_lossy(&units)
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_wstr_len {
+    ($vm:expr, $ptr:expr, $len:expr) => {{
+        let ptr = $ptr as u64;
+        let len = $len as usize;
+        if ptr == 0 || len == 0 {
+            String::new()
+        } else {
+            let mut units = Vec::with_capacity(len);
+            for i in 0..len {
+                let unit = $vm.read_u16((ptr + (i as u64) * 2) as u32).unwrap_or(0);
+                units.push(unit);
+            }
+            String::from_utf16_lossy(&units)
+        }
+    }};
 }
 
 /// Read an ANSI string until delimiter byte (default: 0 for null-terminated).
-#[inline]
-pub fn read_str_delim(vm: &Vm, ptr: u32, delim: u8) -> String {
-    if ptr == 0 {
-        return String::new();
-    }
-    let mut bytes = Vec::new();
-    let mut cursor = ptr;
-    for _ in 0..0x10000 {
-        let b = vm.read_u8(cursor).unwrap_or(delim);
-        if b == delim {
-            break;
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_str_delim {
+    ($vm:expr, $ptr:expr) => {{
+        $crate::read_str_delim!($vm, $ptr, 0u8)
+    }};
+    ($vm:expr, $ptr:expr, $delim:expr) => {{
+        let ptr = $ptr as u64;
+        let delim = $delim as u8;
+        if ptr == 0 {
+            String::new()
+        } else {
+            let mut bytes = Vec::new();
+            let mut cursor = ptr;
+            for _ in 0..0x10000u32 {
+                let b = $vm.read_u8(cursor as u32).unwrap_or(delim);
+                if b == delim {
+                    break;
+                }
+                bytes.push(b);
+                cursor = cursor.wrapping_add(1);
+            }
+            String::from_utf8_lossy(&bytes).into_owned()
         }
-        bytes.push(b);
-        cursor = cursor.wrapping_add(1);
-    }
-    String::from_utf8_lossy(&bytes).into_owned()
+    }};
 }
 
 /// Read a wide (UTF-16) string until delimiter (default: 0 for null-terminated).
-#[inline]
-pub fn read_wstr_delim(vm: &Vm, ptr: u32, delim: u16) -> String {
-    if ptr == 0 {
-        return String::new();
-    }
-    let mut units = Vec::new();
-    let mut cursor = ptr;
-    for _ in 0..0x10000 {
-        let unit = vm.read_u16(cursor).unwrap_or(delim);
-        if unit == delim {
-            break;
+/// Supports u16, u32, u64 pointer types.
+#[macro_export]
+macro_rules! read_wstr_delim {
+    ($vm:expr, $ptr:expr) => {{
+        $crate::read_wstr_delim!($vm, $ptr, 0u16)
+    }};
+    ($vm:expr, $ptr:expr, $delim:expr) => {{
+        let ptr = $ptr as u64;
+        let delim = $delim as u16;
+        if ptr == 0 {
+            String::new()
+        } else {
+            let mut units = Vec::new();
+            let mut cursor = ptr;
+            for _ in 0..0x10000u32 {
+                let unit = $vm.read_u16(cursor as u32).unwrap_or(delim);
+                if unit == delim {
+                    break;
+                }
+                units.push(unit);
+                cursor = cursor.wrapping_add(2);
+            }
+            String::from_utf16_lossy(&units)
         }
-        units.push(unit);
-        cursor = cursor.wrapping_add(2);
-    }
-    String::from_utf16_lossy(&units)
+    }};
 }
+
+// Re-export macros as functions for backward compatibility and vm_args! macro usage
+pub use read_str_arg;
+pub use read_str_delim;
+pub use read_str_len;
+pub use read_wide_or_utf16le_str;
+pub use read_wstr_arg;
+pub use read_wstr_delim;
+pub use read_wstr_len;
 
 /// Macro to read function arguments from the stack.
 ///
@@ -168,11 +222,11 @@ macro_rules! vm_args {
     };
     (@read $vm:expr, $offset:expr, str) => {{
         let ptr = $vm.read_u32($offset).unwrap_or(0);
-        $crate::vm::windows::macros::read_str_arg($vm, ptr)
+        $crate::read_str_arg!($vm, ptr)
     }};
     (@read $vm:expr, $offset:expr, wstr) => {{
         let ptr = $vm.read_u32($offset).unwrap_or(0);
-        $crate::vm::windows::macros::read_wstr_arg($vm, ptr)
+        $crate::read_wstr_arg!($vm, ptr)
     }};
 
     // Entry point: generate tuple/array based on types
@@ -335,7 +389,7 @@ macro_rules! vm_args {
 macro_rules! vm_args_str_len {
     ($vm:expr, $sp:expr; $len:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_str_len($vm, ptr, $len)
+        $crate::read_str_len!($vm, ptr, $len)
     }};
 }
 
@@ -344,7 +398,7 @@ macro_rules! vm_args_str_len {
 macro_rules! vm_args_wstr_len {
     ($vm:expr, $sp:expr; $len:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_wstr_len($vm, ptr, $len)
+        $crate::read_wstr_len!($vm, ptr, $len)
     }};
 }
 
@@ -363,11 +417,11 @@ macro_rules! vm_args_wstr_len {
 macro_rules! vm_args_str_delim {
     ($vm:expr, $sp:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_str_delim($vm, ptr, 0)
+        $crate::read_str_delim!($vm, ptr, 0u8)
     }};
     ($vm:expr, $sp:expr; $delim:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_str_delim($vm, ptr, $delim)
+        $crate::read_str_delim!($vm, ptr, $delim)
     }};
 }
 
@@ -386,11 +440,11 @@ macro_rules! vm_args_str_delim {
 macro_rules! vm_args_wstr_delim {
     ($vm:expr, $sp:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_wstr_delim($vm, ptr, 0)
+        $crate::read_wstr_delim!($vm, ptr, 0u16)
     }};
     ($vm:expr, $sp:expr; $delim:expr) => {{
         let ptr = $vm.read_u32($sp + 4).unwrap_or(0);
-        $crate::vm::windows::macros::read_wstr_delim($vm, ptr, $delim)
+        $crate::read_wstr_delim!($vm, ptr, $delim)
     }};
 }
 
@@ -688,26 +742,26 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         vm.write_bytes(ptr, b"Test\0").unwrap();
-        assert_eq!(read_str_arg(&vm, ptr), "Test");
+        assert_eq!(read_str_arg!(&vm, ptr), "Test");
     }
 
     #[test]
     fn test_read_str_arg_null() {
         let vm = create_test_vm();
-        assert_eq!(read_str_arg(&vm, 0), "");
+        assert_eq!(read_str_arg!(&vm, 0), "");
     }
 
     #[test]
     fn test_read_wstr_arg_basic() {
         let mut vm = create_test_vm();
         let ptr = alloc_wstr(&mut vm, "ABC");
-        assert_eq!(read_wstr_arg(&vm, ptr), "ABC");
+        assert_eq!(read_wstr_arg!(&vm, ptr), "ABC");
     }
 
     #[test]
     fn test_read_wstr_arg_null() {
         let vm = create_test_vm();
-        assert_eq!(read_wstr_arg(&vm, 0), "");
+        assert_eq!(read_wstr_arg!(&vm, 0), "");
     }
 
     #[test]
@@ -715,14 +769,14 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         vm.write_bytes(ptr, b"Hello World").unwrap();
-        assert_eq!(read_str_len(&vm, ptr, 5), "Hello");
-        assert_eq!(read_str_len(&vm, ptr, 11), "Hello World");
+        assert_eq!(read_str_len!(&vm, ptr, 5), "Hello");
+        assert_eq!(read_str_len!(&vm, ptr, 11), "Hello World");
     }
 
     #[test]
     fn test_read_str_len_null() {
         let vm = create_test_vm();
-        assert_eq!(read_str_len(&vm, 0, 5), "");
+        assert_eq!(read_str_len!(&vm, 0, 5), "");
     }
 
     #[test]
@@ -730,21 +784,21 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         vm.write_bytes(ptr, b"Hello").unwrap();
-        assert_eq!(read_str_len(&vm, ptr, 0), "");
+        assert_eq!(read_str_len!(&vm, ptr, 0), "");
     }
 
     #[test]
     fn test_read_wstr_len() {
         let mut vm = create_test_vm();
         let ptr = alloc_wstr(&mut vm, "Hello");
-        assert_eq!(read_wstr_len(&vm, ptr, 5), "Hello");
-        assert_eq!(read_wstr_len(&vm, ptr, 3), "Hel");
+        assert_eq!(read_wstr_len!(&vm, ptr, 5), "Hello");
+        assert_eq!(read_wstr_len!(&vm, ptr, 3), "Hel");
     }
 
     #[test]
     fn test_read_wstr_len_null() {
         let vm = create_test_vm();
-        assert_eq!(read_wstr_len(&vm, 0, 5), "");
+        assert_eq!(read_wstr_len!(&vm, 0, 5), "");
     }
 
     #[test]
@@ -752,7 +806,7 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         vm.write_bytes(ptr, b"Hello\0World").unwrap();
-        assert_eq!(read_str_delim(&vm, ptr, 0), "Hello");
+        assert_eq!(read_str_delim!(&vm, ptr, 0), "Hello");
     }
 
     #[test]
@@ -760,33 +814,33 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         vm.write_bytes(ptr, b"Hello\nWorld").unwrap();
-        assert_eq!(read_str_delim(&vm, ptr, b'\n'), "Hello");
+        assert_eq!(read_str_delim!(&vm, ptr, b'\n'), "Hello");
     }
 
     #[test]
     fn test_read_str_delim_null_ptr() {
         let vm = create_test_vm();
-        assert_eq!(read_str_delim(&vm, 0, 0), "");
+        assert_eq!(read_str_delim!(&vm, 0, 0), "");
     }
 
     #[test]
     fn test_read_wstr_delim_null_term() {
         let mut vm = create_test_vm();
         let ptr = alloc_wstr(&mut vm, "Hi\0X");
-        assert_eq!(read_wstr_delim(&vm, ptr, 0), "Hi");
+        assert_eq!(read_wstr_delim!(&vm, ptr, 0), "Hi");
     }
 
     #[test]
     fn test_read_wstr_delim_custom() {
         let mut vm = create_test_vm();
         let ptr = alloc_wstr(&mut vm, "Hi|X");
-        assert_eq!(read_wstr_delim(&vm, ptr, '|' as u16), "Hi");
+        assert_eq!(read_wstr_delim!(&vm, ptr, '|' as u16), "Hi");
     }
 
     #[test]
     fn test_read_wstr_delim_null_ptr() {
         let vm = create_test_vm();
-        assert_eq!(read_wstr_delim(&vm, 0, 0), "");
+        assert_eq!(read_wstr_delim!(&vm, 0, 0), "");
     }
 
     #[test]

@@ -2,7 +2,6 @@
 
 use crate::pe::{ResourceData, ResourceId, ResourceNode};
 use crate::vm::windows::kernel32::DLL_NAME;
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -202,7 +201,7 @@ fn get_proc_address(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let name = if name_ptr & 0xFFFF_0000 == 0 {
         format!("#{}", name_ptr & 0xFFFF)
     } else {
-        read_wide_or_utf16le_str(vm, name_ptr)
+        read_wide_or_utf16le_str!(vm, name_ptr)
     };
     if std::env::var("PE_VM_TRACE_IMPORTS").is_ok() || std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] GetProcAddress: module=0x{module:08X} name={name}");
@@ -286,7 +285,7 @@ fn read_resource_id(vm: &Vm, value: u32, wide: bool) -> Option<ResourceId> {
             Some(ResourceId::Name(name))
         }
     } else {
-        let name = read_wide_or_utf16le_str(vm, value);
+        let name = read_wide_or_utf16le_str!(vm, value);
         if name.is_empty() {
             None
         } else {

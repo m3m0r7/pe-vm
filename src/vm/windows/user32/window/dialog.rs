@@ -1,6 +1,5 @@
 use crate::define_stub_fn;
 use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
@@ -163,7 +162,7 @@ pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if buf_ptr == 0 || fmt_ptr == 0 {
         return 0;
     }
-    let fmt = read_wide_or_utf16le_str(vm, fmt_ptr);
+    let fmt = read_wide_or_utf16le_str!(vm, fmt_ptr);
     let mut output = String::new();
     let mut arg_offset = 12u32;
     let mut arg_log = Vec::new();
@@ -204,7 +203,7 @@ pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             's' => {
                 let ptr = vm.read_u32(arg_ptr).unwrap_or(0);
                 arg_offset = arg_offset.wrapping_add(4);
-                let value = read_wide_or_utf16le_str(vm, ptr);
+                let value = read_wide_or_utf16le_str!(vm, ptr);
                 if std::env::var("PE_VM_TRACE").is_ok() {
                     arg_log.push(format!("s=0x{ptr:08X} {value:?}"));
                 }
@@ -274,7 +273,7 @@ pub(super) fn wsprintf_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     bytes.push(0);
     let _ = vm.write_bytes(buf_ptr, &bytes);
     if std::env::var("PE_VM_TRACE").is_ok() {
-        let text = read_wide_or_utf16le_str(vm, buf_ptr);
+        let text = read_wide_or_utf16le_str!(vm, buf_ptr);
         eprintln!("[pe_vm] wsprintfA dest=0x{buf_ptr:08X} text={text:?}");
     }
     (bytes.len().saturating_sub(1)) as u32

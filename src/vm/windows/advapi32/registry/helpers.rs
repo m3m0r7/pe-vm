@@ -1,6 +1,5 @@
 //! Helper functions for registry stubs.
 
-use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::windows::registry::RegistryValue;
 use crate::vm::{Architecture, Vm, VmError};
 
@@ -136,7 +135,7 @@ pub(super) fn read_raw_ascii(vm: &Vm, ptr: u32, len: usize) -> String {
 }
 
 pub(super) fn read_string_arg_a(vm: &Vm, ptr: u32) -> String {
-    read_wide_or_utf16le_str(vm, ptr)
+    read_wide_or_utf16le_str!(vm, ptr)
 }
 
 pub(super) fn read_string_arg_w(vm: &Vm, ptr: u32) -> String {
