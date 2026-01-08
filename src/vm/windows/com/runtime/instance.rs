@@ -1,6 +1,7 @@
 //! COM object instantiation and IDispatch negotiation.
 
 use crate::pe::PeFile;
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::{Value, Vm, VmError};
 
 use super::super::object::{vtable_fn, InProcObject};
@@ -167,10 +168,9 @@ fn create_instance_with_iid(
                 line.push_str(&format!(" +0x{offset:02X}=0x{value:08X}"));
             }
             eprintln!("{line}");
-            if let Ok(text) = vm.read_c_string(hr.wrapping_add(0x20)) {
-                if !text.is_empty() {
-                    eprintln!("[pe_vm] CreateInstance text: {text}");
-                }
+            let text = read_wide_or_utf16le_str(vm, hr.wrapping_add(0x20));
+            if !text.is_empty() {
+                eprintln!("[pe_vm] CreateInstance text: {text}");
             }
         }
     }

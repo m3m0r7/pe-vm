@@ -1,41 +1,14 @@
 //! Utility helpers for WinINet stubs.
 
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
-
-pub(super) fn read_c_string(vm: &Vm, ptr: u32) -> String {
-    if ptr == 0 {
-        return String::new();
-    }
-    let b0 = vm.read_u8(ptr).unwrap_or(0);
-    let b1 = vm.read_u8(ptr.wrapping_add(1)).unwrap_or(0);
-    let b2 = vm.read_u8(ptr.wrapping_add(2)).unwrap_or(0);
-    let b3 = vm.read_u8(ptr.wrapping_add(3)).unwrap_or(0);
-    let looks_wide = b0 != 0 && b1 == 0 && (b2 != 0 || b3 == 0);
-    if looks_wide {
-        let mut units = Vec::new();
-        let mut cursor = ptr;
-        for _ in 0..0x400 {
-            let unit = vm.read_u16(cursor).unwrap_or(0);
-            if unit == 0 {
-                break;
-            }
-            units.push(unit);
-            cursor = cursor.wrapping_add(2);
-        }
-        let text = String::from_utf16_lossy(&units);
-        if !text.is_empty() {
-            return text;
-        }
-    }
-    vm.read_c_string(ptr).unwrap_or_default()
-}
 
 pub(super) fn read_optional_string(vm: &Vm, ptr: u32, len: u32) -> String {
     if ptr == 0 {
         return String::new();
     }
     if len == 0 || len == 0xFFFF_FFFF {
-        return read_c_string(vm, ptr);
+        return read_wide_or_utf16le_str(vm, ptr);
     }
     let mut bytes = Vec::with_capacity(len as usize);
     for offset in 0..len {

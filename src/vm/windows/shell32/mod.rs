@@ -6,6 +6,9 @@ use crate::define_stub_fn;
 use crate::vm::Vm;
 use crate::vm_args;
 
+#[cfg(test)]
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
+
 define_stub_fn!(DLL_NAME, shell_execute_a, 33);
 define_stub_fn!(DLL_NAME, shell_execute_ex_a, 1);
 define_stub_fn!(DLL_NAME, sh_browse_for_folder_a, 0);
@@ -121,7 +124,7 @@ mod tests {
         let result = sh_get_path_from_id_list_a(&mut vm, stack);
         assert_eq!(result, 1);
         // Should write "C:\" to buffer
-        let path = vm.read_c_string(buffer).unwrap();
+        let path = read_wide_or_utf16le_str(&vm, buffer);
         assert_eq!(path, "C:\\");
     }
 

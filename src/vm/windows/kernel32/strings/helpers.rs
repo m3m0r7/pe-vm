@@ -1,11 +1,9 @@
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 
 pub(super) fn read_string_arg(vm: &mut Vm, ptr_addr: u32) -> String {
     let ptr = vm.read_u32(ptr_addr).unwrap_or(0);
-    if ptr == 0 {
-        return String::new();
-    }
-    vm.read_c_string(ptr).unwrap_or_default()
+    read_wide_or_utf16le_str(vm, ptr)
 }
 
 pub(super) fn compare_strings(left: &str, right: &str) -> i32 {

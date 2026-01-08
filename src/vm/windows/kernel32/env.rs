@@ -1,6 +1,7 @@
 //! Kernel32 environment stubs.
 
 use crate::vm::windows::kernel32::DLL_NAME;
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -60,7 +61,7 @@ fn get_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if name_ptr == 0 {
         return 0;
     }
-    let name = vm.read_c_string(name_ptr).unwrap_or_default();
+    let name = read_wide_or_utf16le_str(vm, name_ptr);
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] GetEnvironmentVariableA: {name}");
     }
@@ -84,12 +85,12 @@ fn set_environment_variable_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if name_ptr == 0 {
         return 0;
     }
-    let name = vm.read_c_string(name_ptr).unwrap_or_default();
+    let name = read_wide_or_utf16le_str(vm, name_ptr);
     if value_ptr == 0 {
         vm.set_env_entry(name, None);
         return 1;
     }
-    let value = vm.read_c_string(value_ptr).unwrap_or_default();
+    let value = read_wide_or_utf16le_str(vm, value_ptr);
     vm.set_env_entry(name, Some(value));
     1
 }
@@ -99,7 +100,7 @@ fn expand_environment_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if src_ptr == 0 {
         return 0;
     }
-    let src = vm.read_c_string(src_ptr).unwrap_or_default();
+    let src = read_wide_or_utf16le_str(vm, src_ptr);
     let expanded = expand_env(vm, &src);
     let required = expanded.len() + 1;
     if dst_ptr == 0 || dst_len == 0 {
@@ -229,7 +230,7 @@ mod tests {
         vm_set_args!(vm, stack; name_ptr, buf_ptr, 64u32);
         let result = get_environment_variable_a(&mut vm, stack);
         assert_eq!(result, 10); // "test_value".len()
-        assert_eq!(vm.read_c_string(buf_ptr).unwrap(), "test_value");
+        assert_eq!(read_wide_or_utf16le_str(&vm, buf_ptr), "test_value");
     }
 
     #[test]
@@ -281,7 +282,7 @@ mod tests {
         vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
         let result = expand_environment_strings_a(&mut vm, stack);
         assert_eq!(result, 11); // "plain text".len() + 1
-        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "plain text");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dst_ptr), "plain text");
     }
 
     #[test]
@@ -293,7 +294,7 @@ mod tests {
         write_string(&mut vm, src_ptr, "path=%HOME%");
         vm_set_args!(vm, stack; src_ptr, dst_ptr, 64u32);
         let result = expand_environment_strings_a(&mut vm, stack);
-        assert_eq!(vm.read_c_string(dst_ptr).unwrap(), "path=/home/user");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dst_ptr), "path=/home/user");
         assert_eq!(result, 16); // "path=/home/user".len() + 1
     }
 

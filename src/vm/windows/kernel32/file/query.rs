@@ -1,3 +1,4 @@
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -49,7 +50,7 @@ fn get_file_attributes_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         vm.set_last_error(ERROR_FILE_NOT_FOUND);
         return INVALID_FILE_ATTRIBUTES;
     }
-    let path = vm.read_c_string(path_ptr).unwrap_or_default();
+    let path = read_wide_or_utf16le_str(vm, path_ptr);
     let result = if vm.file_exists(&path) {
         let host_path = vm.map_path(&path);
         if std::path::Path::new(&host_path).is_dir() {

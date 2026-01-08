@@ -3,6 +3,9 @@ use crate::vm_args;
 
 use super::helpers::{compare_strings, read_bytes, read_string_arg};
 
+#[cfg(test)]
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
+
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
         "KERNEL32.dll",
@@ -214,7 +217,7 @@ mod tests {
         vm_set_args!(vm, stack; dest, src);
         let result = lstrcpy_a(&mut vm, stack);
         assert_eq!(result, dest);
-        assert_eq!(vm.read_c_string(dest).unwrap(), "Hello");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dest), "Hello");
     }
 
     #[test]
@@ -238,7 +241,7 @@ mod tests {
         vm_set_args!(vm, stack; dest, src);
         let result = lstrcat_a(&mut vm, stack);
         assert_eq!(result, dest);
-        assert_eq!(vm.read_c_string(dest).unwrap(), "HelloWorld");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dest), "HelloWorld");
     }
 
     #[test]
@@ -303,7 +306,7 @@ mod tests {
         vm_set_args!(vm, stack; dest, src, 6u32);
         let result = lstrcpyn_a(&mut vm, stack);
         assert_eq!(result, dest);
-        assert_eq!(vm.read_c_string(dest).unwrap(), "Hello");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dest), "Hello");
     }
 
     #[test]
@@ -316,6 +319,6 @@ mod tests {
         vm_set_args!(vm, stack; dest, src, 10u32);
         let result = lstrcpyn_a(&mut vm, stack);
         assert_eq!(result, dest);
-        assert_eq!(vm.read_c_string(dest).unwrap(), "Hi");
+        assert_eq!(read_wide_or_utf16le_str(&vm, dest), "Hi");
     }
 }

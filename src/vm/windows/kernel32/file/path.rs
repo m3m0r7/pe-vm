@@ -1,3 +1,4 @@
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 
@@ -77,16 +78,16 @@ fn search_path_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if file_ptr == 0 {
         return 0;
     }
-    let file = vm.read_c_string(file_ptr).unwrap_or_default();
+    let file = read_wide_or_utf16le_str(vm, file_ptr);
     let path = if path_ptr == 0 {
         String::new()
     } else {
-        vm.read_c_string(path_ptr).unwrap_or_default()
+        read_wide_or_utf16le_str(vm, path_ptr)
     };
     let ext = if ext_ptr == 0 {
         String::new()
     } else {
-        vm.read_c_string(ext_ptr).unwrap_or_default()
+        read_wide_or_utf16le_str(vm, ext_ptr)
     };
 
     let mut candidates = Vec::new();

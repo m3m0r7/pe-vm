@@ -9,9 +9,10 @@ use super::trace::trace_net;
 use super::types::{Connection, InternetHandle, Request, Session};
 use super::utils::{
     apply_form_overrides, default_host_override, default_path_override, ensure_content_length,
-    ensure_host_header, form_overrides, network_fallback_host, parse_host, read_c_string,
+    ensure_host_header, form_overrides, network_fallback_host, parse_host,
     read_optional_bytes, read_optional_string,
 };
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 
 const ERROR_ACCESS_DENIED: u32 = 5;
 const ERROR_INTERNET_NAME_NOT_RESOLVED: u32 = 12007;
@@ -26,7 +27,7 @@ const INTERNET_FLAG_SECURE: u32 = 0x0080_0000;
 pub(super) fn internet_open_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // InternetOpenA(hAgent, accessType, proxy, bypass, flags).
     let (agent_ptr,) = vm_args!(vm, stack_ptr; u32);
-    let agent = read_c_string(vm, agent_ptr);
+    let agent = read_wide_or_utf16le_str(vm, agent_ptr);
     let handle = InternetHandle::Session(Session { user_agent: agent });
     alloc_handle(handle)
 }
@@ -54,7 +55,7 @@ pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             "InternetConnectA server_ptr=0x{server_ptr:08X} raw={raw} ascii={ascii}"
         ));
     }
-    let (mut server, mut secure_hint) = parse_host(&read_c_string(vm, server_ptr));
+    let (mut server, mut secure_hint) = parse_host(&read_wide_or_utf16le_str(vm, server_ptr));
     if port == 0 {
         if let Some((host, port_str)) = server.rsplit_once(':') {
             if let Ok(parsed) = port_str.parse::<u16>() {
@@ -154,8 +155,8 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             "HttpOpenRequestA object_ptr=0x{object_ptr:08X} raw={raw} ascii={ascii}"
         ));
     }
-    let verb = read_c_string(vm, verb_ptr);
-    let object = read_c_string(vm, object_ptr);
+    let verb = read_wide_or_utf16le_str(vm, verb_ptr);
+    let object = read_wide_or_utf16le_str(vm, object_ptr);
     let secure = (flags & INTERNET_FLAG_SECURE) != 0;
     let method = if verb.is_empty() {
         "GET".to_string()
@@ -258,17 +259,8 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         Ok(response) => response,
         Err(err) => {
             trace_net(&format!("HttpSendRequestA failed: {err}"));
-            // Return a stub HTTP 200 response on connection failure to allow
-            // applications that require network initialization to proceed.
-            // This prevents JVLink from interpreting connection errors as
-            // "server maintenance" and aborting initialization.
-            use super::types::Response;
-            trace_net("HttpSendRequestA: returning stub 200 response");
-            Response {
-                status: 200,
-                body: Vec::new(),
-                raw_headers: "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n".to_string(),
-            }
+            vm.set_last_error(ERROR_INTERNET_CONNECTION_ABORTED);
+            return 0;
         }
     };
 

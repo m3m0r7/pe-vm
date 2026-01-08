@@ -2,6 +2,7 @@
 
 use super::Vm;
 use crate::vm::windows;
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm_args;
 
 pub fn host_printf(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -9,7 +10,7 @@ pub fn host_printf(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if ptr == 0 {
         return 0;
     }
-    let text = vm.read_c_string(ptr).unwrap_or_default();
+    let text = read_wide_or_utf16le_str(vm, ptr);
     vm.write_stdout(&text);
     text.len() as u32
 }

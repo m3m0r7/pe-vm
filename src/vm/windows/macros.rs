@@ -21,10 +21,29 @@ use crate::vm::Vm;
 /// Read a null-terminated ANSI string from a pointer.
 #[inline]
 pub fn read_str_arg(vm: &Vm, ptr: u32) -> String {
+    read_str_delim(vm, ptr, 0)
+}
+
+/// Read a null-terminated string, auto-detecting ANSI or wide (UTF-16LE).
+#[inline]
+pub fn read_wide_or_utf16le_str(vm: &Vm, ptr: u32) -> String {
     if ptr == 0 {
         return String::new();
     }
-    vm.read_c_string(ptr).unwrap_or_default()
+    let dword = vm.read_u32(ptr).unwrap_or(0);
+    let b0 = (dword & 0xFF) as u8;
+    let b1 = ((dword >> 8) & 0xFF) as u8;
+    let b2 = ((dword >> 16) & 0xFF) as u8;
+    let b3 = ((dword >> 24) & 0xFF) as u8;
+    // UTF-16LE: non-zero char followed by 0x00
+    let looks_wide = b0 != 0 && b1 == 0 && (b2 != 0 || b3 == 0);
+    if looks_wide {
+        let text = read_wstr_delim(vm, ptr, 0);
+        if !text.is_empty() {
+            return text;
+        }
+    }
+    read_str_delim(vm, ptr, 0)
 }
 
 /// Read a null-terminated wide (UTF-16) string from a pointer.

@@ -1,5 +1,8 @@
 use crate::vm::Vm;
 
+#[cfg(test)]
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
+
 pub(super) fn write_rect(vm: &mut Vm, rect_ptr: u32, left: i32, top: i32, right: i32, bottom: i32) {
     let _ = vm.write_u32(rect_ptr, left as u32);
     let _ = vm.write_u32(rect_ptr + 4, top as u32);
@@ -81,7 +84,7 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         write_c_string(&mut vm, ptr, "Hello", 10);
-        let text = vm.read_c_string(ptr).unwrap();
+        let text = read_wide_or_utf16le_str(&vm, ptr);
         assert_eq!(text, "Hello");
     }
 
@@ -90,7 +93,7 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         write_c_string(&mut vm, ptr, "HelloWorld", 6);
-        let text = vm.read_c_string(ptr).unwrap();
+        let text = read_wide_or_utf16le_str(&vm, ptr);
         assert_eq!(text, "Hello"); // truncated to 5 chars + null
     }
 
@@ -99,7 +102,7 @@ mod tests {
         let mut vm = create_test_vm();
         let ptr = vm.heap_start as u32;
         write_c_string(&mut vm, ptr, "", 10);
-        let text = vm.read_c_string(ptr).unwrap();
+        let text = read_wide_or_utf16le_str(&vm, ptr);
         assert_eq!(text, "");
     }
 }

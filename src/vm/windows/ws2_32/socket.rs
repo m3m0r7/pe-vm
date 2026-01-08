@@ -1,5 +1,6 @@
 //! Socket-related Winsock stubs.
 
+use crate::vm::windows::macros::read_wide_or_utf16le_str;
 use crate::vm::Vm;
 use crate::vm_args;
 use std::io::ErrorKind;
@@ -80,7 +81,7 @@ pub(super) fn inet_addr(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if ptr == 0 {
         return INVALID_SOCKET;
     }
-    let text = vm.read_c_string(ptr).unwrap_or_default();
+    let text = read_wide_or_utf16le_str(vm, ptr);
     match parse_ipv4(&text) {
         Some(addr) => addr,
         None => INVALID_SOCKET,
@@ -253,7 +254,7 @@ pub(super) fn gethostbyname(vm: &mut Vm, stack_ptr: u32) -> u32 {
         set_last_error(WSAEINVAL);
         return 0;
     }
-    let name = vm.read_c_string(name_ptr).unwrap_or_default();
+    let name = read_wide_or_utf16le_str(vm, name_ptr);
     if name.is_empty() {
         set_last_error(WSAEINVAL);
         return 0;
