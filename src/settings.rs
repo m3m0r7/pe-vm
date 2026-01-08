@@ -409,15 +409,17 @@ fn load_registry(path: &str) -> Result<windows::registry::Registry, VmError> {
         .extension()
         .and_then(|ext| ext.to_str())
         .unwrap_or("");
-    if ext.eq_ignore_ascii_case("reg") {
-        return windows::registry::load_from_registry(path)
-            .map_err(|_| VmError::InvalidConfig("registry load failed"));
-    }
-    if ext.eq_ignore_ascii_case("yml") || ext.eq_ignore_ascii_case("yaml") {
-        return windows::registry::load_from_yml(path)
-            .map_err(|_| VmError::InvalidConfig("registry load failed"));
-    }
-    Err(VmError::InvalidConfig("unsupported registry format"))
+    let registry = if ext.eq_ignore_ascii_case("reg") {
+        windows::registry::load_from_registry(path)
+            .map_err(|_| VmError::InvalidConfig("registry load failed"))?
+    } else if ext.eq_ignore_ascii_case("yml") || ext.eq_ignore_ascii_case("yaml") {
+        windows::registry::load_from_yml(path)
+            .map_err(|_| VmError::InvalidConfig("registry load failed"))?
+    } else {
+        return Err(VmError::InvalidConfig("unsupported registry format"));
+    };
+
+    Ok(registry)
 }
 
 fn merge_paths(base: &mut PathMapping, extra: &PathMapping) {

@@ -94,17 +94,22 @@ fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn get_file_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (_handle, creation, access, write) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    // Return a valid FILETIME corresponding to 2001/02/26 15:28:46 UTC.
+    // FILETIME is 100-nanosecond intervals since January 1, 1601 UTC.
+    // 2001-02-26 15:28:46 UTC = 126596465260000000 (100ns intervals)
+    let filetime_low: u32 = 0x4D5D7400;
+    let filetime_high: u32 = 0x01C0A7C0;
     if creation != 0 {
-        let _ = vm.write_u32(creation, 0);
-        let _ = vm.write_u32(creation + 4, 0);
+        let _ = vm.write_u32(creation, filetime_low);
+        let _ = vm.write_u32(creation + 4, filetime_high);
     }
     if access != 0 {
-        let _ = vm.write_u32(access, 0);
-        let _ = vm.write_u32(access + 4, 0);
+        let _ = vm.write_u32(access, filetime_low);
+        let _ = vm.write_u32(access + 4, filetime_high);
     }
     if write != 0 {
-        let _ = vm.write_u32(write, 0);
-        let _ = vm.write_u32(write + 4, 0);
+        let _ = vm.write_u32(write, filetime_low);
+        let _ = vm.write_u32(write + 4, filetime_high);
     }
     1
 }

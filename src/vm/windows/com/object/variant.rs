@@ -207,6 +207,10 @@ fn build_param_variant(
         || base_vt == VT_USERDEFINED
     {
         let ptr = alloc_param_buffer(vm, vt)?;
+        if base_vt == VT_BSTR {
+            let empty = oleaut32::alloc_bstr(vm, "")?;
+            write_base_value(vm, base_vt, ptr, empty)?;
+        }
         out_ptr = Some(ptr);
         ptr
     } else {

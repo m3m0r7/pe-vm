@@ -3,6 +3,11 @@ use crate::pe::PeFile;
 use crate::vm::*;
 
 const NULL_PAGE_LIMIT: u32 = 0x1000;
+const HIGH_NULL_PAGE_START: u32 = 0xFFFF_F000;
+
+fn is_null_page(addr: u32, base: u32) -> bool {
+    (addr < base && addr < NULL_PAGE_LIMIT) || addr >= HIGH_NULL_PAGE_START
+}
 
 impl Vm {
     pub fn load(pe: &PeFile, image: &[u8]) -> Result<Self, VmError> {
@@ -62,7 +67,7 @@ impl Vm {
     }
 
     pub fn read_u8(&self, addr: u32) -> Result<u8, VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
@@ -76,7 +81,7 @@ impl Vm {
     }
 
     pub fn read_u16(&self, addr: u32) -> Result<u16, VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
@@ -90,7 +95,7 @@ impl Vm {
     }
 
     pub fn read_u32(&self, addr: u32) -> Result<u32, VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
@@ -108,7 +113,7 @@ impl Vm {
     }
 
     pub fn read_u64(&self, addr: u32) -> Result<u64, VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(0);
         }
         let offset = self.addr_to_offset(addr)?;
@@ -128,7 +133,7 @@ impl Vm {
     }
 
     pub(crate) fn write_u8(&mut self, addr: u32, value: u8) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
@@ -142,7 +147,7 @@ impl Vm {
     }
 
     pub(crate) fn write_u16(&mut self, addr: u32, value: u16) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
@@ -156,7 +161,7 @@ impl Vm {
     }
 
     pub fn write_u32(&mut self, addr: u32, value: u32) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
@@ -170,7 +175,7 @@ impl Vm {
     }
 
     pub(crate) fn write_u64(&mut self, addr: u32, value: u64) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
@@ -184,7 +189,7 @@ impl Vm {
     }
 
     pub(crate) fn write_bytes(&mut self, addr: u32, bytes: &[u8]) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
@@ -198,7 +203,7 @@ impl Vm {
     }
 
     pub(crate) fn memset(&mut self, addr: u32, value: u8, len: usize) -> Result<(), VmError> {
-        if addr < self.base && addr < NULL_PAGE_LIMIT {
+        if is_null_page(addr, self.base) {
             return Ok(());
         }
         let offset = self.addr_to_offset(addr)?;
