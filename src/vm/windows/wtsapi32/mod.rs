@@ -1,15 +1,62 @@
-//! WTSAPI32 stubs.
+//! WTSAPI32 - Windows Terminal Services API stubs.
 
 pub const DLL_NAME: &str = "WTSAPI32.dll";
 
-use crate::define_stub_fn;
-use crate::vm::windows::check_stub;
 use crate::vm::Vm;
 use crate::vm_args;
 
-define_stub_fn!(DLL_NAME, wts_open_server_a, 1);
-define_stub_fn!(DLL_NAME, wts_close_server, 0);
-define_stub_fn!(DLL_NAME, wts_free_memory, 0);
+/// Dummy server handle returned by WTSOpenServerA
+const DUMMY_WTS_SERVER_HANDLE: u32 = 0x10001;
+
+/// WTSOpenServerA - Opens a handle to the specified Remote Desktop Session Host server.
+/// Parameters:
+///   - pServerName: Pointer to a null-terminated string specifying the server name
+/// Returns: Server handle on success, NULL (0) on failure
+/// For local server (NULL name), returns a valid dummy handle.
+fn wts_open_server_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (server_name_ptr,) = vm_args!(vm, stack_ptr; u32);
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!(
+            "[pe_vm] WTSOpenServerA: pServerName=0x{server_name_ptr:08X}"
+        );
+    }
+
+    // Return a dummy handle for both local (NULL) and remote servers
+    // In a real implementation, NULL means local server which always succeeds
+    DUMMY_WTS_SERVER_HANDLE
+}
+
+/// WTSCloseServer - Closes an open handle to a Remote Desktop Session Host server.
+/// Parameters:
+///   - hServer: Handle to the server
+/// Returns: void (we return 1 to indicate success, though Windows returns void)
+fn wts_close_server(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (h_server,) = vm_args!(vm, stack_ptr; u32);
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] WTSCloseServer: hServer=0x{h_server:08X}");
+    }
+
+    // This function returns void in Windows, but we return 0 for consistency
+    0
+}
+
+/// WTSFreeMemory - Frees memory allocated by a Terminal Services function.
+/// Parameters:
+///   - pMemory: Pointer to the memory to free
+/// Returns: void (we return 0)
+fn wts_free_memory(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (p_memory,) = vm_args!(vm, stack_ptr; u32);
+
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] WTSFreeMemory: pMemory=0x{p_memory:08X}");
+    }
+
+    // In a real implementation, we would free the memory allocated by WTS functions
+    // Our VM doesn't track these allocations separately, so this is a no-op
+    0
+}
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -47,11 +94,18 @@ const WTS_ACTIVE: u32 = 0;
 // - State: WTS_CONNECTSTATE_CLASS (4 bytes)
 const WTS_SESSION_INFO_SIZE: usize = 12;
 
-// BOOL WTSEnumerateSessionsA(HANDLE, DWORD, DWORD, PWTS_SESSION_INFO*, DWORD*)
+/// WTSEnumerateSessionsA - Retrieves a list of sessions on a Remote Desktop Session Host server.
+/// Parameters:
+///   - hServer: Handle to RD Session Host server (from WTSOpenServerA or WTS_CURRENT_SERVER_HANDLE)
+///   - Reserved: Reserved, must be 0
+///   - Version: Version of the enumeration, must be 1
+///   - ppSessionInfo: Receives pointer to array of WTS_SESSION_INFO structures
+///   - pCount: Receives number of WTS_SESSION_INFO structures returned
+/// Returns: TRUE on success, FALSE on failure
 fn wts_enumerate_sessions_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    check_stub(vm, DLL_NAME, "WTSEnumerateSessionsA");
     let (h_server, reserved, version, sessions_ptr, count_ptr) =
         vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    let _ = (reserved, version); // Mark as intentionally unused
 
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!(
@@ -142,7 +196,7 @@ mod tests {
         let mut vm = create_test_vm();
         let result = wts_open_server_a(&mut vm, 0);
         // Returns a non-null handle
-        assert_eq!(result, 1);
+        assert_eq!(result, DUMMY_WTS_SERVER_HANDLE);
     }
 
     #[test]

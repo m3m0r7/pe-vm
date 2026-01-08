@@ -245,6 +245,14 @@ impl Vm {
                 self.base,
                 self.memory.len()
             );
+            // Print instruction bytes at EIP
+            let mut inst_bytes = Vec::new();
+            for i in 0..16u32 {
+                if let Ok(b) = self.read_u8(self.regs.eip.wrapping_add(i)) {
+                    inst_bytes.push(format!("{b:02X}"));
+                }
+            }
+            eprintln!("[pe_vm] inst at eip: {}", inst_bytes.join(" "));
             eprintln!(
                 "[pe_vm] regs: eax=0x{:08X} ecx=0x{:08X} edx=0x{:08X} ebx=0x{:08X} esp=0x{:08X} ebp=0x{:08X} esi=0x{:08X} edi=0x{:08X}",
                 self.regs.eax,

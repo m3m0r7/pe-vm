@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::vm::state::{FileMapping, MappedView};
 use crate::vm::*;
 
 impl Vm {
@@ -129,5 +130,81 @@ impl Vm {
         }
         file.cursor = next as usize;
         Some(next as u64)
+    }
+
+    /// Create a file mapping object
+    pub(crate) fn create_file_mapping(&mut self, file_handle: u32, size: usize) -> Option<u32> {
+        let mapping_handle = self.file_mapping_next_handle;
+        self.file_mapping_next_handle = self.file_mapping_next_handle.wrapping_add(1);
+
+        self.file_mappings.insert(
+            mapping_handle,
+            FileMapping { file_handle, size },
+        );
+
+        Some(mapping_handle)
+    }
+
+    /// Map a view of a file mapping into memory
+    pub(crate) fn map_view_of_file(
+        &mut self,
+        mapping_handle: u32,
+        offset: usize,
+        bytes_to_map: usize,
+    ) -> Option<u32> {
+        let mapping = self.file_mappings.get(&mapping_handle)?;
+        let file_handle = mapping.file_handle;
+        let mapping_size = mapping.size;
+
+        // Get the file data
+        let file = self.file_handles.get(&file_handle)?;
+        let file_path = file.path.clone();
+        let data = self.virtual_files.get(&file_path)?.clone();
+
+        // Calculate actual size to map
+        let actual_size = if bytes_to_map == 0 {
+            mapping_size.saturating_sub(offset)
+        } else {
+            bytes_to_map.min(mapping_size.saturating_sub(offset))
+        };
+
+        if actual_size == 0 {
+            return None;
+        }
+
+        // Allocate memory in VM heap for the mapped view
+        let base_addr = self.heap_alloc(actual_size);
+        if base_addr == 0 {
+            return None;
+        }
+
+        // Copy file data to the allocated memory
+        let start = offset.min(data.len());
+        let end = (offset + actual_size).min(data.len());
+        if end > start {
+            let _ = self.write_bytes(base_addr, &data[start..end]);
+        }
+
+        // Track the mapped view
+        self.mapped_views.insert(
+            base_addr,
+            MappedView {
+                mapping_handle,
+                base_addr,
+                size: actual_size,
+            },
+        );
+
+        Some(base_addr)
+    }
+
+    /// Unmap a previously mapped view
+    pub(crate) fn unmap_view_of_file(&mut self, base_addr: u32) -> bool {
+        if let Some(view) = self.mapped_views.remove(&base_addr) {
+            self.heap_free(view.base_addr);
+            true
+        } else {
+            false
+        }
     }
 }

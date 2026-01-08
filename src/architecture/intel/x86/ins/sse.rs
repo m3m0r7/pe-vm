@@ -8,6 +8,8 @@ pub(crate) fn exec_rm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<
     let opcode = vm.read_u8(cursor + 1)?;
     let modrm = decode_modrm(vm, cursor + 2)?;
     match opcode {
+        0x10 => movups_to_xmm(vm, &modrm, prefixes)?, // MOVUPS xmm, r/m128
+        0x11 => movups_from_xmm(vm, &modrm, prefixes)?, // MOVUPS r/m128, xmm
         0x57 => xorps(vm, &modrm, prefixes)?,
         0x60 => punpcklbw(vm, &modrm, prefixes)?, // PUNPCKLBW
         0x61 => punpcklwd(vm, &modrm, prefixes)?, // PUNPCKLWD
@@ -29,6 +31,26 @@ pub(crate) fn exec_rm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<
     let extra = if opcode == 0x70 { 1 } else { 0 };
     vm.set_eip(cursor + 2 + modrm.len as u32 + extra);
     Ok(())
+}
+
+/// MOVUPS xmm, r/m128 (0F 10) - Move unaligned packed single-precision
+fn movups_to_xmm(
+    vm: &mut Vm,
+    modrm: &super::core::ModRm,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
+    // Load 128-bit value from r/m to xmm register
+    mov_xmm_from_rm(vm, modrm, prefixes)
+}
+
+/// MOVUPS r/m128, xmm (0F 11) - Move unaligned packed single-precision
+fn movups_from_xmm(
+    vm: &mut Vm,
+    modrm: &super::core::ModRm,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
+    // Store 128-bit value from xmm register to r/m
+    mov_rm_from_xmm(vm, modrm, prefixes)
 }
 
 fn xorps(vm: &mut Vm, modrm: &super::core::ModRm, prefixes: Prefixes) -> Result<(), VmError> {

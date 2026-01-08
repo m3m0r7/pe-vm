@@ -66,6 +66,9 @@ impl Vm {
             stdout: Arc::new(Mutex::new(Vec::new())),
             executor: X86Executor::new(),
             fpu: FpuState::default(),
+            file_mappings: HashMap::new(),
+            file_mapping_next_handle: 0x3000,
+            mapped_views: HashMap::new(),
         };
         // Register default Windows stubs up front for import resolution.
         if matches!(vm.config.os_value(), Os::Windows) {

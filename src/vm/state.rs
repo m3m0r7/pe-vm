@@ -119,6 +119,10 @@ pub struct Vm {
     pub(super) stdout: Arc<Mutex<Vec<u8>>>,
     pub(super) executor: X86Executor,
     pub(super) fpu: FpuState,
+    // File mapping support
+    pub(super) file_mappings: HashMap<u32, FileMapping>,
+    pub(super) file_mapping_next_handle: u32,
+    pub(super) mapped_views: HashMap<u32, MappedView>,
 }
 
 #[derive(Debug, Clone)]
@@ -127,6 +131,19 @@ pub(crate) struct FileHandle {
     pub(crate) cursor: usize,
     pub(crate) readable: bool,
     pub(crate) writable: bool,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct FileMapping {
+    pub(crate) file_handle: u32,
+    pub(crate) size: usize,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct MappedView {
+    pub(crate) mapping_handle: u32,
+    pub(crate) base_addr: u32,
+    pub(crate) size: usize,
 }
 
 impl Vm {

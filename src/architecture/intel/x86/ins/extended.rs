@@ -27,8 +27,8 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
         }
 
         // SSE instructions
-        Xorps | Punpcklbw | Punpcklwd | MovdToXmm | Movdqa | Pshufd | MovdFromXmm | Movdqu
-        | Movq | Pxor => sse::exec_rm32(vm, cursor, prefixes),
+        MovupsToXmm | MovupsFromXmm | Xorps | Punpcklbw | Punpcklwd | MovdToXmm | Movdqa
+        | Pshufd | MovdFromXmm | Movdqu | Movq | Pxor => sse::exec_rm32(vm, cursor, prefixes),
 
         // Conditional jumps (Jcc rel32)
         Jo | Jno | Jb | Jae | Je | Jne | Jbe | Ja | Js | Jns | Jp | Jnp | Jl | Jge | Jle | Jg => {

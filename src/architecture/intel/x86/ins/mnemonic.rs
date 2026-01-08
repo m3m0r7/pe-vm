@@ -632,6 +632,8 @@ pub(crate) enum ExtendedOpcode {
     Cmovg = 0x4F,
 
     // SSE instructions
+    MovupsToXmm = 0x10,
+    MovupsFromXmm = 0x11,
     Xorps = 0x57,
     Punpcklbw = 0x60,
     Punpcklwd = 0x61,
@@ -722,6 +724,8 @@ impl ExtendedOpcode {
             0x4F => Some(Self::Cmovg),
 
             // SSE
+            0x10 => Some(Self::MovupsToXmm),
+            0x11 => Some(Self::MovupsFromXmm),
             0x57 => Some(Self::Xorps),
             0x60 => Some(Self::Punpcklbw),
             0x61 => Some(Self::Punpcklwd),

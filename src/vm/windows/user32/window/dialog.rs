@@ -1,4 +1,3 @@
-use crate::define_stub_fn;
 use crate::pe::{ResourceData, ResourceDirectory, ResourceId, ResourceNode};
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
@@ -6,11 +5,84 @@ use crate::vm_args;
 
 use super::helpers::{write_c_string, write_rect};
 
-define_stub_fn!(DLL_NAME, get_dlg_item, 0);
-define_stub_fn!(DLL_NAME, send_dlg_item_message_a, 0);
-define_stub_fn!(DLL_NAME, end_dialog, 1);
-define_stub_fn!(DLL_NAME, dialog_box_indirect_param_a, 1);
-define_stub_fn!(DLL_NAME, map_window_points, 0);
+/// Dummy dialog item handle base
+const DUMMY_DLG_ITEM_HANDLE: u32 = 0x20000;
+
+/// GetDlgItem - Retrieves a handle to a control in the dialog box
+/// Parameters:
+///   - hDlg: Handle to the dialog box
+///   - nIDDlgItem: Identifier of the control
+/// Returns: Handle to the control, or NULL if failed
+fn get_dlg_item(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hdlg, id) = vm_args!(vm, stack_ptr; u32, u32);
+    if hdlg != 0 && id != 0 {
+        // Return a dummy handle derived from the control ID
+        DUMMY_DLG_ITEM_HANDLE | (id & 0xFFFF)
+    } else {
+        0 // NULL
+    }
+}
+
+/// SendDlgItemMessageA - Sends a message to a control in a dialog box
+/// Parameters:
+///   - hDlg: Handle to the dialog box
+///   - nIDDlgItem: Identifier of the control
+///   - Msg: Message to send
+///   - wParam: Additional message-specific information
+///   - lParam: Additional message-specific information
+/// Returns: Result of message processing (depends on the message)
+fn send_dlg_item_message_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_hdlg, _id, _msg, _wparam, _lparam) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    // Without real controls, return 0 as default
+    0
+}
+
+/// EndDialog - Destroys a modal dialog box and returns to caller
+/// Parameters:
+///   - hDlg: Handle to the dialog box
+///   - nResult: Value to return to caller
+/// Returns: TRUE if succeeded, FALSE if failed
+fn end_dialog(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hdlg, _result) = vm_args!(vm, stack_ptr; u32, i32);
+    if hdlg != 0 {
+        1 // TRUE
+    } else {
+        0 // FALSE
+    }
+}
+
+/// DialogBoxIndirectParamA - Creates a modal dialog box from a template in memory
+/// Parameters:
+///   - hInstance: Handle to the module
+///   - lpTemplate: Pointer to dialog box template
+///   - hWndParent: Handle to owner window
+///   - lpDialogFunc: Pointer to dialog box procedure
+///   - dwInitParam: Value to pass to dialog box procedure
+/// Returns: nResult from EndDialog, or -1 on failure
+fn dialog_box_indirect_param_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_hinstance, template_ptr, _parent, _dlg_proc, _init_param) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    if template_ptr == 0 {
+        return 0xFFFFFFFF; // -1 (failure)
+    }
+    // We can't actually display dialogs, so return 0 (IDOK equivalent)
+    // or -1 for failure. Since template is valid, return success.
+    0
+}
+
+/// MapWindowPoints - Maps a set of points from one window's coordinate space to another
+/// Parameters:
+///   - hWndFrom: Handle to source window
+///   - hWndTo: Handle to destination window
+///   - lpPoints: Pointer to array of POINT structures
+///   - cPoints: Number of points in array
+/// Returns: Number of pixels added to horizontal/vertical coordinates (MAKELONG format)
+fn map_window_points(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_from, _to, _points_ptr, _count) = vm_args!(vm, stack_ptr; u32, u32, u32, u32);
+    // Without real window positions, return 0 (no offset)
+    0
+}
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(

@@ -60,6 +60,12 @@ impl InstructionSet {
         if let Some(handler) = self.handlers[opcode as usize] {
             handler(vm, cursor, prefixes)
         } else {
+            if std::env::var("PE_VM_TRACE_UNSUPPORTED").is_ok() {
+                eprintln!(
+                    "[pe_vm] unsupported opcode 0x{opcode:02X} at cursor=0x{cursor:08X} eip=0x{:08X}",
+                    vm.eip()
+                );
+            }
             Err(VmError::UnsupportedInstruction(opcode))
         }
     }

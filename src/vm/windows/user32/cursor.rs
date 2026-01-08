@@ -1,11 +1,18 @@
 //! User32 cursor-related stubs.
 
-use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 
-define_stub_fn!(DLL_NAME, load_cursor_a, 1);
-define_stub_fn!(DLL_NAME, load_cursor_w, 1);
+/// LoadCursorA - Loads a cursor resource
+/// Returns a dummy cursor handle (non-zero = success)
+fn load_cursor_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
+
+/// LoadCursorW - Loads a cursor resource (wide)
+fn load_cursor_w(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -25,18 +32,10 @@ pub fn register(vm: &mut Vm) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::settings::BypassSettings;
     use crate::vm::{Architecture, VmConfig};
 
     fn create_test_vm() -> Vm {
-        let mut bypass = BypassSettings::new();
-        bypass.not_implemented_module = true;
-        let mut vm = Vm::new(
-            VmConfig::new()
-                .architecture(Architecture::X86)
-                .bypass(bypass),
-        )
-        .expect("vm");
+        let mut vm = Vm::new(VmConfig::new().architecture(Architecture::X86)).expect("vm");
         vm.memory = vec![0u8; 0x10000];
         vm.base = 0x1000;
         vm.stack_top = 0x1000 + 0x10000 - 4;

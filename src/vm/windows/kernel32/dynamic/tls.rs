@@ -23,7 +23,11 @@ fn fls_free(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn fls_get_value(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (index,) = vm_args!(vm, stack_ptr; u32);
-    vm.tls_get(index)
+    let value = vm.tls_get(index);
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] FlsGetValue: index={index} -> value=0x{value:08X}");
+    }
+    value
 }
 
 fn fls_set_value(vm: &mut Vm, stack_ptr: u32) -> u32 {

@@ -84,7 +84,12 @@ fn create_file_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         );
     }
     match vm.file_open(&path, readable, writable, create, truncate) {
-        Ok(handle) => handle,
+        Ok(handle) => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] CreateFileA: {path} -> handle=0x{handle:08X}");
+            }
+            handle
+        }
         Err(_) => {
             vm.set_last_error(ERROR_FILE_NOT_FOUND);
             INVALID_HANDLE_VALUE

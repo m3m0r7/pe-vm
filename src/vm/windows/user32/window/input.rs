@@ -1,16 +1,38 @@
-use crate::define_stub_fn;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
 use super::helpers::write_point;
 
-define_stub_fn!(DLL_NAME, set_cursor, 0);
-define_stub_fn!(DLL_NAME, set_capture, 0);
-define_stub_fn!(DLL_NAME, release_capture, 1);
-define_stub_fn!(DLL_NAME, get_key_state, 0);
-define_stub_fn!(DLL_NAME, get_focus, 0);
-define_stub_fn!(DLL_NAME, set_focus, 0);
+/// SetCursor - Sets the cursor shape (returns previous cursor, 0 if none)
+fn set_cursor(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    0
+}
+
+/// SetCapture - Sets mouse capture to window (returns previous capture window)
+fn set_capture(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    0
+}
+
+/// ReleaseCapture - Releases mouse capture
+fn release_capture(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    1
+}
+
+/// GetKeyState - Gets key state (0 = not pressed)
+fn get_key_state(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    0
+}
+
+/// GetFocus - Gets window with keyboard focus (0 = no focus)
+fn get_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    0
+}
+
+/// SetFocus - Sets keyboard focus to window (returns previous focus window)
+fn set_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    0
+}
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
