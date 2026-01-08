@@ -26,6 +26,16 @@ fn fls_get_value(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let value = vm.tls_get(index);
     if std::env::var("PE_VM_TRACE").is_ok() {
         eprintln!("[pe_vm] FlsGetValue: index={index} -> value=0x{value:08X}");
+        // Dump first 64 bytes of the TLS data structure if value is valid
+        if value != 0 && value >= vm.base && value < vm.base + vm.memory.len() as u32 {
+            let mut bytes = Vec::new();
+            for i in 0..64u32 {
+                if let Ok(b) = vm.read_u8(value.wrapping_add(i)) {
+                    bytes.push(format!("{b:02X}"));
+                }
+            }
+            eprintln!("[pe_vm]   TLS data at 0x{value:08X}: {}", bytes.join(" "));
+        }
     }
     value
 }

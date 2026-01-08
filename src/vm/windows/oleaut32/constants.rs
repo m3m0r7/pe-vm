@@ -3,6 +3,7 @@
 use crate::vm::Vm;
 
 pub(super) const S_OK: u32 = 0;
+pub(super) const E_FAIL: u32 = 0x8000_4005;
 pub(super) const E_INVALIDARG: u32 = 0x8007_0057;
 pub(super) const E_NOTIMPL: u32 = 0x8000_4001;
 pub(super) const E_NOINTERFACE: u32 = 0x8000_4002;

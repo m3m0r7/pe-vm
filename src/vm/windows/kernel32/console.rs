@@ -82,6 +82,12 @@ fn read_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (handle, buffer, count, bytes_read, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if let Some(bytes) = vm.file_read(handle, count) {
+        if std::env::var("PE_VM_TRACE").is_ok() {
+            eprintln!(
+                "[pe_vm] ReadFile: handle=0x{:08X} buffer=0x{:08X} count={} read={}",
+                handle, buffer, count, bytes.len()
+            );
+        }
         if buffer != 0 {
             let _ = vm.write_bytes(buffer, &bytes);
         }
@@ -89,6 +95,12 @@ fn read_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
             let _ = vm.write_u32(bytes_read, bytes.len() as u32);
         }
         return 1;
+    }
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!(
+            "[pe_vm] ReadFile: handle=0x{:08X} FAILED (invalid handle)",
+            handle
+        );
     }
     if bytes_read != 0 {
         let _ = vm.write_u32(bytes_read, 0);

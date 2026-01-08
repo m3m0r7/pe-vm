@@ -66,16 +66,26 @@ fn set_window_text_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 /// GetWindow - Gets handle to related window (owner, child, sibling, etc.)
 /// Returns: Window handle, or NULL if no window exists
-fn get_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    // We don't track window hierarchy, return NULL
-    0
+fn get_window(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hwnd, _cmd) = vm_args!(vm, stack_ptr; u32, u32);
+    // Return the same window handle if valid, simulating a simple hierarchy
+    if hwnd != 0 {
+        hwnd
+    } else {
+        DUMMY_HWND
+    }
 }
 
 /// GetParent - Gets handle to parent window
 /// Returns: Parent window handle, or NULL if no parent
-fn get_parent(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    // We don't track window hierarchy, return NULL
-    0
+fn get_parent(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hwnd,) = vm_args!(vm, stack_ptr; u32);
+    // Return desktop window as parent if hwnd is valid
+    if hwnd != 0 {
+        DUMMY_HWND
+    } else {
+        0
+    }
 }
 
 /// IsChild - Tests whether window is child of specified parent
@@ -101,16 +111,21 @@ fn set_window_long_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 
 /// SetParent - Changes parent window of specified child window
 /// Returns: Previous parent window handle, or NULL on failure
-fn set_parent(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    // We don't track window hierarchy, return NULL
-    0
+fn set_parent(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hwnd, _new_parent) = vm_args!(vm, stack_ptr; u32, u32);
+    // Return previous parent (desktop window) if child is valid
+    if hwnd != 0 {
+        DUMMY_HWND
+    } else {
+        0
+    }
 }
 
 /// GetActiveWindow - Gets handle to active window attached to calling thread's message queue
 /// Returns: Active window handle, or NULL if no active window
 fn get_active_window(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    // We don't have an active window system, return NULL
-    0
+    // Return a valid dummy window handle
+    DUMMY_HWND
 }
 
 pub(super) fn register(vm: &mut Vm) {

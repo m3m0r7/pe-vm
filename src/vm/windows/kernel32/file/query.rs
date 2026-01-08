@@ -74,12 +74,18 @@ fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (handle, high_ptr) = vm_args!(vm, stack_ptr; u32, u32);
     match vm.file_size(handle) {
         Some(size) => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] GetFileSize: handle=0x{handle:08X} size={size}");
+            }
             if high_ptr != 0 {
                 let _ = vm.write_u32(high_ptr, 0);
             }
             size
         }
         None => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] GetFileSize: handle=0x{handle:08X} INVALID");
+            }
             vm.set_last_error(ERROR_INVALID_HANDLE);
             INVALID_FILE_ATTRIBUTES
         }

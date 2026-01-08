@@ -264,6 +264,34 @@ impl Vm {
                 self.regs.esi,
                 self.regs.edi
             );
+            // Print stack trace (return addresses)
+            eprintln!("[pe_vm] stack trace (potential return addrs):");
+            for i in 0..8u32 {
+                let stack_addr = self.regs.esp.wrapping_add(i * 4);
+                if let Ok(value) = self.read_u32(stack_addr) {
+                    if value >= self.base && value < self.base + self.memory.len() as u32 {
+                        eprintln!("[pe_vm]   esp+0x{:02X}: 0x{:08X}", i * 4, value);
+                    }
+                }
+            }
+            // Print ebp chain
+            let mut ebp = self.regs.ebp;
+            for _ in 0..4 {
+                if ebp == 0 || ebp < self.base {
+                    break;
+                }
+                if let Ok(ret_addr) = self.read_u32(ebp.wrapping_add(4)) {
+                    eprintln!("[pe_vm]   [ebp+4]=0x{:08X} (from ebp=0x{:08X})", ret_addr, ebp);
+                }
+                if let Ok(next_ebp) = self.read_u32(ebp) {
+                    if next_ebp <= ebp || next_ebp >= self.base + self.memory.len() as u32 {
+                        break;
+                    }
+                    ebp = next_ebp;
+                } else {
+                    break;
+                }
+            }
             if let Ok(value) = self.read_u32(self.regs.edi) {
                 eprintln!("[pe_vm] mem[edi]=0x{value:08X}");
             }

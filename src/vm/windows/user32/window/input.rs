@@ -2,6 +2,7 @@ use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
 
+use super::constants::DUMMY_HWND;
 use super::helpers::write_point;
 
 /// SetCursor - Sets the cursor shape (returns previous cursor, 0 if none)
@@ -9,9 +10,16 @@ fn set_cursor(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     0
 }
 
-/// SetCapture - Sets mouse capture to window (returns previous capture window)
-fn set_capture(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+/// SetCapture - Sets mouse capture to window
+/// Returns: Handle to window that previously had capture, or NULL
+fn set_capture(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hwnd,) = vm_args!(vm, stack_ptr; u32);
+    // Return previous capture window
+    if hwnd != 0 {
+        DUMMY_HWND
+    } else {
+        0
+    }
 }
 
 /// ReleaseCapture - Releases mouse capture
@@ -24,14 +32,23 @@ fn get_key_state(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     0
 }
 
-/// GetFocus - Gets window with keyboard focus (0 = no focus)
+/// GetFocus - Gets window with keyboard focus
+/// Returns: Handle to window with focus, or NULL if none
 fn get_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+    // Return a valid dummy window handle
+    DUMMY_HWND
 }
 
-/// SetFocus - Sets keyboard focus to window (returns previous focus window)
-fn set_focus(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+/// SetFocus - Sets keyboard focus to window
+/// Returns: Handle to window that previously had focus
+fn set_focus(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (hwnd,) = vm_args!(vm, stack_ptr; u32);
+    // Return previous focus window (use dummy if setting to valid window)
+    if hwnd != 0 {
+        DUMMY_HWND
+    } else {
+        0
+    }
 }
 
 pub(super) fn register(vm: &mut Vm) {

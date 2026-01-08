@@ -9,8 +9,8 @@ use crate::vm::windows::oleaut32::typelib;
 use crate::vm::{Value, Vm};
 
 use super::super::constants::{
-    DISP_E_MEMBERNOTFOUND, DISP_E_TYPEMISMATCH, E_NOTIMPL, PARAMFLAG_FRETVAL, S_OK, VT_EMPTY,
-    VT_HRESULT, VT_I4, VT_VOID,
+    DISP_E_MEMBERNOTFOUND, DISP_E_TYPEMISMATCH, E_FAIL, E_NOTIMPL, PARAMFLAG_FRETVAL, S_OK,
+    VT_EMPTY, VT_HRESULT, VT_I4, VT_VOID,
 };
 use super::helpers::resolve_typeinfo_info;
 
@@ -208,7 +208,9 @@ pub(super) fn typeinfo_invoke(vm: &mut Vm, stack_ptr: u32) -> u32 {
             if std::env::var("PE_VM_TRACE_COM").is_ok() {
                 eprintln!("[pe_vm] ITypeInfo::Invoke call failed: {err}");
             }
-            return E_NOTIMPL;
+            // Return E_FAIL for runtime errors (memory access, etc.)
+            // E_NOTIMPL is reserved for unimplemented methods
+            return E_FAIL;
         }
     };
     trace_out_params(vm, &invoke_values.out_params);
