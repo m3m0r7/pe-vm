@@ -29,6 +29,7 @@ pub mod user32;
 pub mod vcruntime;
 pub mod version;
 pub mod wininet;
+pub mod winhttp;
 pub mod ws2_32;
 pub mod wtsapi32;
 
@@ -109,6 +110,7 @@ pub fn register_default(vm: &mut Vm) {
     ws2_32::register(vm);
     wtsapi32::register(vm);
     wininet::register(vm);
+    winhttp::register(vm);
     stkit432::register(vm);
     mfc40d::register(vm);
     mfcn40d::register(vm);

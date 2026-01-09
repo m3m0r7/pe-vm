@@ -32,10 +32,10 @@ pub(super) struct Request {
 }
 
 #[derive(Clone)]
-pub(super) struct Response {
-    pub(super) status: u16,
-    pub(super) body: Vec<u8>,
-    pub(super) raw_headers: String,
+pub(crate) struct Response {
+    pub(crate) status: u16,
+    pub(crate) body: Vec<u8>,
+    pub(crate) raw_headers: String,
 }
 
 #[derive(Clone)]

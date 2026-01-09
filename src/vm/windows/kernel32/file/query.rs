@@ -27,6 +27,12 @@ pub(super) fn register(vm: &mut Vm) {
     );
     vm.register_import_stdcall(
         "KERNEL32.dll",
+        "GetFileSizeEx",
+        crate::vm::stdcall_args(2),
+        get_file_size_ex,
+    );
+    vm.register_import_stdcall(
+        "KERNEL32.dll",
         "GetFileTime",
         crate::vm::stdcall_args(4),
         get_file_time,
@@ -88,6 +94,31 @@ fn get_file_size(vm: &mut Vm, stack_ptr: u32) -> u32 {
             }
             vm.set_last_error(ERROR_INVALID_HANDLE);
             INVALID_FILE_ATTRIBUTES
+        }
+    }
+}
+
+fn get_file_size_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (handle, size_ptr) = vm_args!(vm, stack_ptr; u32, u32);
+    match vm.file_size(handle) {
+        Some(size) => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] GetFileSizeEx: handle=0x{handle:08X} size={size}");
+            }
+            if size_ptr != 0 {
+                let _ = vm.write_u64(size_ptr, size as u64);
+            }
+            1
+        }
+        None => {
+            if std::env::var("PE_VM_TRACE").is_ok() {
+                eprintln!("[pe_vm] GetFileSizeEx: handle=0x{handle:08X} INVALID");
+            }
+            vm.set_last_error(ERROR_INVALID_HANDLE);
+            if size_ptr != 0 {
+                let _ = vm.write_u64(size_ptr, 0);
+            }
+            0
         }
     }
 }

@@ -11,6 +11,8 @@ mod utils;
 
 use crate::vm::Vm;
 
+pub(crate) use client::send_http_request;
+
 // Register minimal WinINet entry points used by common DLLs.
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(

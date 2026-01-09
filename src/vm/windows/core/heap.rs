@@ -2,7 +2,7 @@ use crate::vm::*;
 
 impl Vm {
     // Allocate bytes in the VM heap for host-side helpers (COM/BSTR/etc).
-    pub(crate) fn alloc_bytes(&mut self, bytes: &[u8], align: usize) -> Result<u32, VmError> {
+    pub fn alloc_bytes(&mut self, bytes: &[u8], align: usize) -> Result<u32, VmError> {
         if self.memory.is_empty() {
             return Err(VmError::NoImage);
         }

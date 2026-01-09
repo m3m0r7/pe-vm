@@ -209,8 +209,9 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     // XCHG EAX, reg
     inst.register_range(XchgEaxEcx, XchgEaxEdi, atomic::xchg_eax_reg);
 
-    // CDQ, PUSHFD
+    // CDQ, FWAIT, PUSHFD
     inst.register(Cdq, system::cdq);
+    inst.register(Fwait, system::fwait);
     inst.register(Pushfd, stack::pushfd);
 
     // MOV with memory offset

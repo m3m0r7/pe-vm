@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
 use crate::architecture::intel::x86::X86Executor;
-use crate::pe::ResourceDirectory;
+use crate::pe::{PeFile, ResourceDirectory};
 
 use super::{windows, ComOutParam, MessageBoxMode, VmConfig, VmError};
 
@@ -38,7 +38,7 @@ pub(crate) struct Flags {
     pub(crate) df: bool,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct FpuState {
     pub(crate) stack: [f64; 8],
     pub(crate) valid: [bool; 8],
@@ -48,6 +48,19 @@ pub(crate) struct FpuState {
     pub(crate) status_word: u16,
     #[allow(dead_code)]
     pub(crate) tag_word: u16,
+}
+
+impl Default for FpuState {
+    fn default() -> Self {
+        Self {
+            stack: [0.0; 8],
+            valid: [false; 8],
+            top: 0,
+            control_word: 0x037F,
+            status_word: 0,
+            tag_word: 0xFFFF,
+        }
+    }
 }
 
 impl FpuState {
@@ -67,6 +80,7 @@ pub(crate) struct HostFunction {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub(crate) struct AtlStringMgr {
     pub(crate) vtable: u32,
     pub(crate) object: u32,
@@ -77,6 +91,17 @@ pub(crate) struct AtlStringMgr {
 pub(crate) struct PendingThread {
     pub(crate) entry: u32,
     pub(crate) param: u32,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct LoadedModule {
+    pub(crate) name: String,
+    pub(crate) guest_path: String,
+    pub(crate) host_path: String,
+    pub(crate) base: u32,
+    #[allow(dead_code)]
+    pub(crate) size: u32,
+    pub(crate) pe: PeFile,
 }
 
 pub struct Vm {
@@ -104,6 +129,8 @@ pub struct Vm {
     pub(super) dispatch_instance: Option<u32>,
     pub(super) last_com_out_params: Vec<ComOutParam>,
     pub(super) last_error: u32,
+    pub(super) main_module: Option<u32>,
+    pub(super) modules: Vec<LoadedModule>,
     pub(super) registry_handles: HashMap<u32, String>,
     pub(super) registry_next_handle: u32,
     pub(super) file_handles: HashMap<u32, FileHandle>,
@@ -149,6 +176,7 @@ pub(crate) struct FileMapping {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct MappedView {
     pub(crate) mapping_handle: u32,
     pub(crate) base_addr: u32,

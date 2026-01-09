@@ -10,6 +10,7 @@ pub(crate) fn exec_rm32(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<
     match opcode {
         0x10 => movups_to_xmm(vm, &modrm, prefixes)?, // MOVUPS xmm, r/m128
         0x11 => movups_from_xmm(vm, &modrm, prefixes)?, // MOVUPS r/m128, xmm
+        0x13 => movlps_rm_from_xmm(vm, &modrm, prefixes)?, // MOVLPS m64, xmm
         0x57 => xorps(vm, &modrm, prefixes)?,
         0x60 => punpcklbw(vm, &modrm, prefixes)?, // PUNPCKLBW
         0x61 => punpcklwd(vm, &modrm, prefixes)?, // PUNPCKLWD
@@ -51,6 +52,21 @@ fn movups_from_xmm(
 ) -> Result<(), VmError> {
     // Store 128-bit value from xmm register to r/m
     mov_rm_from_xmm(vm, modrm, prefixes)
+}
+
+/// MOVLPS m64, xmm (0F 13) - Store low 64 bits from XMM to memory
+fn movlps_rm_from_xmm(
+    vm: &mut Vm,
+    modrm: &super::core::ModRm,
+    prefixes: Prefixes,
+) -> Result<(), VmError> {
+    if modrm.mod_bits == 3 {
+        return Ok(());
+    }
+    let addr = calc_ea(vm, modrm, prefixes.segment_base)?;
+    let value = vm.xmm(modrm.reg);
+    vm.write_bytes(addr, &value[..8])?;
+    Ok(())
 }
 
 fn xorps(vm: &mut Vm, modrm: &super::core::ModRm, prefixes: Prefixes) -> Result<(), VmError> {

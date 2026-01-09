@@ -1,6 +1,7 @@
 //! Miscellaneous User32 helpers.
 
 use crate::define_stub_fn;
+use crate::vm::windows::gdi32;
 use crate::vm::windows::user32::DLL_NAME;
 use crate::vm::{Value, Vm};
 use crate::vm_args;
@@ -33,6 +34,12 @@ pub fn register(vm: &mut Vm) {
         "KillTimer",
         crate::vm::stdcall_args(2),
         kill_timer,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "LoadImageA",
+        crate::vm::stdcall_args(6),
+        load_image_a,
     );
 }
 
@@ -81,6 +88,87 @@ fn set_timer(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 fn kill_timer(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     1
+}
+
+fn load_image_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    let (hinst, name_ptr, image_type, cx, cy, _flags) =
+        vm_args!(_vm, _stack_ptr; u32, u32, u32, u32, u32, u32);
+    if hinst == 0 && name_ptr == 0 {
+        return 0;
+    }
+    // Only handle bitmap-from-file for now.
+    if image_type != 0 {
+        return 0;
+    }
+    if name_ptr == 0 {
+        return 0;
+    }
+    let path = read_wide_or_utf16le_str!(_vm, name_ptr);
+    let host_path = _vm.map_path(&path);
+    let data = match std::fs::read(&host_path) {
+        Ok(data) => data,
+        Err(_) => return 0,
+    };
+    let bmp = match parse_bmp(&data) {
+        Some(info) => info,
+        None => return 0,
+    };
+    let width = if cx == 0 { bmp.width } else { cx };
+    let height = if cy == 0 { bmp.height } else { cy };
+    let Some((handle, _)) = gdi32::create_bitmap(_vm, width, height, bmp.bit_count, Some(&bmp.bits))
+    else {
+        return 0;
+    };
+    handle
+}
+
+struct BmpInfo {
+    width: u32,
+    height: u32,
+    bit_count: u16,
+    bits: Vec<u8>,
+}
+
+fn parse_bmp(data: &[u8]) -> Option<BmpInfo> {
+    if data.len() < 54 {
+        return None;
+    }
+    if &data[0..2] != b"BM" {
+        return None;
+    }
+    let pixel_offset = u32::from_le_bytes([data[10], data[11], data[12], data[13]]) as usize;
+    let header_size = u32::from_le_bytes([data[14], data[15], data[16], data[17]]) as usize;
+    if data.len() < 14 + header_size {
+        return None;
+    }
+    let width_raw = i32::from_le_bytes([data[18], data[19], data[20], data[21]]);
+    let height_raw = i32::from_le_bytes([data[22], data[23], data[24], data[25]]);
+    let planes = u16::from_le_bytes([data[26], data[27]]);
+    let bit_count = u16::from_le_bytes([data[28], data[29]]);
+    let compression = u32::from_le_bytes([data[30], data[31], data[32], data[33]]);
+    if planes == 0 || compression != 0 {
+        return None;
+    }
+    let width = width_raw.unsigned_abs();
+    let height = height_raw.unsigned_abs();
+    if width == 0 || height == 0 {
+        return None;
+    }
+    let stride = ((u32::from(bit_count) * width + 31) / 32).saturating_mul(4);
+    let size = stride.saturating_mul(height) as usize;
+    if pixel_offset >= data.len() {
+        return None;
+    }
+    let available = data.len().saturating_sub(pixel_offset);
+    let copy_len = size.min(available);
+    let mut bits = vec![0u8; size];
+    bits[..copy_len].copy_from_slice(&data[pixel_offset..pixel_offset + copy_len]);
+    Some(BmpInfo {
+        width,
+        height,
+        bit_count,
+        bits,
+    })
 }
 
 #[cfg(test)]

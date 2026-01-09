@@ -173,8 +173,9 @@ pub(crate) enum Opcode {
     XchgEaxEsi = 0x96,
     XchgEaxEdi = 0x97,
 
-    // CDQ, PUSHFD
+    // CDQ, FWAIT, PUSHFD
     Cdq = 0x99,
+    Fwait = 0x9B,
     Pushfd = 0x9C,
 
     // MOV with memory offset
@@ -444,8 +445,9 @@ impl Opcode {
             0x96 => Some(Self::XchgEaxEsi),
             0x97 => Some(Self::XchgEaxEdi),
 
-            // CDQ, PUSHFD
+            // CDQ, FWAIT, PUSHFD
             0x99 => Some(Self::Cdq),
+            0x9B => Some(Self::Fwait),
             0x9C => Some(Self::Pushfd),
 
             // MOV moffs
@@ -616,6 +618,7 @@ pub(crate) enum ExtendedOpcode {
     // System instructions
     Xgetbv = 0x01,
     Cpuid = 0xA2,
+    Nop = 0x1F,
 
     // Conditional move (CMOVcc)
     Cmovo = 0x40,
@@ -638,6 +641,7 @@ pub(crate) enum ExtendedOpcode {
     // SSE instructions
     MovupsToXmm = 0x10,
     MovupsFromXmm = 0x11,
+    MovlpsFromXmm = 0x13,
     Xorps = 0x57,
     Punpcklbw = 0x60,
     Punpcklwd = 0x61,
@@ -708,6 +712,7 @@ impl ExtendedOpcode {
         match byte {
             0x01 => Some(Self::Xgetbv),
             0xA2 => Some(Self::Cpuid),
+            0x1F => Some(Self::Nop),
 
             // CMOVcc
             0x40 => Some(Self::Cmovo),
@@ -730,6 +735,7 @@ impl ExtendedOpcode {
             // SSE
             0x10 => Some(Self::MovupsToXmm),
             0x11 => Some(Self::MovupsFromXmm),
+            0x13 => Some(Self::MovlpsFromXmm),
             0x57 => Some(Self::Xorps),
             0x60 => Some(Self::Punpcklbw),
             0x61 => Some(Self::Punpcklwd),
@@ -817,7 +823,8 @@ impl ExtendedOpcode {
     pub(crate) fn is_sse(self) -> bool {
         matches!(
             self,
-            Self::Xorps
+            Self::MovlpsFromXmm
+                | Self::Xorps
                 | Self::Punpcklbw
                 | Self::Punpcklwd
                 | Self::MovdToXmm
@@ -848,6 +855,8 @@ pub(crate) fn supported_extended_opcodes() -> Vec<u8> {
     ops.extend([
         ExtendedOpcode::Xgetbv as u8,
         ExtendedOpcode::Cpuid as u8,
+        ExtendedOpcode::Nop as u8,
+        ExtendedOpcode::MovlpsFromXmm as u8,
         ExtendedOpcode::Xorps as u8,
         ExtendedOpcode::Punpcklbw as u8,
         ExtendedOpcode::Punpcklwd as u8,

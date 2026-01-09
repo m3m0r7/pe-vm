@@ -20,6 +20,11 @@ pub(super) fn register(vm: &mut Vm) {
         get_date_format_ex,
     );
     vm.register_import_any_stdcall(
+        "GetLocaleInfoA",
+        crate::vm::stdcall_args(4),
+        get_locale_info_a,
+    );
+    vm.register_import_any_stdcall(
         "GetLocaleInfoEx",
         crate::vm::stdcall_args(4),
         get_locale_info_ex,
@@ -87,6 +92,25 @@ fn get_date_format_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     write_utf16(vm, out_ptr, out_len, &text)
+}
+
+fn get_locale_info_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_locale, lc_type, out_ptr, out_len) =
+        vm_args!(vm, stack_ptr; u32, u32, u32, usize);
+    let value = locale_info_value(lc_type);
+    let required = value.len() + 1;
+    if out_ptr == 0 || out_len == 0 {
+        return required as u32;
+    }
+    if out_len < required {
+        vm.set_last_error(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+    for (i, byte) in value.as_bytes().iter().enumerate() {
+        let _ = vm.write_u8(out_ptr + i as u32, *byte);
+    }
+    let _ = vm.write_u8(out_ptr + value.len() as u32, 0);
+    required as u32
 }
 
 fn get_locale_info_ex(vm: &mut Vm, stack_ptr: u32) -> u32 {

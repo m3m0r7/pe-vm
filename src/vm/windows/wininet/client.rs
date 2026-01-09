@@ -8,7 +8,7 @@ use native_tls::{HandshakeError, TlsConnector};
 use super::trace::{log_http_request, log_http_response};
 use super::types::Response;
 
-pub(super) fn send_http_request(
+pub(crate) fn send_http_request(
     host: &str,
     port: u16,
     method: &str,
@@ -69,7 +69,20 @@ fn send_request_over_stream<S: Read + Write>(
     }
 
     let mut response_bytes = Vec::new();
-    stream.read_to_end(&mut response_bytes)?;
+    let mut buf = [0u8; 8192];
+    loop {
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => response_bytes.extend_from_slice(&buf[..n]),
+            Err(err) if err.kind() == std::io::ErrorKind::ConnectionReset => {
+                if response_bytes.is_empty() {
+                    return Err(err);
+                }
+                break;
+            }
+            Err(err) => return Err(err),
+        }
+    }
     let response = parse_http_response(&response_bytes);
     log_http_response(response.status, &response.body);
     Ok(response)

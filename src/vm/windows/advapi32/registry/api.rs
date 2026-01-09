@@ -260,38 +260,54 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
         Some(value) => value,
         None => return ERROR_FILE_NOT_FOUND,
     };
-    let value = match resolve_registry_value(vm, registry, &key) {
-        Some(value) => value,
-        None => return ERROR_FILE_NOT_FOUND,
-    };
+    let resolved = resolve_registry_value(vm, registry, &key);
+    let fallback_empty = resolved.is_none()
+        && value_name.is_some()
+        && (registry.stats(&prefix, wide).is_ok()
+            || redirect_wow6432_key(vm, &prefix)
+                .map(|redirected| registry.stats(&redirected, wide).is_ok())
+                .unwrap_or(false));
 
-    let (value_type, bytes) = match value {
-        RegistryValue::String(text) => {
+    let (value_type, bytes) = match resolved {
+        Some(value) => match value {
+            RegistryValue::String(text) => {
+                let bytes = if wide {
+                    encode_wide_string(text)
+                } else {
+                    let mut bytes = text.as_bytes().to_vec();
+                    bytes.push(0);
+                    bytes
+                };
+                (REG_SZ, bytes)
+            }
+            RegistryValue::Dword(value) => (REG_DWORD, value.to_le_bytes().to_vec()),
+            RegistryValue::MultiString(values) => {
+                let bytes = if wide {
+                    encode_wide_multi_string(values)
+                } else {
+                    let mut bytes = Vec::new();
+                    for item in values {
+                        bytes.extend_from_slice(item.as_bytes());
+                        bytes.push(0);
+                    }
+                    bytes.push(0);
+                    bytes
+                };
+                (REG_MULTI_SZ, bytes)
+            }
+            RegistryValue::Binary(bytes) => (REG_BINARY, bytes.clone()),
+        },
+        None => {
+            if !fallback_empty {
+                return ERROR_FILE_NOT_FOUND;
+            }
             let bytes = if wide {
-                encode_wide_string(text)
+                encode_wide_string("")
             } else {
-                let mut bytes = text.as_bytes().to_vec();
-                bytes.push(0);
-                bytes
+                vec![0u8]
             };
             (REG_SZ, bytes)
         }
-        RegistryValue::Dword(value) => (REG_DWORD, value.to_le_bytes().to_vec()),
-        RegistryValue::MultiString(values) => {
-            let bytes = if wide {
-                encode_wide_multi_string(values)
-            } else {
-                let mut bytes = Vec::new();
-                for item in values {
-                    bytes.extend_from_slice(item.as_bytes());
-                    bytes.push(0);
-                }
-                bytes.push(0);
-                bytes
-            };
-            (REG_MULTI_SZ, bytes)
-        }
-        RegistryValue::Binary(bytes) => (REG_BINARY, bytes.clone()),
     };
 
     if std::env::var("PE_VM_TRACE_REGVAL").is_ok() {

@@ -6,6 +6,7 @@ use crate::pe::ResourceDirectory;
 
 use crate::vm::state::FpuState;
 use crate::vm::*;
+use super::modules::module_filename;
 
 impl Vm {
     pub fn new(config: VmConfig) -> Result<Self, VmError> {
@@ -43,6 +44,8 @@ impl Vm {
             dispatch_instance: None,
             last_com_out_params: Vec::new(),
             last_error: 0,
+            main_module: None,
+            modules: Vec::new(),
             registry_handles: HashMap::new(),
             registry_next_handle: 0x1000_0000,
             file_handles: HashMap::new(),
@@ -117,7 +120,18 @@ impl Vm {
     }
 
     pub(crate) fn set_image_path(&mut self, path: impl Into<String>) {
-        self.image_path = Some(path.into());
+        let path = path.into();
+        let host_path = self.map_path(&path);
+        self.image_path = Some(path.clone());
+        if let Some(handle) = self.main_module {
+            if let Some(module) = self.modules.iter_mut().find(|module| module.base == handle) {
+                module.guest_path = path.clone();
+                if module.host_path.is_empty() {
+                    module.host_path = host_path;
+                }
+                module.name = module_filename(&path);
+            }
+        }
     }
 
     pub(crate) fn image_path(&self) -> Option<&str> {

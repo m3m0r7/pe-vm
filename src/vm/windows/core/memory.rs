@@ -1,6 +1,8 @@
 use crate::pe::PeFile;
 
 use crate::vm::*;
+use super::modules::module_name_from_pe;
+use crate::vm::state::LoadedModule;
 
 const NULL_PAGE_LIMIT: u32 = 0x1000;
 const HIGH_NULL_PAGE_START: u32 = 0xFFFF_F000;
@@ -55,6 +57,17 @@ impl Vm {
         self.string_overlays.clear();
         self.resource_dir = pe.directories.resource.clone();
         self.resource_sizes.clear();
+        self.image_path = None;
+        self.main_module = Some(base);
+        self.modules.clear();
+        self.modules.push(LoadedModule {
+            name: module_name_from_pe(pe),
+            guest_path: String::new(),
+            host_path: String::new(),
+            base,
+            size: image_size as u32,
+            pe: pe.clone(),
+        });
         self.fpu_reset();
         Ok(())
     }

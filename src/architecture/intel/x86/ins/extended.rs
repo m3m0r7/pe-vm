@@ -19,6 +19,7 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
         // System instructions
         Cpuid => system::cpuid(vm, cursor, prefixes),
         Xgetbv => system::xgetbv(vm, cursor, prefixes),
+        Nop => system::nop_ext(vm, cursor, prefixes),
 
         // Conditional move (CMOVcc)
         Cmovo | Cmovno | Cmovb | Cmovae | Cmove | Cmovne | Cmovbe | Cmova | Cmovs | Cmovns
@@ -27,8 +28,10 @@ pub(crate) fn exec(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
         }
 
         // SSE instructions
-        MovupsToXmm | MovupsFromXmm | Xorps | Punpcklbw | Punpcklwd | MovdToXmm | Movdqa
-        | Pshufd | MovdFromXmm | Movdqu | Movq | Pxor => sse::exec_rm32(vm, cursor, prefixes),
+        MovupsToXmm | MovupsFromXmm | MovlpsFromXmm | Xorps | Punpcklbw | Punpcklwd | MovdToXmm
+        | Movdqa | Pshufd | MovdFromXmm | Movdqu | Movq | Pxor => {
+            sse::exec_rm32(vm, cursor, prefixes)
+        }
 
         // Conditional jumps (Jcc rel32)
         Jo | Jno | Jb | Jae | Je | Jne | Jbe | Ja | Js | Jns | Jp | Jnp | Jl | Jge | Jle | Jg => {

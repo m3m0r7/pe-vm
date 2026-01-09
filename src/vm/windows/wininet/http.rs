@@ -140,7 +140,7 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     } else {
         verb
     };
-    let mut path = if object.is_empty() {
+    let path = if object.is_empty() {
         "/".to_string()
     } else if object.starts_with('/') {
         object
@@ -170,7 +170,7 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
 
     let headers = read_optional_string(vm, headers_ptr, headers_len);
-    let mut body = read_optional_bytes(vm, optional_ptr, optional_len as usize);
+    let body = read_optional_bytes(vm, optional_ptr, optional_len as usize);
 
     let (method, path, host, port, user_agent, secure) = {
         let guard = store().lock().expect("wininet store");
@@ -198,7 +198,7 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         )
     };
 
-    let mut headers = ensure_host_header(&headers, &host);
+    let headers = ensure_host_header(&headers, &host);
 
     if !vm.network_allowed(&host) {
         vm.set_last_error(ERROR_ACCESS_DENIED);

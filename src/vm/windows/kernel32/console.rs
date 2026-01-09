@@ -2,7 +2,7 @@
 
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
-use crate::{read_str_len, read_wstr_len, vm_args};
+use crate::{read_wstr_len, vm_args};
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -10,6 +10,12 @@ pub fn register(vm: &mut Vm) {
         "GetConsoleCP",
         crate::vm::stdcall_args(0),
         get_console_cp,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
+        "GetConsoleOutputCP",
+        crate::vm::stdcall_args(0),
+        get_console_output_cp,
     );
     vm.register_import_stdcall(
         DLL_NAME,
@@ -51,6 +57,10 @@ pub fn register(vm: &mut Vm) {
 }
 
 fn get_console_cp(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+    65001
+}
+
+fn get_console_output_cp(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     65001
 }
 
@@ -123,17 +133,26 @@ fn write_console_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
 fn write_file(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (handle, buffer, count, written, _) = vm_args!(vm, stack_ptr; u32, u32, usize, u32, u32);
     if buffer != 0 && count > 0 {
-        let bytes = read_str_len!(vm, buffer, count);
-        if let Some(wrote) = vm.file_write(handle, bytes.as_bytes()) {
+        let bytes = read_bytes(vm, buffer, count);
+        if let Some(wrote) = vm.file_write(handle, &bytes) {
             if written != 0 {
                 let _ = vm.write_u32(written, wrote as u32);
             }
             return 1;
         }
-        vm.write_stdout(&bytes);
+        vm.write_stdout(&String::from_utf8_lossy(&bytes));
         if written != 0 {
             let _ = vm.write_u32(written, count as u32);
         }
     }
     1
+}
+
+fn read_bytes(vm: &Vm, addr: u32, len: usize) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(len);
+    for offset in 0..len {
+        let value = vm.read_u8(addr.wrapping_add(offset as u32)).unwrap_or(0);
+        bytes.push(value);
+    }
+    bytes
 }

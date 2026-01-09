@@ -55,7 +55,7 @@ pub(super) fn variant_time_to_system_time(vm: &mut Vm, stack_ptr: u32) -> u32 {
     }
     let out = vm.read_u32(stack_ptr + 4 + 8).unwrap_or(0);
     if out == 0 {
-        return 0;
+        return 1;
     }
     let low = vm.read_u32(stack_ptr + 4).unwrap_or(0) as u64;
     let high = vm.read_u32(stack_ptr + 8).unwrap_or(0) as u64;

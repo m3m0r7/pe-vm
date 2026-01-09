@@ -37,6 +37,22 @@ impl Vm {
         Ok(self.regs.eax)
     }
 
+    pub fn execute_entry_with_values(
+        &mut self,
+        entry: u32,
+        values: &[Value],
+        options: ExecuteOptions,
+    ) -> Result<u32, VmError> {
+        self.reset_stack();
+        if let Some(env) = options.env_ref() {
+            self.set_env(env.clone());
+        }
+        self.apply_values(values)?;
+        self.execute(entry)?;
+        self.run_pending_threads();
+        Ok(self.regs.eax)
+    }
+
     pub fn execute(&mut self, entry: u32) -> Result<(), VmError> {
         if self.memory.is_empty() {
             return Err(VmError::NoImage);

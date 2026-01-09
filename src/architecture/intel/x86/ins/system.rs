@@ -2,10 +2,16 @@
 
 use crate::vm::{Vm, VmError, REG_AL, REG_EAX, REG_EBX, REG_ECX, REG_EDX};
 
-use super::core::Prefixes;
+use super::core::{decode_modrm, Prefixes};
 
 pub(crate) fn nop(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+pub(crate) fn nop_ext(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    let modrm = decode_modrm(vm, cursor + 2)?;
+    vm.set_eip(cursor + 2 + modrm.len as u32);
     Ok(())
 }
 
@@ -72,6 +78,11 @@ pub(crate) fn cdq(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), V
     let eax = vm.reg32(REG_EAX) as i32;
     let edx = if eax < 0 { 0xFFFF_FFFF } else { 0 };
     vm.set_reg32(REG_EDX, edx);
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+pub(crate) fn fwait(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     vm.set_eip(cursor + 1);
     Ok(())
 }

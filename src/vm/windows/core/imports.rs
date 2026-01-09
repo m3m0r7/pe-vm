@@ -82,11 +82,23 @@ impl Vm {
     }
 
     pub fn resolve_imports(&mut self, pe: &PeFile) -> Result<(), VmError> {
-        self.imports_by_iat.clear();
-        self.imports_by_iat_name.clear();
+        self.resolve_imports_at(pe, self.base, true)
+    }
+
+    pub fn resolve_imports_at(
+        &mut self,
+        pe: &PeFile,
+        base: u32,
+        clear_existing: bool,
+    ) -> Result<(), VmError> {
+        if clear_existing {
+            self.imports_by_iat.clear();
+            self.imports_by_iat_name.clear();
+        }
         let mut missing = Vec::new();
         for import in &pe.imports {
             let mut resolved = None;
+            let mut resolved_addr = None;
             let label = if let Some(name) = &import.name {
                 format!("{}!{}", import.module, name)
             } else if let Some(ordinal) = import.ordinal {
@@ -115,9 +127,29 @@ impl Vm {
                     resolved = Some(func);
                 }
             }
+            if resolved.is_none() {
+                if let Some(handle) = self.module_handle_by_name(&import.module) {
+                    if let Some(module) = self.module_by_handle(handle) {
+                        if let Some(name) = &import.name {
+                            if let Some(rva) = module.pe.export_rva(name) {
+                                resolved_addr = Some(module.base.wrapping_add(rva));
+                            }
+                        } else if let Some(ordinal) = import.ordinal {
+                            if let Some(symbol) = module
+                                .pe
+                                .exports
+                                .iter()
+                                .find(|sym| sym.ordinal == ordinal)
+                            {
+                                resolved_addr = Some(module.base.wrapping_add(symbol.rva));
+                            }
+                        }
+                    }
+                }
+            }
 
             if let Some(func) = resolved {
-                let addr = self.base + import.iat_rva;
+                let addr = base + import.iat_rva;
                 self.imports_by_iat.insert(addr, func);
                 self.imports_by_iat_name.insert(addr, label.clone());
                 if let Ok(value) = self.read_u32(addr) {
@@ -126,6 +158,10 @@ impl Vm {
                         self.imports_by_iat_name.insert(value, label.clone());
                     }
                 }
+            } else if let Some(addr) = resolved_addr {
+                let iat_addr = base + import.iat_rva;
+                let _ = self.write_u32(iat_addr, addr);
+                self.imports_by_iat_name.insert(iat_addr, label.clone());
             } else {
                 missing.push(label.clone());
                 if std::env::var("PE_VM_TRACE").is_ok() {
@@ -135,7 +171,7 @@ impl Vm {
                         eprintln!("[pe_vm] Unresolved import: {}!#{}", import.module, ordinal);
                     }
                 }
-                let addr = self.base + import.iat_rva;
+                let addr = base + import.iat_rva;
                 self.imports_by_iat_name.insert(addr, label.clone());
                 if let Ok(value) = self.read_u32(addr) {
                     if value != 0 {
