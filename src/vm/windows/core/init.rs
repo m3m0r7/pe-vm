@@ -61,6 +61,7 @@ impl Vm {
             imports_by_iat_name: HashMap::new(),
             dynamic_imports: HashMap::new(),
             dynamic_import_next: 0x7000_0000,
+            atl_string_mgr: None,
             pending_threads: Vec::new(),
             next_thread_handle: 0x6000_0000,
             stdout: Arc::new(Mutex::new(Vec::new())),

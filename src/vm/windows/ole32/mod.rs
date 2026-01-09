@@ -2,6 +2,8 @@
 
 pub const DLL_NAME: &str = "ole32.dll";
 
+mod stream;
+
 use crate::vm::windows::{get_registry, registry::RegistryValue};
 use crate::vm::{Vm, VmError};
 use crate::vm_args;
@@ -15,6 +17,7 @@ const CLASS_E_CLASSNOTAVAILABLE: u32 = 0x8004_0111;
 const CO_E_CLASSSTRING: u32 = 0x8004_010F;
 
 pub fn register(vm: &mut Vm) {
+    stream::register_stream_imports(vm);
     vm.register_import_stdcall(
         DLL_NAME,
         "CLSIDFromString",
@@ -215,20 +218,26 @@ fn co_get_class_object(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 // CoTaskMemAlloc(size)
 fn co_task_mem_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (size,) = vm_args!(vm, stack_ptr; u32);
-    let buf = vec![0u8; size as usize];
-    vm.alloc_bytes(&buf, 8).unwrap_or(0)
+    vm.heap_alloc(size as usize)
 }
 
 // CoTaskMemRealloc(ptr, size)
 fn co_task_mem_realloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
-    let (_, size) = vm_args!(vm, stack_ptr; u32, u32);
-    let buf = vec![0u8; size as usize];
-    vm.alloc_bytes(&buf, 8).unwrap_or(0)
+    let (ptr, size) = vm_args!(vm, stack_ptr; u32, u32);
+    vm.heap_realloc(ptr, size as usize)
 }
 
 // CoTaskMemFree(ptr)
 fn co_task_mem_free(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+    let (ptr,) = vm_args!(_vm, _stack_ptr; u32);
+    if ptr == 0 {
+        return 0;
+    }
+    if _vm.heap_free(ptr) {
+        0
+    } else {
+        0
+    }
 }
 
 // CreateDataAdviseHolder(...)
@@ -300,7 +309,7 @@ fn ole_reg_enum_verbs(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
 // CreateStreamOnHGlobal(...)
 fn create_stream_on_hglobal(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    E_NOTIMPL
+    stream::create_stream_on_hglobal(_vm, _stack_ptr)
 }
 
 // Read a null-terminated UTF-16 string.

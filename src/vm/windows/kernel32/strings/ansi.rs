@@ -47,7 +47,16 @@ fn lstrlen_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if ptr == 0 {
         return 0;
     }
-    read_bytes(vm, ptr, -1).len() as u32
+    let bytes = read_bytes(vm, ptr, -1);
+    if std::env::var("PE_VM_TRACE_STRLEN").is_ok() {
+        let raw = read_raw_bytes(vm, ptr, 32);
+        eprintln!(
+            "[pe_vm] lstrlenA ptr=0x{ptr:08X} len={} text={:?} raw={raw}",
+            bytes.len(),
+            render_bytes(&bytes)
+        );
+    }
+    bytes.len() as u32
 }
 
 fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -64,6 +73,7 @@ fn lstrcpy_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         );
     }
     write_c_bytes(vm, dest, &text);
+    update_atl_string_len(vm, dest, text.len());
     dest
 }
 
@@ -91,6 +101,7 @@ fn lstrcat_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
         );
     }
     write_c_bytes(vm, dest, &dest_text);
+    update_atl_string_len(vm, dest, dest_text.len());
     dest
 }
 
@@ -124,6 +135,7 @@ fn lstrcpyn_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             "[pe_vm] lstrcpynA dest=0x{dest:08X} src=0x{src:08X} count={count} text={rendered:?} src_raw={src_raw}"
         );
     }
+    update_atl_string_len(vm, dest, bytes.len().saturating_sub(1));
     dest
 }
 
@@ -147,6 +159,82 @@ fn write_c_bytes(vm: &mut Vm, dest: u32, bytes: &[u8]) {
 
 fn render_bytes(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).to_string()
+}
+
+fn update_atl_string_len(vm: &mut Vm, data_ptr: u32, len: usize) {
+    if data_ptr < 12 {
+        return;
+    }
+    if update_atl_string_len_atl(vm, data_ptr, len) {
+        return;
+    }
+    update_atl_string_len_mfc(vm, data_ptr, len);
+}
+
+fn update_atl_string_len_atl(vm: &mut Vm, data_ptr: u32, len: usize) -> bool {
+    if data_ptr < 16 {
+        return false;
+    }
+    let header_ptr = data_ptr.wrapping_sub(16);
+    if !vm.contains_addr(header_ptr) {
+        return false;
+    }
+    let mgr_ptr = vm.read_u32(header_ptr).unwrap_or(0);
+    let alloc_len = vm.read_u32(header_ptr.wrapping_add(8)).unwrap_or(0);
+    let refs = vm.read_u32(header_ptr.wrapping_add(12)).unwrap_or(0) as i32;
+
+    let mgr_matches = vm
+        .atl_string_mgr
+        .map(|mgr| mgr.object == mgr_ptr)
+        .unwrap_or(false);
+    let mgr_in_vm = mgr_ptr != 0 && vm.contains_addr(mgr_ptr);
+    let alloc_ok = alloc_len > 0
+        && alloc_len <= 0x0010_0000
+        && (len as u32) <= alloc_len;
+    let refs_ok = refs == -1 || (0..=0x7FFF).contains(&refs);
+    let end_ok = vm.contains_addr(data_ptr.wrapping_add(alloc_len).wrapping_add(1));
+
+    if !(mgr_matches || (mgr_in_vm && alloc_ok && refs_ok && end_ok)) {
+        return false;
+    }
+
+    let new_len = (len as u32).min(alloc_len);
+    let _ = vm.write_u32(header_ptr.wrapping_add(4), new_len);
+    if std::env::var("PE_VM_TRACE_ATL").is_ok() {
+        eprintln!(
+            "[pe_vm] ATL CString len update data=0x{data_ptr:08X} header=0x{header_ptr:08X} len={len} alloc={alloc_len} mgr=0x{mgr_ptr:08X} refs={refs}"
+        );
+    }
+    true
+}
+
+fn update_atl_string_len_mfc(vm: &mut Vm, data_ptr: u32, len: usize) {
+    let header_ptr = data_ptr.wrapping_sub(12);
+    if !vm.contains_addr(header_ptr) {
+        return;
+    }
+    let refs = vm.read_u32(header_ptr).unwrap_or(0) as i32;
+    let current_len = vm.read_u32(header_ptr.wrapping_add(4)).unwrap_or(0);
+    let alloc_len = vm.read_u32(header_ptr.wrapping_add(8)).unwrap_or(0);
+
+    let alloc_ok = alloc_len > 0
+        && alloc_len <= 0x0010_0000
+        && (len as u32) <= alloc_len
+        && current_len <= alloc_len;
+    let refs_ok = refs == -1 || (0..=0x7FFF).contains(&refs);
+    let end_ok = vm.contains_addr(data_ptr.wrapping_add(alloc_len).wrapping_add(1));
+
+    if !(alloc_ok && refs_ok && end_ok) {
+        return;
+    }
+
+    let new_len = (len as u32).min(alloc_len);
+    let _ = vm.write_u32(header_ptr.wrapping_add(4), new_len);
+    if std::env::var("PE_VM_TRACE_ATL").is_ok() {
+        eprintln!(
+            "[pe_vm] MFC CString len update data=0x{data_ptr:08X} header=0x{header_ptr:08X} len={len} alloc={alloc_len} refs={refs}"
+        );
+    }
 }
 
 #[cfg(test)]

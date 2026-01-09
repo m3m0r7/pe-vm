@@ -3,6 +3,8 @@
 pub(super) const INVALID_SOCKET: u32 = 0xFFFF_FFFF;
 pub(super) const SOCKET_ERROR: u32 = 0xFFFF_FFFF;
 pub(super) const AF_INET: u16 = 2;
+pub(super) const SOCK_STREAM: u32 = 1;
+pub(super) const SOCK_DGRAM: u32 = 2;
 
 pub(super) const WSAEINVAL: u32 = 10022;
 pub(super) const WSAEWOULDBLOCK: u32 = 10035;

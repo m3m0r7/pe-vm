@@ -6,8 +6,9 @@ use crate::vm::{ComOutParam, Vm, VmError};
 
 use super::{ComArg, ComValue};
 use super::{
-    DISP_E_TYPEMISMATCH, PARAMFLAG_FIN, PARAMFLAG_FOUT, PARAMFLAG_FRETVAL, VARIANT_SIZE, VT_BSTR,
-    VT_BYREF, VT_EMPTY, VT_I1, VT_I4, VT_INT, VT_NULL, VT_UI4, VT_UINT, VT_USERDEFINED, VT_VARIANT,
+    DISP_E_PARAMNOTFOUND, DISP_E_TYPEMISMATCH, PARAMFLAG_FIN, PARAMFLAG_FOUT, PARAMFLAG_FRETVAL,
+    VARIANT_SIZE, VT_BSTR, VT_BYREF, VT_EMPTY, VT_ERROR, VT_I1, VT_I4, VT_INT, VT_NULL, VT_UI4,
+    VT_UINT, VT_USERDEFINED, VT_VARIANT,
 };
 
 // Build a VARIANT array in right-to-left order.
@@ -70,8 +71,9 @@ pub(super) fn build_variant_array_typed(
             continue;
         }
         let out_only = is_out_only(param.flags);
+        let in_out = (param.flags & PARAMFLAG_FOUT) != 0 && (param.flags & PARAMFLAG_FIN) != 0;
         let arg = if out_only { None } else { input_iter.next() };
-        let force_out = out_only || arg.is_none();
+        let force_out = out_only || in_out;
         let (vt, value, out_ptr) = build_param_variant(vm, param.vt, arg, force_out)?;
         if let Some(ptr) = out_ptr {
             out_params.push(ComOutParam {
@@ -201,11 +203,9 @@ fn build_param_variant(
                 base_value
             }
         }
-    } else if force_out
-        || (vt & VT_BYREF) != 0
-        || base_vt == VT_VARIANT
-        || base_vt == VT_USERDEFINED
-    {
+    } else if !force_out {
+        return Ok((VT_ERROR, DISP_E_PARAMNOTFOUND, None));
+    } else if (vt & VT_BYREF) != 0 || base_vt == VT_VARIANT || base_vt == VT_USERDEFINED {
         let ptr = alloc_param_buffer(vm, vt)?;
         if base_vt == VT_BSTR {
             let empty = oleaut32::alloc_bstr(vm, "")?;
@@ -257,6 +257,7 @@ pub(super) fn read_variant(vm: &Vm, addr: u32) -> Result<ComValue, VmError> {
         VT_EMPTY => Ok(ComValue::Void),
         VT_I4 => Ok(ComValue::I4(vm.read_u32(addr + 8)? as i32)),
         VT_UI4 | VT_INT | VT_UINT => Ok(ComValue::I4(vm.read_u32(addr + 8)? as i32)),
+        VT_ERROR => Ok(ComValue::I4(vm.read_u32(addr + 8)? as i32)),
         VT_BSTR => {
             let ptr = vm.read_u32(addr + 8)?;
             let value = oleaut32::read_bstr(vm, ptr)?;

@@ -2,6 +2,9 @@ use crate::vm::Vm;
 use crate::vm_args;
 
 use super::constants::DRIVE_FIXED;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+static TEMP_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 pub(super) fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -51,7 +54,50 @@ fn get_logical_drive_strings_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 fn get_temp_file_name_a(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    0
+    let (path_ptr, prefix_ptr, unique, out_ptr) = vm_args!(_vm, _stack_ptr; u32, u32, u32, u32);
+    if out_ptr == 0 {
+        return 0;
+    }
+    let mut path = if path_ptr == 0 {
+        "C:\\Windows\\Temp".to_string()
+    } else {
+        read_wide_or_utf16le_str!(_vm, path_ptr)
+    };
+    if path.is_empty() {
+        path = "C:\\Windows\\Temp".to_string();
+    }
+    let mut prefix = if prefix_ptr == 0 {
+        "TMP".to_string()
+    } else {
+        read_wide_or_utf16le_str!(_vm, prefix_ptr)
+    };
+    if prefix.is_empty() {
+        prefix = "TMP".to_string();
+    }
+    if prefix.len() > 3 {
+        prefix.truncate(3);
+    }
+    let unique_val = if unique != 0 {
+        unique
+    } else {
+        TEMP_COUNTER.fetch_add(1, Ordering::Relaxed).max(1)
+    };
+    let sep = if path.ends_with(['\\', '/']) { "" } else { "\\" };
+    let filename = format!("{path}{sep}{prefix}{:04X}.tmp", unique_val & 0xFFFF);
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        eprintln!("[pe_vm] GetTempFileNameA: {filename}");
+    }
+    let mut bytes = filename.as_bytes().to_vec();
+    bytes.push(0);
+    let _ = _vm.write_bytes(out_ptr, &bytes);
+    if unique == 0 {
+        let host_path = _vm.map_path(&filename);
+        if let Some(parent) = std::path::Path::new(&host_path).parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(&host_path, b"");
+    }
+    unique_val
 }
 
 fn get_windows_directory_a(vm: &mut Vm, stack_ptr: u32) -> u32 {

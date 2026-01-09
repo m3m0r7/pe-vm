@@ -35,6 +35,7 @@ pub(crate) struct Flags {
     pub(crate) zf: bool,
     pub(crate) sf: bool,
     pub(crate) of: bool,
+    pub(crate) df: bool,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -63,6 +64,13 @@ impl FpuState {
 pub(crate) struct HostFunction {
     pub(crate) func: HostCall,
     pub(crate) stack_cleanup: u32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct AtlStringMgr {
+    pub(crate) vtable: u32,
+    pub(crate) object: u32,
+    pub(crate) nil_data: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -114,6 +122,7 @@ pub struct Vm {
     pub(super) imports_by_iat_name: HashMap<u32, String>,
     pub(super) dynamic_imports: HashMap<String, u32>,
     pub(super) dynamic_import_next: u32,
+    pub(super) atl_string_mgr: Option<AtlStringMgr>,
     pub(super) pending_threads: Vec<PendingThread>,
     pub(super) next_thread_handle: u32,
     pub(super) stdout: Arc<Mutex<Vec<u8>>>,

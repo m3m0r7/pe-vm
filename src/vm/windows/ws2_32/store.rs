@@ -1,7 +1,7 @@
 //! Winsock handle store and error state.
 
 use std::collections::HashMap;
-use std::net::UdpSocket;
+use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::vm::Vm;
@@ -17,8 +17,16 @@ struct SocketStore {
     last_error: u32,
 }
 
-struct SocketInfo {
-    socket: Arc<UdpSocket>,
+#[derive(Clone)]
+pub(super) enum SocketState {
+    Udp(Arc<UdpSocket>),
+    TcpStream(Arc<TcpStream>),
+    TcpListener(Arc<TcpListener>),
+    PendingTcp { bound: Option<SocketAddr> },
+}
+
+pub(super) struct SocketInfo {
+    pub(super) state: SocketState,
 }
 
 fn store() -> &'static Mutex<SocketStore> {
@@ -47,22 +55,23 @@ pub(super) fn close_socket(handle: u32) -> bool {
     guard.sockets.remove(&handle).is_some()
 }
 
-pub(super) fn register_socket(handle: u32, socket: UdpSocket) {
+pub(super) fn register_socket(handle: u32, state: SocketState) {
     let mut guard = store().lock().expect("ws2_32 store");
-    guard.sockets.insert(
-        handle,
-        SocketInfo {
-            socket: Arc::new(socket),
-        },
-    );
+    guard.sockets.insert(handle, SocketInfo { state });
 }
 
-pub(super) fn socket_by_handle(handle: u32) -> Option<Arc<UdpSocket>> {
+pub(super) fn socket_state(handle: u32) -> Option<SocketState> {
     let guard = store().lock().expect("ws2_32 store");
-    guard
-        .sockets
-        .get(&handle)
-        .map(|info| Arc::clone(&info.socket))
+    guard.sockets.get(&handle).map(|info| info.state.clone())
+}
+
+pub(super) fn with_socket_mut<F, R>(handle: u32, f: F) -> Option<R>
+where
+    F: FnOnce(&mut SocketInfo) -> R,
+{
+    let mut guard = store().lock().expect("ws2_32 store");
+    let info = guard.sockets.get_mut(&handle)?;
+    Some(f(info))
 }
 
 pub(super) fn alloc_event() -> u32 {
@@ -115,7 +124,7 @@ mod tests {
 
     fn register_dummy_socket(handle: u32) {
         let socket = UdpSocket::bind("127.0.0.1:0").expect("bind socket");
-        register_socket(handle, socket);
+        register_socket(handle, SocketState::Udp(std::sync::Arc::new(socket)));
     }
 
     #[test]

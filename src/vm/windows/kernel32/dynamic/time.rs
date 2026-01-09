@@ -1,4 +1,5 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::OnceLock;
+use std::time::Instant;
 
 use crate::vm::{Vm, REG_EDX};
 
@@ -11,12 +12,12 @@ pub(super) fn register(vm: &mut Vm) {
 }
 
 fn get_tick_count64(vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    let duration = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let millis = duration.as_millis() as u64;
+    let start = TICK_START.get_or_init(Instant::now);
+    let millis = start.elapsed().as_millis() as u64;
     let low = millis as u32;
     let high = (millis >> 32) as u32;
     vm.set_reg32(REG_EDX, high);
     low
 }
+
+static TICK_START: OnceLock<Instant> = OnceLock::new();

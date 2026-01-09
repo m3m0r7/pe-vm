@@ -1,4 +1,5 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::OnceLock;
+use std::time::Instant;
 
 use crate::vm::Vm;
 use crate::vm_args;
@@ -18,10 +19,8 @@ fn query_performance_counter(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
 
-    let duration = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let ticks = duration.as_nanos() as u64;
+    let start = QPC_START.get_or_init(Instant::now);
+    let ticks = start.elapsed().as_nanos() as u64;
     let low = ticks as u32;
     let high = (ticks >> 32) as u32;
     let _ = vm.write_u32(counter_ptr, low);
@@ -29,3 +28,5 @@ fn query_performance_counter(vm: &mut Vm, stack_ptr: u32) -> u32 {
 
     1
 }
+
+static QPC_START: OnceLock<Instant> = OnceLock::new();

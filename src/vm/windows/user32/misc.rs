@@ -41,7 +41,12 @@ fn char_next_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     if ptr == 0 {
         return 0;
     }
-    ptr.wrapping_add(1)
+    let byte = vm.read_u8(ptr).unwrap_or(0);
+    if is_shift_jis_lead(byte) {
+        ptr.wrapping_add(2)
+    } else {
+        ptr.wrapping_add(1)
+    }
 }
 
 fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -50,6 +55,10 @@ fn char_next_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     ptr.wrapping_add(2)
+}
+
+fn is_shift_jis_lead(byte: u8) -> bool {
+    matches!(byte, 0x81..=0x9F | 0xE0..=0xFC)
 }
 
 fn set_timer(vm: &mut Vm, stack_ptr: u32) -> u32 {

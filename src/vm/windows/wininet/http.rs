@@ -8,9 +8,8 @@ use super::store::{alloc_handle, remove_handle, store};
 use super::trace::trace_net;
 use super::types::{Connection, InternetHandle, Request, Session};
 use super::utils::{
-    apply_form_overrides, default_host_override, default_path_override, ensure_content_length,
-    ensure_host_header, form_overrides, network_fallback_host, parse_host,
-    read_optional_bytes, read_optional_string,
+    ensure_host_header, network_fallback_host, parse_host, read_optional_bytes,
+    read_optional_string,
 };
 
 const ERROR_ACCESS_DENIED: u32 = 5;
@@ -60,27 +59,6 @@ pub(super) fn internet_connect_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
             if let Ok(parsed) = port_str.parse::<u16>() {
                 server = host.to_string();
                 port = parsed;
-            }
-        }
-    }
-    if server.is_empty() {
-        if let Some(override_host) = default_host_override() {
-            let (mut fallback_host, fallback_secure) = parse_host(&override_host);
-            let mut fallback_port = None;
-            if let Some((host, port_str)) = fallback_host.rsplit_once(':') {
-                if let Ok(parsed) = port_str.parse::<u16>() {
-                    fallback_host = host.to_string();
-                    if parsed > 0 {
-                        fallback_port = Some(parsed);
-                    }
-                }
-            }
-            if !fallback_host.is_empty() {
-                server = fallback_host;
-                secure_hint = secure_hint || fallback_secure;
-                if port == 0 {
-                    port = fallback_port.unwrap_or(0);
-                }
             }
         }
     }
@@ -169,15 +147,6 @@ pub(super) fn http_open_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     } else {
         format!("/{object}")
     };
-    if path == "/" {
-        if let Some(override_path) = default_path_override() {
-            if override_path.starts_with('/') {
-                path = override_path;
-            } else {
-                path = format!("/{override_path}");
-            }
-        }
-    }
     trace_net(&format!("HttpOpenRequestA method={method} path={path}"));
     let handle = InternetHandle::Request(Request {
         connection: connection_handle,
@@ -194,6 +163,11 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     // HttpSendRequestA(hRequest, headers, headersLen, optional, optionalLen).
     let (request_handle, headers_ptr, headers_len, optional_ptr, optional_len) =
         vm_args!(vm, stack_ptr; u32, u32, u32, u32, u32);
+    if std::env::var("PE_VM_TRACE").is_ok() {
+        trace_net(&format!(
+            "HttpSendRequestA optional_ptr=0x{optional_ptr:08X} optional_len={optional_len}"
+        ));
+    }
 
     let headers = read_optional_string(vm, headers_ptr, headers_len);
     let mut body = read_optional_bytes(vm, optional_ptr, optional_len as usize);
@@ -225,20 +199,6 @@ pub(super) fn http_send_request_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
     };
 
     let mut headers = ensure_host_header(&headers, &host);
-    let overrides = form_overrides();
-    if !overrides.is_empty()
-        && headers
-            .to_ascii_lowercase()
-            .contains("application/x-www-form-urlencoded")
-    {
-        if let Ok(body_text) = String::from_utf8(body.clone()) {
-            let (updated, changed) = apply_form_overrides(&body_text, &overrides);
-            if changed {
-                body = updated.into_bytes();
-                headers = ensure_content_length(&headers, body.len());
-            }
-        }
-    }
 
     if !vm.network_allowed(&host) {
         vm.set_last_error(ERROR_ACCESS_DENIED);

@@ -1,6 +1,7 @@
 //! Winsock utilities.
 
 use crate::vm::Vm;
+use std::net::Ipv4Addr;
 
 pub(super) fn read_fd_count(vm: &Vm, set_ptr: u32) -> u32 {
     if set_ptr == 0 {
@@ -36,4 +37,22 @@ pub(super) fn read_sockaddr_in(vm: &Vm, ptr: u32) -> Option<(String, u16)> {
     let octets = addr.to_le_bytes();
     let host = format!("{}.{}.{}.{}", octets[0], octets[1], octets[2], octets[3]);
     Some((host, port))
+}
+
+pub(super) fn write_sockaddr_in(
+    vm: &mut Vm,
+    ptr: u32,
+    ip: &Ipv4Addr,
+    port: u16,
+) -> Result<(), crate::vm::VmError> {
+    if ptr == 0 {
+        return Ok(());
+    }
+    let port_be = port.to_be();
+    let addr = u32::from_le_bytes(ip.octets());
+    vm.write_u16(ptr, 2)?;
+    vm.write_u16(ptr + 2, port_be)?;
+    vm.write_u32(ptr + 4, addr)?;
+    vm.write_u32(ptr + 8, 0)?;
+    Ok(())
 }

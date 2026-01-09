@@ -52,7 +52,15 @@ impl Vm {
     }
 
     pub(crate) fn file_close(&mut self, handle: u32) -> bool {
-        self.file_handles.remove(&handle).is_some()
+        let Some(file) = self.file_handles.remove(&handle) else {
+            return false;
+        };
+        if file.writable {
+            if let Some(data) = self.virtual_files.get(&file.path) {
+                let _ = std::fs::write(&file.path, data);
+            }
+        }
+        true
     }
 
     pub(crate) fn file_exists(&self, guest_path: &str) -> bool {

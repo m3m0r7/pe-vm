@@ -56,6 +56,18 @@ pub(crate) fn salc(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), 
     Ok(())
 }
 
+pub(crate) fn cld(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_df(false);
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
+pub(crate) fn std(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
+    vm.set_df(true);
+    vm.set_eip(cursor + 1);
+    Ok(())
+}
+
 pub(crate) fn cdq(vm: &mut Vm, cursor: u32, _prefixes: Prefixes) -> Result<(), VmError> {
     let eax = vm.reg32(REG_EAX) as i32;
     let edx = if eax < 0 { 0xFFFF_FFFF } else { 0 };
@@ -100,8 +112,9 @@ pub(crate) fn outsb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     use crate::vm::{REG_ECX, REG_ESI};
     let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
     let esi = vm.reg32(REG_ESI);
+    let delta = if vm.df() { count.wrapping_neg() } else { count };
     // Just advance ESI by count bytes (we don't actually output anything)
-    vm.set_reg32(REG_ESI, esi.wrapping_add(count));
+    vm.set_reg32(REG_ESI, esi.wrapping_add(delta));
     if prefixes.rep {
         vm.set_reg32(REG_ECX, 0);
     }
@@ -116,8 +129,14 @@ pub(crate) fn outsd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     let size = if prefixes.operand_size_16 { 2u32 } else { 4u32 };
     let count = if prefixes.rep { vm.reg32(REG_ECX) } else { 1 };
     let esi = vm.reg32(REG_ESI);
+    let delta = count.wrapping_mul(size);
+    let delta = if vm.df() {
+        delta.wrapping_neg()
+    } else {
+        delta
+    };
     // Just advance ESI by count * size bytes (we don't actually output anything)
-    vm.set_reg32(REG_ESI, esi.wrapping_add(count.wrapping_mul(size)));
+    vm.set_reg32(REG_ESI, esi.wrapping_add(delta));
     if prefixes.rep {
         vm.set_reg32(REG_ECX, 0);
     }
@@ -134,7 +153,11 @@ pub(crate) fn insb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
     // Fill destination with zeros
     for _ in 0..count {
         vm.write_u8(edi, 0)?;
-        edi = edi.wrapping_add(1);
+        if vm.df() {
+            edi = edi.wrapping_sub(1);
+        } else {
+            edi = edi.wrapping_add(1);
+        }
     }
     vm.set_reg32(REG_EDI, edi);
     if prefixes.rep {
@@ -155,10 +178,18 @@ pub(crate) fn insd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), V
     for _ in 0..count {
         if size == 2 {
             vm.write_u16(edi, 0)?;
-            edi = edi.wrapping_add(2);
+            if vm.df() {
+                edi = edi.wrapping_sub(2);
+            } else {
+                edi = edi.wrapping_add(2);
+            }
         } else {
             vm.write_u32(edi, 0)?;
-            edi = edi.wrapping_add(4);
+            if vm.df() {
+                edi = edi.wrapping_sub(4);
+            } else {
+                edi = edi.wrapping_add(4);
+            }
         }
     }
     vm.set_reg32(REG_EDI, edi);

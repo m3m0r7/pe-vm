@@ -122,8 +122,17 @@ impl Vm {
         self.flags.cf
     }
 
+    pub(crate) fn df(&self) -> bool {
+        self.flags.df
+    }
+
+    pub(crate) fn set_df(&mut self, df: bool) {
+        self.flags.df = df;
+    }
+
     pub(crate) fn set_flags(&mut self, zf: bool, sf: bool, of: bool, cf: bool) {
-        self.flags = Flags { cf, zf, sf, of };
+        let df = self.flags.df;
+        self.flags = Flags { cf, zf, sf, of, df };
     }
 
     pub(crate) fn fs_base(&self) -> u32 {

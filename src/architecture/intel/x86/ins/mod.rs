@@ -278,6 +278,8 @@ pub(crate) fn build_instruction_set() -> InstructionSet {
     inst.register(OutDxEax, system::out_dx_eax);
 
     // Group instructions
+    inst.register(Cld, system::cld);
+    inst.register(Std, system::std);
     inst.register(GroupF6, group_f6::exec);
     inst.register(GroupF7, group_f7::exec);
     inst.register(GroupFE, group_fe::exec);

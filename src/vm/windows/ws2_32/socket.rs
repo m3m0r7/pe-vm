@@ -2,17 +2,22 @@
 
 use crate::vm::Vm;
 use crate::vm_args;
-use std::io::ErrorKind;
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, ToSocketAddrs, UdpSocket};
+use std::io::{ErrorKind, Read, Write};
+use std::net::{
+    Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener, TcpStream, ToSocketAddrs, UdpSocket,
+};
 use std::time::Duration;
 
 use super::constants::{
-    AF_INET, INVALID_SOCKET, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION, WSAEINVAL, WSAENOTSOCK,
-    WSAEWOULDBLOCK,
+    AF_INET, INVALID_SOCKET, SOCK_DGRAM, SOCK_STREAM, SOCKET_ERROR, WSADATA_SIZE, WSADATA_VERSION,
+    WSAEINVAL, WSAENOTSOCK, WSAEWOULDBLOCK,
 };
-use super::store::{alloc_socket, close_socket, register_socket, set_last_error, socket_by_handle};
+use super::store::{
+    alloc_socket, close_socket, register_socket, set_last_error, socket_state, with_socket_mut,
+    SocketState,
+};
 use super::trace::{log_connect, log_send, trace_net};
-use super::util::{parse_ipv4, read_fd_count, read_sockaddr_in};
+use super::util::{parse_ipv4, read_fd_count, read_sockaddr_in, write_sockaddr_in};
 
 fn network_fallback_host(vm: &Vm) -> Option<&str> {
     vm.config()
@@ -20,9 +25,54 @@ fn network_fallback_host(vm: &Vm) -> Option<&str> {
         .and_then(|sandbox| sandbox.network_fallback_host())
 }
 
-pub(super) fn bind(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    set_last_error(0);
-    0
+pub(super) fn bind(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (handle, addr_ptr, _len) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    let Some((host, port)) = read_sockaddr_in(vm, addr_ptr) else {
+        set_last_error(WSAEINVAL);
+        return SOCKET_ERROR;
+    };
+    let port = u16::from_be(port);
+    trace_net(&format!(
+        "WSA bind sockaddr host={host} port={port} addr_ptr=0x{addr_ptr:08X}"
+    ));
+    let ip = match host.parse::<Ipv4Addr>() {
+        Ok(value) => value,
+        Err(_) => {
+            set_last_error(WSAEINVAL);
+            return SOCKET_ERROR;
+        }
+    };
+    let addr = SocketAddr::V4(SocketAddrV4::new(ip, port));
+    trace_net(&format!("WSA bind handle=0x{handle:08X} addr={addr}"));
+
+    let Some(result) = with_socket_mut(handle, |info| match &mut info.state {
+        SocketState::Udp(_) => {
+            if let Ok(socket) = UdpSocket::bind(addr) {
+                let _ = socket.set_read_timeout(Some(Duration::from_secs(2)));
+                info.state = SocketState::Udp(std::sync::Arc::new(socket));
+                true
+            } else {
+                false
+            }
+        }
+        SocketState::PendingTcp { bound } => {
+            *bound = Some(addr);
+            true
+        }
+        _ => false,
+    }) else {
+        set_last_error(WSAENOTSOCK);
+        return SOCKET_ERROR;
+    };
+
+    if result {
+        set_last_error(0);
+        0
+    } else {
+        trace_net("WSA bind failed");
+        set_last_error(WSAEINVAL);
+        SOCKET_ERROR
+    }
 }
 
 pub(super) fn closesocket(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -47,21 +97,44 @@ pub(super) fn connect(vm: &mut Vm, stack_ptr: u32) -> u32 {
     ));
     if let Some((host, port)) = read_sockaddr_in(vm, addr_ptr) {
         let port = u16::from_be(port);
+        trace_net(&format!(
+            "WSA connect sockaddr host={host} port={port} addr_ptr=0x{addr_ptr:08X}"
+        ));
         // Use sandbox fallback host if configured
         let target_host = network_fallback_host(vm)
             .map(|s| s.to_string())
             .unwrap_or(host);
         if let Ok(ip) = target_host.parse::<Ipv4Addr>() {
             let addr = SocketAddrV4::new(ip, port);
-            if let Some(socket) = socket_by_handle(handle) {
-                log_connect(&target_host, port);
-                if socket.connect(addr).is_ok() {
-                    set_last_error(0);
-                    return 0;
+            let Some(result) = with_socket_mut(handle, |info| match &mut info.state {
+                SocketState::Udp(socket) => {
+                    log_connect(&target_host, port);
+                    socket.connect(addr).is_ok()
                 }
-            } else {
+                SocketState::PendingTcp { .. } => {
+                    match TcpStream::connect(addr) {
+                        Ok(stream) => {
+                            let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+                            let _ = stream.set_write_timeout(Some(Duration::from_secs(2)));
+                            info.state = SocketState::TcpStream(std::sync::Arc::new(stream));
+                            log_connect(&target_host, port);
+                            true
+                        }
+                        Err(err) => {
+                            trace_net(&format!("WSA connect failed addr={addr} err={err}"));
+                            false
+                        }
+                    }
+                }
+                SocketState::TcpStream(_) => false,
+                _ => false,
+            }) else {
                 set_last_error(WSAENOTSOCK);
                 return SOCKET_ERROR;
+            };
+            if result {
+                set_last_error(0);
+                return 0;
             }
         }
     }
@@ -69,9 +142,56 @@ pub(super) fn connect(vm: &mut Vm, stack_ptr: u32) -> u32 {
     SOCKET_ERROR
 }
 
+pub(super) fn accept(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (handle, addr_ptr, addrlen_ptr) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    trace_net(&format!("WSA accept handle=0x{handle:08X}"));
+    let Some(state) = socket_state(handle) else {
+        set_last_error(WSAENOTSOCK);
+        return INVALID_SOCKET;
+    };
+    let SocketState::TcpListener(listener) = state else {
+        set_last_error(WSAENOTSOCK);
+        return INVALID_SOCKET;
+    };
+    match listener.accept() {
+        Ok((stream, addr)) => {
+            trace_net(&format!("WSA accept connection from {addr}"));
+            let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+            let _ = stream.set_write_timeout(Some(Duration::from_secs(2)));
+            let new_handle = alloc_socket();
+            register_socket(new_handle, SocketState::TcpStream(std::sync::Arc::new(stream)));
+            if addr_ptr != 0 {
+                if let SocketAddr::V4(addr) = addr {
+                    let _ = write_sockaddr_in(vm, addr_ptr, addr.ip(), addr.port());
+                    if addrlen_ptr != 0 {
+                        let _ = vm.write_u32(addrlen_ptr, 16);
+                    }
+                }
+            }
+            set_last_error(0);
+            new_handle
+        }
+        Err(err) => {
+            trace_net(&format!("WSA accept failed err={err}"));
+            set_last_error(WSAEINVAL);
+            INVALID_SOCKET
+        }
+    }
+}
+
+pub(super) fn htonl(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (value,) = vm_args!(vm, stack_ptr; u32);
+    let swapped = value.to_be();
+    trace_net(&format!("WSA htonl value=0x{value:08X} -> 0x{swapped:08X}"));
+    swapped
+}
+
 pub(super) fn htons(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (value,) = vm_args!(vm, stack_ptr; u32);
     let swapped = (value as u16).to_be();
+    trace_net(&format!(
+        "WSA htons value=0x{value:08X} -> 0x{swapped:04X}"
+    ));
     swapped as u32
 }
 
@@ -81,15 +201,56 @@ pub(super) fn inet_addr(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return INVALID_SOCKET;
     }
     let text = read_wide_or_utf16le_str!(vm, ptr);
-    match parse_ipv4(&text) {
+    let parsed = match parse_ipv4(&text) {
         Some(addr) => addr,
         None => INVALID_SOCKET,
-    }
+    };
+    trace_net(&format!("WSA inet_addr text={text:?} -> 0x{parsed:08X}"));
+    parsed
 }
 
-pub(super) fn listen(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
-    set_last_error(0);
-    0
+pub(super) fn inet_ntoa(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (addr,) = vm_args!(vm, stack_ptr; u32);
+    let bytes = addr.to_le_bytes();
+    let text = format!("{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3]);
+    let mut out = text.into_bytes();
+    out.push(0);
+    vm.alloc_bytes(&out, 1).unwrap_or(0)
+}
+
+pub(super) fn listen(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (handle, _backlog) = vm_args!(vm, stack_ptr; u32, u32);
+    trace_net(&format!("WSA listen handle=0x{handle:08X}"));
+    let Some(result) = with_socket_mut(handle, |info| match &mut info.state {
+        SocketState::PendingTcp { bound } => {
+            let addr = bound
+                .take()
+                .unwrap_or_else(|| SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)));
+            match TcpListener::bind(addr) {
+                Ok(listener) => {
+                    trace_net(&format!("WSA listen bound addr={addr}"));
+                    info.state = SocketState::TcpListener(std::sync::Arc::new(listener));
+                    true
+                }
+                Err(err) => {
+                    trace_net(&format!("WSA listen bind failed addr={addr} err={err}"));
+                    false
+                }
+            }
+        }
+        SocketState::TcpListener(_) => true,
+        _ => false,
+    }) else {
+        set_last_error(WSAENOTSOCK);
+        return SOCKET_ERROR;
+    };
+    if result {
+        set_last_error(0);
+        0
+    } else {
+        set_last_error(WSAEINVAL);
+        SOCKET_ERROR
+    }
 }
 
 pub(super) fn recv(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -100,30 +261,42 @@ pub(super) fn recv(vm: &mut Vm, stack_ptr: u32) -> u32 {
         return 0;
     }
     let mut buffer = vec![0u8; len as usize];
-    if let Some(socket) = socket_by_handle(handle) {
-        match socket.recv(&mut buffer) {
-            Ok(received) => {
-                if buf_ptr != 0 {
-                    for (offset, byte) in buffer[..received].iter().enumerate() {
-                        let _ = vm.write_u8(buf_ptr.wrapping_add(offset as u32), *byte);
-                    }
-                }
-                set_last_error(0);
-                return received as u32;
-            }
-            Err(err) => {
-                if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) {
-                    set_last_error(WSAEWOULDBLOCK);
-                    return 0;
-                }
-            }
-        }
-    } else {
+    let state = socket_state(handle);
+    let Some(state) = state else {
         set_last_error(WSAENOTSOCK);
         return SOCKET_ERROR;
+    };
+    let result = match state {
+        SocketState::Udp(socket) => socket.recv(&mut buffer),
+        SocketState::TcpStream(stream) => {
+            let mut stream_ref = stream.as_ref();
+            stream_ref.read(&mut buffer)
+        }
+        _ => {
+            set_last_error(WSAENOTSOCK);
+            return SOCKET_ERROR;
+        }
+    };
+    match result {
+        Ok(received) => {
+            if buf_ptr != 0 {
+                for (offset, byte) in buffer[..received].iter().enumerate() {
+                    let _ = vm.write_u8(buf_ptr.wrapping_add(offset as u32), *byte);
+                }
+            }
+            set_last_error(0);
+            received as u32
+        }
+        Err(err) => {
+            if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) {
+                set_last_error(WSAEWOULDBLOCK);
+                0
+            } else {
+                set_last_error(WSAEINVAL);
+                SOCKET_ERROR
+            }
+        }
     }
-    set_last_error(WSAEINVAL);
-    SOCKET_ERROR
 }
 
 pub(super) fn select(vm: &mut Vm, stack_ptr: u32) -> u32 {
@@ -153,18 +326,33 @@ pub(super) fn send(vm: &mut Vm, stack_ptr: u32) -> u32 {
     for offset in 0..len {
         bytes.push(vm.read_u8(buf_ptr.wrapping_add(offset)).unwrap_or(0));
     }
-    if let Some(socket) = socket_by_handle(handle) {
-        if let Ok(count) = socket.send(&bytes) {
-            log_send(&bytes);
-            set_last_error(0);
-            return count as u32;
-        }
-    } else {
+    let state = socket_state(handle);
+    let Some(state) = state else {
         set_last_error(WSAENOTSOCK);
         return SOCKET_ERROR;
+    };
+    let result = match state {
+        SocketState::Udp(socket) => socket.send(&bytes),
+        SocketState::TcpStream(stream) => {
+            let mut stream_ref = stream.as_ref();
+            stream_ref.write(&bytes)
+        }
+        _ => {
+            set_last_error(WSAENOTSOCK);
+            return SOCKET_ERROR;
+        }
+    };
+    match result {
+        Ok(count) => {
+            log_send(&bytes);
+            set_last_error(0);
+            count as u32
+        }
+        Err(_) => {
+            set_last_error(WSAEINVAL);
+            SOCKET_ERROR
+        }
     }
-    set_last_error(WSAEINVAL);
-    SOCKET_ERROR
 }
 
 pub(super) fn setsockopt(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
@@ -177,16 +365,32 @@ pub(super) fn shutdown(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     0
 }
 
-pub(super) fn socket(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
+pub(super) fn socket(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (af, sock_type, _protocol) = vm_args!(vm, stack_ptr; u32, u32, u32);
+    if af as u16 != AF_INET {
+        set_last_error(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
     let handle = alloc_socket();
-    match UdpSocket::bind("0.0.0.0:0") {
-        Ok(socket) => {
-            let _ = socket.set_read_timeout(Some(Duration::from_secs(2)));
-            register_socket(handle, socket);
+    match sock_type {
+        SOCK_STREAM => {
+            register_socket(handle, SocketState::PendingTcp { bound: None });
             set_last_error(0);
             handle
         }
-        Err(_) => {
+        SOCK_DGRAM => match UdpSocket::bind("0.0.0.0:0") {
+            Ok(socket) => {
+                let _ = socket.set_read_timeout(Some(Duration::from_secs(2)));
+                register_socket(handle, SocketState::Udp(std::sync::Arc::new(socket)));
+                set_last_error(0);
+                handle
+            }
+            Err(_) => {
+                set_last_error(WSAEINVAL);
+                SOCKET_ERROR
+            }
+        },
+        _ => {
             set_last_error(WSAEINVAL);
             SOCKET_ERROR
         }
@@ -202,28 +406,43 @@ pub(super) fn ioctlsocket(vm: &mut Vm, stack_ptr: u32) -> u32 {
         set_last_error(WSAEINVAL);
         return SOCKET_ERROR;
     }
-    let Some(socket) = socket_by_handle(handle) else {
-        set_last_error(WSAENOTSOCK);
-        return SOCKET_ERROR;
-    };
-
     match cmd {
         FIONBIO => {
             let nonblocking = vm.read_u32(argp).unwrap_or(0) != 0;
-            match socket.set_nonblocking(nonblocking) {
-                Ok(()) => {
+            let result = with_socket_mut(handle, |info| match &info.state {
+                SocketState::Udp(socket) => socket.set_nonblocking(nonblocking).is_ok(),
+                SocketState::TcpStream(stream) => stream.set_nonblocking(nonblocking).is_ok(),
+                SocketState::TcpListener(listener) => listener.set_nonblocking(nonblocking).is_ok(),
+                SocketState::PendingTcp { .. } => true,
+            });
+            match result {
+                Some(true) => {
                     set_last_error(0);
                     0
                 }
-                Err(_) => {
+                Some(false) => {
                     set_last_error(WSAEINVAL);
+                    SOCKET_ERROR
+                }
+                None => {
+                    set_last_error(WSAENOTSOCK);
                     SOCKET_ERROR
                 }
             }
         }
         FIONREAD => {
+            let state = socket_state(handle);
+            let Some(state) = state else {
+                set_last_error(WSAENOTSOCK);
+                return SOCKET_ERROR;
+            };
             let mut buffer = [0u8; 512];
-            match socket.peek(&mut buffer) {
+            let result = match state {
+                SocketState::Udp(socket) => socket.peek(&mut buffer),
+                SocketState::TcpStream(stream) => stream.peek(&mut buffer),
+                _ => Err(std::io::Error::new(ErrorKind::Other, "invalid socket")),
+            };
+            match result {
                 Ok(count) => {
                     let _ = vm.write_u32(argp, count as u32);
                     set_last_error(0);

@@ -1,7 +1,8 @@
 //! BSTR helpers.
 
-use crate::vm::{Vm, VmError};
+use crate::vm::{Os, Vm, VmError};
 use crate::vm_args;
+use encoding_rs::{SHIFT_JIS, UTF_8};
 
 // Allocate a BSTR from UTF-16 units.
 pub(crate) fn alloc_bstr_from_utf16(vm: &mut Vm, utf16: &[u16]) -> Result<u32, VmError> {
@@ -11,6 +12,16 @@ pub(crate) fn alloc_bstr_from_utf16(vm: &mut Vm, utf16: &[u16]) -> Result<u32, V
     for unit in utf16 {
         buf.extend_from_slice(&unit.to_le_bytes());
     }
+    buf.extend_from_slice(&0u16.to_le_bytes());
+    let base = vm.alloc_bytes(&buf, 4)?;
+    Ok(base + 4)
+}
+
+fn alloc_bstr_from_bytes(vm: &mut Vm, bytes: &[u8]) -> Result<u32, VmError> {
+    let byte_len = bytes.len() as u32;
+    let mut buf = Vec::with_capacity(4 + bytes.len() + 2);
+    buf.extend_from_slice(&byte_len.to_le_bytes());
+    buf.extend_from_slice(bytes);
     buf.extend_from_slice(&0u16.to_le_bytes());
     let base = vm.alloc_bytes(&buf, 4)?;
     Ok(base + 4)
@@ -31,12 +42,23 @@ pub(crate) fn read_bstr(vm: &Vm, ptr: u32) -> Result<String, VmError> {
         return Err(VmError::MemoryOutOfRange);
     }
     let byte_len = vm.read_u32(ptr - 4)? as usize;
-    let char_len = byte_len / 2;
-    let mut utf16 = Vec::with_capacity(char_len);
-    for i in 0..char_len {
-        utf16.push(vm.read_u16(ptr + (i as u32) * 2)?);
+    if byte_len == 0 {
+        return Ok(String::new());
     }
-    Ok(String::from_utf16_lossy(&utf16))
+    let mut bytes = Vec::with_capacity(byte_len);
+    for i in 0..byte_len {
+        bytes.push(vm.read_u8(ptr + i as u32)?);
+    }
+    if byte_len % 2 == 0 && looks_like_utf16_le(&bytes) {
+        return Ok(decode_utf16_le(&bytes));
+    }
+    if is_probably_ascii(&bytes) {
+        return Ok(decode_ansi(vm, &bytes));
+    }
+    if byte_len % 2 == 0 {
+        return Ok(decode_utf16_le(&bytes));
+    }
+    Ok(decode_ansi(vm, &bytes))
 }
 
 // Read a null-terminated UTF-16 string from VM memory.
@@ -61,6 +83,46 @@ fn read_utf16_len(vm: &Vm, ptr: u32, len: usize) -> Result<Vec<u16>, VmError> {
         out.push(vm.read_u16(ptr + (i as u32) * 2)?);
     }
     Ok(out)
+}
+
+fn looks_like_utf16_le(bytes: &[u8]) -> bool {
+    let sample_len = bytes.len().min(64);
+    let mut zeros = 0usize;
+    let mut total = 0usize;
+    for idx in (1..sample_len).step_by(2) {
+        total += 1;
+        if bytes[idx] == 0 {
+            zeros += 1;
+        }
+    }
+    total > 0 && zeros * 3 >= total * 2
+}
+
+fn decode_utf16_le(bytes: &[u8]) -> String {
+    let mut units = Vec::with_capacity(bytes.len() / 2);
+    for chunk in bytes.chunks_exact(2) {
+        units.push(u16::from_le_bytes([chunk[0], chunk[1]]));
+    }
+    String::from_utf16_lossy(&units)
+}
+
+fn is_probably_ascii(bytes: &[u8]) -> bool {
+    bytes
+        .iter()
+        .all(|byte| matches!(byte, b'\t' | b'\n' | b'\r' | 0x20..=0x7E))
+}
+
+fn decode_ansi(vm: &Vm, bytes: &[u8]) -> String {
+    match vm.config().os_value() {
+        Os::Windows => {
+            let (text, _, _) = SHIFT_JIS.decode(bytes);
+            text.into_owned()
+        }
+        _ => {
+            let (text, _, _) = UTF_8.decode(bytes);
+            text.into_owned()
+        }
+    }
 }
 
 // SysAllocString(wstr)
@@ -95,15 +157,16 @@ pub(super) fn sys_alloc_string_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
 pub(super) fn sys_alloc_string_byte_len(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (src, len) = vm_args!(vm, stack_ptr; u32, u32);
     let len = len as usize;
-    if src == 0 {
-        return alloc_bstr_from_utf16(vm, &[]).unwrap_or(0);
-    }
-    let mut bytes = Vec::with_capacity(len);
-    for i in 0..len {
-        bytes.push(vm.read_u8(src + i as u32).unwrap_or(0));
-    }
-    let utf16: Vec<u16> = bytes.iter().map(|value| *value as u16).collect();
-    alloc_bstr_from_utf16(vm, &utf16).unwrap_or(0)
+    let bytes = if src == 0 {
+        vec![0u8; len]
+    } else {
+        let mut bytes = Vec::with_capacity(len);
+        for i in 0..len {
+            bytes.push(vm.read_u8(src + i as u32).unwrap_or(0));
+        }
+        bytes
+    };
+    alloc_bstr_from_bytes(vm, &bytes).unwrap_or(0)
 }
 
 // SysFreeString(wstr)

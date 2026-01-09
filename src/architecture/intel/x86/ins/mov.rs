@@ -179,13 +179,23 @@ pub(crate) fn movsd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
         if size == 2 {
             let value = vm.read_u16(src)?;
             vm.write_u16(dst, value)?;
-            src = src.wrapping_add(2);
-            dst = dst.wrapping_add(2);
+            if vm.df() {
+                src = src.wrapping_sub(2);
+                dst = dst.wrapping_sub(2);
+            } else {
+                src = src.wrapping_add(2);
+                dst = dst.wrapping_add(2);
+            }
         } else {
             let value = vm.read_u32(src)?;
             vm.write_u32(dst, value)?;
-            src = src.wrapping_add(4);
-            dst = dst.wrapping_add(4);
+            if vm.df() {
+                src = src.wrapping_sub(4);
+                dst = dst.wrapping_sub(4);
+            } else {
+                src = src.wrapping_add(4);
+                dst = dst.wrapping_add(4);
+            }
         }
     }
     vm.set_reg32(REG_ESI, src);
@@ -204,8 +214,13 @@ pub(crate) fn movsb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     for _ in 0..count {
         let value = vm.read_u8(src)?;
         vm.write_u8(dst, value)?;
-        src = src.wrapping_add(1);
-        dst = dst.wrapping_add(1);
+        if vm.df() {
+            src = src.wrapping_sub(1);
+            dst = dst.wrapping_sub(1);
+        } else {
+            src = src.wrapping_add(1);
+            dst = dst.wrapping_add(1);
+        }
     }
     vm.set_reg32(REG_ESI, src);
     vm.set_reg32(REG_EDI, dst);
@@ -222,7 +237,11 @@ pub(crate) fn stosb(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     let value = vm.reg8(REG_AL);
     for _ in 0..count {
         vm.write_u8(dst, value)?;
-        dst = dst.wrapping_add(1);
+        if vm.df() {
+            dst = dst.wrapping_sub(1);
+        } else {
+            dst = dst.wrapping_add(1);
+        }
     }
     vm.set_reg32(REG_EDI, dst);
     if prefixes.rep {
@@ -240,10 +259,18 @@ pub(crate) fn stosd(vm: &mut Vm, cursor: u32, prefixes: Prefixes) -> Result<(), 
     for _ in 0..count {
         if size == 2 {
             vm.write_u16(dst, value32 as u16)?;
-            dst = dst.wrapping_add(2);
+            if vm.df() {
+                dst = dst.wrapping_sub(2);
+            } else {
+                dst = dst.wrapping_add(2);
+            }
         } else {
             vm.write_u32(dst, value32)?;
-            dst = dst.wrapping_add(4);
+            if vm.df() {
+                dst = dst.wrapping_sub(4);
+            } else {
+                dst = dst.wrapping_add(4);
+            }
         }
     }
     vm.set_reg32(REG_EDI, dst);
@@ -289,7 +316,11 @@ fn scas_common(vm: &mut Vm, cursor: u32, prefixes: Prefixes, size: u32) -> Resul
             }
             _ => unreachable!(),
         }
-        edi = edi.wrapping_add(size);
+        if vm.df() {
+            edi = edi.wrapping_sub(size);
+        } else {
+            edi = edi.wrapping_add(size);
+        }
         remaining = remaining.wrapping_sub(1);
         if !repeats {
             break;

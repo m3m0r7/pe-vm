@@ -1,8 +1,12 @@
+use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use crate::pe::PeFile;
 
 use crate::vm::*;
 
 const NESTED_STACK_SLICE_SIZE: u32 = 0x20000;
+static TRACE_EIP_ONCE_HIT: AtomicBool = AtomicBool::new(false);
 
 impl Vm {
     pub fn call_export(&mut self, pe: &PeFile, name: &str) -> Result<(), VmError> {
@@ -43,6 +47,25 @@ impl Vm {
         let limit = self.config.execution_limit_value();
         let mut steps = 0u64;
         while self.regs.eip != 0 {
+            if let Some(trace_eip) = trace_eip_target() {
+                if self.regs.eip == trace_eip {
+                    let already_hit = TRACE_EIP_ONCE_HIT.swap(true, Ordering::SeqCst);
+                    if !trace_eip_once_enabled() || !already_hit {
+                        eprintln!(
+                            "[pe_vm] trace_eip hit eip=0x{:08X} eax=0x{:08X} ecx=0x{:08X} edx=0x{:08X} ebx=0x{:08X} esp=0x{:08X} ebp=0x{:08X} esi=0x{:08X} edi=0x{:08X}",
+                            self.regs.eip,
+                            self.regs.eax,
+                            self.regs.ecx,
+                            self.regs.edx,
+                            self.regs.ebx,
+                            self.regs.esp,
+                            self.regs.ebp,
+                            self.regs.esi,
+                            self.regs.edi
+                        );
+                    }
+                }
+            }
             if limit != 0 && steps > limit {
                 if std::env::var("PE_VM_TRACE").is_ok() {
                     let eip = self.regs.eip;
@@ -297,4 +320,28 @@ impl Vm {
             Value::Env(_) => Ok(()),
         }
     }
+}
+
+fn trace_eip_target() -> Option<u32> {
+    static TRACE_EIP: OnceLock<Option<u32>> = OnceLock::new();
+    *TRACE_EIP.get_or_init(|| {
+        let raw = std::env::var("PE_VM_TRACE_EIP").ok()?;
+        parse_trace_eip(&raw)
+    })
+}
+
+fn trace_eip_once_enabled() -> bool {
+    static TRACE_EIP_ONCE: OnceLock<bool> = OnceLock::new();
+    *TRACE_EIP_ONCE.get_or_init(|| std::env::var("PE_VM_TRACE_EIP_ONCE").is_ok())
+}
+
+fn parse_trace_eip(value: &str) -> Option<u32> {
+    let trimmed = value.trim();
+    if let Some(hex) = trimmed.strip_prefix("0x").or_else(|| trimmed.strip_prefix("0X")) {
+        return u32::from_str_radix(hex, 16).ok();
+    }
+    if let Ok(parsed) = trimmed.parse::<u32>() {
+        return Some(parsed);
+    }
+    u32::from_str_radix(trimmed, 16).ok()
 }

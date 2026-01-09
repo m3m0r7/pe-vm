@@ -1,6 +1,7 @@
 //! Kernel32 process-related stubs.
 
 use crate::define_stub_fn;
+use crate::{read_str_arg, read_wstr_arg};
 use crate::vm::windows::kernel32::DLL_NAME;
 use crate::vm::Vm;
 use crate::vm_args;
@@ -8,7 +9,6 @@ use crate::vm_args;
 define_stub_fn!(DLL_NAME, is_debugger_present, 0);
 define_stub_fn!(DLL_NAME, exit_process, 0);
 define_stub_fn!(DLL_NAME, create_process_a, 0);
-define_stub_fn!(DLL_NAME, output_debug_string_w, 0);
 
 pub fn register(vm: &mut Vm) {
     vm.register_import_stdcall(
@@ -85,6 +85,12 @@ pub fn register(vm: &mut Vm) {
     );
     vm.register_import_stdcall(
         DLL_NAME,
+        "OutputDebugStringA",
+        crate::vm::stdcall_args(1),
+        output_debug_string_a,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
         "SetHandleCount",
         crate::vm::stdcall_args(1),
         set_handle_count,
@@ -99,6 +105,28 @@ fn get_current_process_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 fn get_current_thread_id(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
     // Returns a fixed thread ID for the main thread.
     1
+}
+
+fn output_debug_string_w(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
+    if ptr != 0 && std::env::var("PE_VM_TRACE_DEBUGSTR").is_ok() {
+        let text = read_wstr_arg!(vm, ptr);
+        if !text.is_empty() {
+            eprintln!("[pe_vm] OutputDebugStringW: {text}");
+        }
+    }
+    0
+}
+
+fn output_debug_string_a(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (ptr,) = vm_args!(vm, stack_ptr; u32);
+    if ptr != 0 && std::env::var("PE_VM_TRACE_DEBUGSTR").is_ok() {
+        let text = read_str_arg!(vm, ptr);
+        if !text.is_empty() {
+            eprintln!("[pe_vm] OutputDebugStringA: {text}");
+        }
+    }
+    0
 }
 
 // Processor feature constants from winnt.h
@@ -127,17 +155,17 @@ fn is_processor_feature_present(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let result = match feature {
         PF_FLOATING_POINT_PRECISION_ERRATA => 0, // No Pentium FP bug
         PF_FLOATING_POINT_EMULATED => 0,         // Hardware FP available
-        PF_COMPARE_EXCHANGE_DOUBLE => 1,         // CMPXCHG8B available
-        PF_MMX_INSTRUCTIONS_AVAILABLE => 1,      // MMX available
-        PF_XMMI_INSTRUCTIONS_AVAILABLE => 1,     // SSE available
+        PF_COMPARE_EXCHANGE_DOUBLE => 0,         // CMPXCHG8B not emulated
+        PF_MMX_INSTRUCTIONS_AVAILABLE => 0,      // MMX not emulated
+        PF_XMMI_INSTRUCTIONS_AVAILABLE => 0,     // SSE not fully emulated
         PF_3DNOW_INSTRUCTIONS_AVAILABLE => 0,    // No 3DNow! (AMD only)
-        PF_RDTSC_INSTRUCTION_AVAILABLE => 1,     // RDTSC available
+        PF_RDTSC_INSTRUCTION_AVAILABLE => 0,     // RDTSC not emulated
         PF_PAE_ENABLED => 0,                     // PAE not enabled in our VM
-        PF_XMMI64_INSTRUCTIONS_AVAILABLE => 1,   // SSE2 available
+        PF_XMMI64_INSTRUCTIONS_AVAILABLE => 0,   // SSE2 not emulated
         PF_NX_ENABLED => 0,                      // NX/DEP not enforced in our VM
-        PF_SSE3_INSTRUCTIONS_AVAILABLE => 1,     // SSE3 available
+        PF_SSE3_INSTRUCTIONS_AVAILABLE => 0,     // SSE3 not emulated
         PF_COMPARE_EXCHANGE128 => 0,             // Not on 32-bit
-        PF_FASTFAIL_AVAILABLE => 1,              // __fastfail available
+        PF_FASTFAIL_AVAILABLE => 0,              // __fastfail not emulated
         _ => 0,                                  // Unknown feature
     };
 

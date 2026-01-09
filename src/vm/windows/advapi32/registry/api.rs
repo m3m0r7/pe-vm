@@ -241,6 +241,9 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
     if std::env::var("PE_VM_TRACE").is_ok() {
         let name = value_name.as_deref().unwrap_or("(Default)");
         eprintln!("[pe_vm] {api}: {key} ({name}) value_ptr=0x{value_ptr:08X}");
+        eprintln!(
+            "[pe_vm] {api}: data_ptr=0x{data_ptr:08X} size_ptr=0x{size_ptr:08X} type_ptr=0x{type_ptr:08X}"
+        );
         if size_ptr != 0 {
             let requested = vm.read_u32(size_ptr).unwrap_or(0);
             eprintln!("[pe_vm] {api} size request: {requested}");
@@ -290,6 +293,20 @@ fn reg_query_value_ex(vm: &mut Vm, stack_ptr: u32, api: &str, wide: bool) -> u32
         }
         RegistryValue::Binary(bytes) => (REG_BINARY, bytes.clone()),
     };
+
+    if std::env::var("PE_VM_TRACE_REGVAL").is_ok() {
+        let name = value_name.as_deref().unwrap_or("(Default)");
+        let preview = bytes
+            .iter()
+            .take(64)
+            .map(|byte| format!("{byte:02X}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        eprintln!(
+            "[pe_vm] {api} value: {key} ({name}) type=0x{value_type:08X} len={} data={preview}",
+            bytes.len()
+        );
+    }
 
     if type_ptr != 0 {
         let _ = vm.write_u32(type_ptr, value_type);

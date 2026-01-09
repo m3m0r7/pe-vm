@@ -51,6 +51,7 @@ impl Vm {
         self.imports_by_iat.clear();
         self.dynamic_imports.clear();
         self.dynamic_import_next = 0x7000_0000;
+        self.atl_string_mgr = None;
         self.string_overlays.clear();
         self.resource_dir = pe.directories.resource.clone();
         self.resource_sizes.clear();

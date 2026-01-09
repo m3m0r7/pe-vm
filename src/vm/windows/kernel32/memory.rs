@@ -47,6 +47,12 @@ pub fn register(vm: &mut Vm) {
     );
     vm.register_import_stdcall(
         DLL_NAME,
+        "LocalAlloc",
+        crate::vm::stdcall_args(2),
+        local_alloc,
+    );
+    vm.register_import_stdcall(
+        DLL_NAME,
         "GlobalFree",
         crate::vm::stdcall_args(1),
         global_free,
@@ -151,6 +157,11 @@ fn heap_destroy(_vm: &mut Vm, _stack_ptr: u32) -> u32 {
 }
 
 fn global_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
+    let (_flags, size) = vm_args!(vm, stack_ptr; u32, usize);
+    vm.heap_alloc(size)
+}
+
+fn local_alloc(vm: &mut Vm, stack_ptr: u32) -> u32 {
     let (_flags, size) = vm_args!(vm, stack_ptr; u32, usize);
     vm.heap_alloc(size)
 }

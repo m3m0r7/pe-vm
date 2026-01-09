@@ -265,6 +265,8 @@ pub(crate) enum Opcode {
     // Group instructions
     GroupF6 = 0xF6,
     GroupF7 = 0xF7,
+    Cld = 0xFC,
+    Std = 0xFD,
     GroupFE = 0xFE,
     GroupFF = 0xFF,
 }
@@ -534,6 +536,8 @@ impl Opcode {
             // Groups
             0xF6 => Some(Self::GroupF6),
             0xF7 => Some(Self::GroupF7),
+            0xFC => Some(Self::Cld),
+            0xFD => Some(Self::Std),
             0xFE => Some(Self::GroupFE),
             0xFF => Some(Self::GroupFF),
 

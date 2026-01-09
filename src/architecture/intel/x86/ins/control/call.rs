@@ -63,6 +63,9 @@ pub(crate) fn call_rm32(
     let mem_addr = calc_ea(vm, modrm, prefixes.segment_base)?;
     if !vm.try_call_import(mem_addr, next)? {
         let target = vm.read_u32(mem_addr)?;
+        if target == 0 && vm.try_handle_atl_string_mgr_call(mem_addr, next)? {
+            return Ok(());
+        }
         if std::env::var("PE_VM_TRACE_CALLS").is_ok() {
             let mut line = format!(
                 "[pe_vm] call_rm32 target=0x{target:08X} mem=0x{mem_addr:08X} next=0x{next:08X} esp=0x{:08X} eax=0x{:08X} ecx=0x{:08X} edx=0x{:08X}",

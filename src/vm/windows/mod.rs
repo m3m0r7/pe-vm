@@ -11,8 +11,11 @@ mod guid;
 pub mod imagehlp;
 pub mod imm32;
 pub mod kernel32;
+pub mod mfc40d;
+pub mod mfcn40d;
 pub mod mscoree;
 pub mod msvcr100;
+pub mod msvcr40d;
 pub mod ntdll;
 pub mod ole;
 pub mod ole32;
@@ -95,6 +98,7 @@ pub fn register_default(vm: &mut Vm) {
     vcruntime::register(vm);
     ucrt::register(vm);
     msvcr100::register(vm);
+    msvcr40d::register(vm);
     mscoree::register(vm);
     ole::register(vm);
     ole32::register(vm);
@@ -106,4 +110,6 @@ pub fn register_default(vm: &mut Vm) {
     wtsapi32::register(vm);
     wininet::register(vm);
     stkit432::register(vm);
+    mfc40d::register(vm);
+    mfcn40d::register(vm);
 }

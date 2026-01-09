@@ -155,10 +155,9 @@ fn get_cp_info(vm: &mut Vm, stack_ptr: u32) -> u32 {
 }
 
 pub(crate) fn resolve_code_page(vm: &Vm, code_page: u32) -> u32 {
-    if code_page == 0 {
-        default_ansi_codepage(vm)
-    } else {
-        code_page
+    match code_page {
+        0 | 1 | 2 | 3 => default_ansi_codepage(vm),
+        _ => code_page,
     }
 }
 
